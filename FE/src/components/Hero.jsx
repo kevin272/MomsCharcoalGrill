@@ -23,6 +23,8 @@ const Hero = () => (
         alt=""
       />
     </div>
+
+    <div className="hero-crescent"></div>
   </section>
 )
 

@@ -1,5 +1,7 @@
 /* Import Afacad font */
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amarante&display=swap');
+
 
 /* Reset and base styles */
 * {
@@ -149,34 +151,83 @@ html {
 /* Hero Section */
 .hero-section {
   position: relative;
-  min-height: 80vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 60px 20px;
-  background: linear-gradient(89deg, rgba(202, 201, 182, 0.10) 34.64%, rgba(155, 154, 143, 0.10) 59.35%, rgba(62, 62, 62, 0.10) 75.8%, rgba(0, 0, 0, 0.10) 105.82%);
+  padding: 40px 20px;
+  background: linear-gradient(89deg, rgba(202, 201, 182, 0.40) 34.64%, rgba(155, 154, 143, 0.40) 59.35%, rgba(62, 62, 62, 0.40) 75.8%, rgba(0, 0, 0, 0.40) 105.82%);
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/Frame 1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -2;
+}
+
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(89deg, rgba(202, 201, 182, 0.40) 34.64%, rgba(155, 154, 143, 0.40) 59.35%, rgba(62, 62, 62, 0.40) 75.8%, rgba(0, 0, 0, 0.40) 105.82%);
+  z-index: -1;
+}
+
+/* Hero crescent design */
+.hero-section .hero-crescent {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%) rotate(90deg);
+  width: 414px;
+  height: 294px;
+  background-image: url('/Rectangle 170.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.4;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .hero-content {
   flex: 1;
   max-width: 600px;
 }
-
 .hero-title {
-  font-family: 'Amarante', regular;
-  font-size: 96px;
-  font-weight: normal;
+  font-family: 'Amarante', sans-serif;
+  font-size: 128px;
+  font-weight: 200;
   color: #fff;
-  letter-spacing: -10.88px;
-  line-height: 140px;
+  letter-spacing: 2px;
+  line-height: 1.4;
   margin-bottom: 40px;
+  text-transform: uppercase;
+  text-align: center;
 }
+
+.hero-title span {
+  display: block;
+}
+
 
 .specialty-button {
   display: flex;
   align-items: center;
   background-color: #FFF200;
-  padding: 15px 30px;
+  padding: 12px 25px;
   border-radius: 0;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -184,6 +235,7 @@ html {
   min-height: 44px;
   border: none;
   outline: none;
+  font-size: 22px;
 }
 
 .specialty-button:hover {
@@ -204,8 +256,9 @@ html {
 }
 
 .arrows img {
-  width: 20px;
+  width: 16px;
   height: auto;
+  filter: invert(1);
 }
 
 .hero-image {
@@ -217,10 +270,11 @@ html {
 }
 
 .hero-image img {
-  width: 576px;
-  height: 584px;
+  width: 480px;
+  height: 480px;
   border-radius: 50%;
   object-fit: cover;
+  border: 6px solid #FAEB30;
 }
 
 .hero-decoration {
@@ -238,11 +292,27 @@ html {
 /* Menu Carousel */
 .menu-carousel {
   position: relative;
-  padding: 80px 20px;
+  padding: 60px 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 30px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.menu-carousel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/Rectangle 162.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.2;
+  z-index: -1;
 }
 
 .carousel-nav {
@@ -253,6 +323,7 @@ html {
 .carousel-nav img {
   width: 33px;
   height: 45px;
+  filter: invert(1);
 }
 
 .menu-items {
@@ -266,20 +337,25 @@ html {
 }
 
 .menu-item img {
-  width: 300px;
-  height: 300px;
+  width: 250px;
+  height: 250px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  transition: transform 0.3s ease;
+}
+
+.menu-item:hover img {
+  transform: scale(1.05);
 }
 
 .menu-item h3 {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 40.96px;
+  font-size: 32px;
   color: #fff;
-  letter-spacing: -0.614px;
-  line-height: 59.197px;
+  letter-spacing: -0.5px;
+  line-height: 1.4;
 }
 
 .carousel-dots {
@@ -306,8 +382,24 @@ html {
 
 /* About Section */
 .about-section {
-  padding: 80px 20px;
-  background: rgba(0, 0, 0, 0.2);
+  padding: 60px 20px;
+  background: rgba(0, 0, 0, 0.9);
+  position: relative;
+}
+
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/Rectangle 162.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.2;
+  z-index: -1;
 }
 
 .about-section .container {
@@ -334,18 +426,18 @@ html {
 .about-content h2 {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 86px;
+  font-size: 64px;
   color: #FAEB30;
-  line-height: 80px;
-  margin-bottom: 40px;
+  line-height: 1.2;
+  margin-bottom: 30px;
 }
 
 .about-content p {
   font-family: 'Afacad', sans-serif;
   font-weight: 400;
-  font-size: 24px;
+  font-size: 20px;
   color: #fff;
-  line-height: normal;
+  line-height: 1.5;
   margin-bottom: 20px;
 }
 
@@ -358,17 +450,17 @@ html {
 .contact-section h2 {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 64px;
+  font-size: 52px;
   color: #FAEB30;
-  margin-bottom: 60px;
+  margin-bottom: 50px;
 }
 
 .contact-form {
   display: flex;
   gap: 60px;
   max-width: 1200px;
-  margin: 0 auto;
-  margin-bottom: 40px;
+  margin: 0 auto 40px;
+  align-items: flex-start;
 }
 
 .form-left {
@@ -387,20 +479,20 @@ html {
   width: 100%;
   background-color: #000;
   border: 2.4px solid #FFF8F8;
-  padding: 26px;
+  padding: 20px;
   font-family: 'Afacad', sans-serif;
-  font-size: 32px;
+  font-size: 26px;
   color: #fff;
   outline: none;
   transition: border-color 0.3s ease;
 }
 
 .contact-form input {
-  height: 84px;
+  height: 70px;
 }
 
 .contact-form textarea {
-  height: 393px;
+  height: 320px;
   resize: vertical;
 }
 
@@ -415,18 +507,7 @@ html {
   border-color: #FAEB30;
 }
 
-.contact-form {
-  display: flex;
-  gap: 60px;
-  max-width: 1200px;
-  margin: 0 auto 40px;
-  flex-wrap: wrap;              /* lets children break to new row */
-}
-
 .send-button {
-  flex-basis: 100%;          /* force onto new row */
-  align-self: center;           /* centers the button in the form row */
-  margin-top: 20px;
   background-color: #FFF200;
   border: none;
   padding: 18px 38px;
@@ -436,11 +517,13 @@ html {
   color: #000;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  min-width: 200px;
+  min-width: 326px;
   height: 75px;
   min-height: 44px;
   outline: none;
   user-select: none;
+  margin: 20px auto 0;
+  display: block;
 }
 
 .send-button:hover {
@@ -610,6 +693,14 @@ html {
     padding: 40px 15px;
   }
 
+  .hero-content {
+    order: 2;
+  }
+
+  .hero-image {
+    order: 1;
+  }
+
   .hero-title {
     font-size: 72px;
     line-height: 1.2;
@@ -684,10 +775,14 @@ html {
   }
 
   .hero-title {
-    font-size: 48px;
+    font-size: 42px;
     line-height: 1.1;
     letter-spacing: -2px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
+  }
+
+  .hero-crescent {
+    display: none;
   }
 
   .specialty-button {
@@ -727,13 +822,13 @@ html {
   }
 
   .menu-item img {
-    width: 150px;
-    height: 150px;
+    width: 140px;
+    height: 140px;
   }
 
   .menu-item h3 {
-    font-size: 24px;
-    margin-top: 10px;
+    font-size: 20px;
+    margin-top: 8px;
   }
 
   .about-section {
@@ -741,9 +836,9 @@ html {
   }
 
   .about-content h2 {
-    font-size: 36px;
+    font-size: 32px;
     line-height: 1.2;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
   .about-content p {
@@ -756,8 +851,8 @@ html {
   }
 
   .contact-section h2 {
-    font-size: 36px;
-    margin-bottom: 30px;
+    font-size: 32px;
+    margin-bottom: 25px;
   }
 
   .contact-form {
@@ -771,11 +866,11 @@ html {
   }
 
   .contact-form input {
-    height: 60px;
+    height: 55px;
   }
 
   .contact-form textarea {
-    height: 200px;
+    height: 180px;
   }
 
   .send-button {
@@ -850,10 +945,10 @@ html {
   }
 
   .hero-title {
-    font-size: 32px;
+    font-size: 28px;
     letter-spacing: -1px;
     line-height: 1;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
   .specialty-button {
@@ -875,8 +970,8 @@ html {
   }
 
   .hero-image img {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
   }
 
   .hero-decoration {
@@ -893,12 +988,12 @@ html {
   }
 
   .menu-item img {
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
   }
 
   .menu-item h3 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .about-section {
@@ -906,7 +1001,7 @@ html {
   }
 
   .about-content h2 {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1.1;
   }
 
@@ -920,7 +1015,7 @@ html {
   }
 
   .contact-section h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .contact-form input,
@@ -1497,6 +1592,184 @@ html {
   align-items: flex-start;
 }
 
+/* Sauces Page Styles */
+.sauces-page {
+  background-color: #000;
+  min-height: 100vh;
+  position: relative;
+}
+
+.sauces-decorative-left {
+  position: absolute;
+  top: 2px;
+  left: 44px;
+  z-index: 5;
+}
+
+.sauces-decorative-left img {
+  width: 190px;
+  height: 253px;
+  aspect-ratio: 190/253.33;
+}
+
+.sauces-grid-section {
+  padding: 80px 20px;
+  position: relative;
+  max-width: 1728px;
+  margin: 0 auto;
+}
+
+.sauces-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+}
+
+.sauces-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 80px 200px;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  justify-items: center;
+}
+/* === SAUCES: layout fixes & responsive cleanups === */
+
+/* Card: switch from hard fixed box + absolute content to a flexible padded layout */
+.sauce-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 950px;          /* was fixed 795px */
+  min-height: 254px;         /* matches bg shape height */
+  padding: 24px 110px 24px 300px; /* room for image + cart icon */
+}
+
+/* Keep the gradient shape as a background layer */
+.sauce-background {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 1;
+  opacity: 0.4;
+}
+.sauce-bg-shape {
+  width: 524px;
+  height: 254px;
+}
+
+/* Image: no rotation, vertically centered on the left */
+.sauce-image-container {
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.sauce-image {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  object-fit: cover;
+  transform: none !important; /* remove 90deg rotation */
+}
+
+/* Content: stop absolutely positioning; let it flow */
+.sauce-content {
+  position: relative;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Name, price inline flow */
+.sauce-name {
+  margin: 0;
+}
+.sauce-price {
+  position: static;          /* was absolute; prevents overlap */
+  margin: 0 0 6px 0;
+}
+
+/* Description keeps its max width for neat wrapping */
+.sauce-description {
+  margin-top: 6px;           /* was big to compensate for abs pos */
+  max-width: 420px;
+}
+
+/* Cart button stays on the right but anchors to padding box */
+.sauce-cart-button {
+  position: absolute;
+  right: 40px;               /* was 76px; aligns with new padding */
+  bottom: 24px;
+  z-index: 3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  transition: transform .3s ease;
+}
+.sauce-cart-button:hover { transform: scale(1.06); }
+
+/* ====== Responsive tweaks ====== */
+@media (max-width: 1200px) {
+  .sauce-item {
+    max-width: 860px;
+    padding: 22px 90px 22px 260px;
+  }
+  .sauce-image { width: 200px; height: 200px; }
+}
+
+@media (max-width: 992px) {
+  .sauce-item {
+    max-width: 100%;
+    padding: 20px 80px 20px 230px;
+  }
+  .sauce-bg-shape { width: 400px; height: 200px; }
+  .sauce-image { width: 180px; height: 180px; }
+}
+
+@media (max-width: 768px) {
+  /* Single column is already defined; ensure content spacing works */
+  .sauce-item {
+    padding: 18px 70px 18px 200px;
+    min-height: 200px;
+  }
+  .sauce-bg-shape { width: 300px; height: 150px; }
+  .sauce-image { width: 150px; height: 150px; }
+}
+
+@media (max-width: 520px) {
+  /* Stack image above text for very small screens */
+  .sauce-item {
+    display: block;
+    padding: 16px 16px 64px 16px; /* bottom room for cart button */
+    min-height: unset;
+  }
+  .sauce-image-container {
+    position: relative;
+    left: 0; top: 0; transform: none;
+    margin: 0 auto 14px;
+    text-align: center;
+  }
+  .sauce-bg-shape {
+    width: 100%;
+    height: 160px;
+  }
+  .sauce-content { text-align: center; align-items: center; }
+  .sauce-description { max-width: 90%; }
+  .sauce-cart-button { right: 16px; bottom: 16px; }
+}
+
+
 /* Hot Dishes Page Styles */
 .hot-dishes-page {
   background-color: #000;
@@ -1570,7 +1843,6 @@ html {
   height: 240px;
   border-radius: 50%;
   object-fit: cover;
-  transform: rotate(90deg);
 }
 
 .hot-dish-content {

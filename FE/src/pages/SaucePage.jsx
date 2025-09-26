@@ -1,6 +1,5 @@
 import React from 'react'
-import Breadcrumb from '../components/common/Breadcrumb'
-import Footer from '../components/common/Footer'
+import Breadcrumb from '../components/CateringHero'
 
 const SaucePage = () => {
   const sauces = [
@@ -9,21 +8,21 @@ const SaucePage = () => {
       name: "Pasta",
       price: "$80",
       description: "Silky white sauce with parmesan and herbs.",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/0c52cab6e07d5e32d8d9c38767188d8ce6e07106?width=380"
+      image: "/sauce/Ellipse 18.png"
     },
     {
       id: 2,
       name: "Pasta",
       price: "$80", 
       description: "Silky white sauce with parmesan and herbs.",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/cabd48ddcb0f09b9f73982e610f883762c93932b?width=588"
+      image: "/sauce/Ellipse 20.png"
     },
     {
       id: 3,
       name: "Pasta",
       price: "$80",
       description: "Silky white sauce with parmesan and herbs.",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/0c52cab6e07d5e32d8d9c38767188d8ce6e07106?width=380"
+      image: "/sauce/Ellipse 22.png"
     },
     {
       id: 4,
@@ -52,12 +51,9 @@ const SaucePage = () => {
     <div className="sauces-page">
       <Breadcrumb 
         title="SAUCES"
-        background="https://api.builder.io/api/v1/image/assets/TEMP/ca991e8d5e8649cac31a0df60ae4617cd900d35c?width=3528"
+        backgroundImage="https://api.builder.io/api/v1/image/assets/TEMP/ca991e8d5e8649cac31a0df60ae4617cd900d35c?width=3528"
       />
       
-      <div className="sauces-decorative-apple">
-        <img src="https://api.builder.io/api/v1/image/assets/TEMP/0c52cab6e07d5e32d8d9c38767188d8ce6e07106?width=380" alt="" />
-      </div>
       
       <section className="sauces-grid-section">
         <div className="sauces-container">
@@ -102,24 +98,8 @@ const SaucePage = () => {
         </div>
       </section>
 
-      <div className="sauces-decorative-apple-bottom">
-        <img src="https://api.builder.io/api/v1/image/assets/TEMP/cabd48ddcb0f09b9f73982e610f883762c93932b?width=588" alt="" />
-      </div>
+      
 
-      <div className="sauces-decorative-rails">
-        <div className="sauce-rail left">
-          <svg width="629" height="29" viewBox="0 0 629 29" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 14.5C0 6.49187 6.49187 0 14.5 0H614.5C622.508 0 629 6.49187 629 14.5C629 22.5081 622.508 29 614.5 29H14.5C6.49186 29 0 22.5081 0 14.5Z" fill="#FFF200"/>
-          </svg>
-        </div>
-        <div className="sauce-rail right">
-          <svg width="612" height="31" viewBox="0 0 612 31" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 15.5C0 6.93959 6.93959 0 15.5 0H596.5C605.06 0 612 6.93959 612 15.5C612 24.0604 605.06 31 596.5 31H15.5C6.93958 31 0 24.0604 0 15.5Z" fill="#FFF200"/>
-          </svg>
-        </div>
-      </div>
-
-      <Footer />
     </div>
   )
 }

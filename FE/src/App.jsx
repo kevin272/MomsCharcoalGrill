@@ -8,6 +8,8 @@ import Catering from "./pages/Catering"
 import HotDishes from "./pages/HotDishes"
 import CartPage from "./pages/CartPage"
 import Layout from "./components/common/Layout"
+import SaucePage from "./pages/SaucePage"
+import NotFound from "./pages/NotFoundPage"
 
 function App() {
 
@@ -20,6 +22,10 @@ function App() {
           <Route path="/catering" element = {<Catering/>}/>
           <Route path="/catering/hot-dishes" element = {<HotDishes/>}/>
           <Route path="/cart" element = {<CartPage/>}/>
+          <Route path="/sauces" element= {<SaucePage/>}/>
+
+          <Route path="*" element={<NotFound />} />
+
         </Route>
       </Routes>
       </>
