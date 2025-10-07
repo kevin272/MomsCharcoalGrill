@@ -1,4 +1,6 @@
 /* Import Afacad and Amarante fonts */
+@import "tailwindcss";
+
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Amarante&display=swap');
 
 :root {

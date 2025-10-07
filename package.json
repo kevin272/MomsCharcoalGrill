@@ -1,0 +1,31 @@
+{
+  "name": "momscharcoalgrill",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "backend": "cd BE && npm run dev",
+    "frontend": "cd FE && npm run dev",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm install && cd FE && npm install --include=dev && npm run build && cd ../BE && npm install",
+    "dev": "node BE/src/app.js",
+    "start": "concurrently -n BE,FE -c blue,green \"npm:backend\" \"npm:frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevin272/MomsCharcoalGrill.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "nodemon": "^3.1.10",
+    "start": "^5.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/kevin272/MomsCharcoalGrill/issues"
+  },
+  "homepage": "https://github.com/kevin272/MomsCharcoalGrill#readme"
+}

@@ -51,7 +51,7 @@ const SaucePage = () => {
     <div className="sauces-page">
       <Breadcrumb 
         title="SAUCES"
-        backgroundImage="https://api.builder.io/api/v1/image/assets/TEMP/ca991e8d5e8649cac31a0df60ae4617cd900d35c?width=3528"
+        backgroundImage="/Saus.png"
       />
       
       
