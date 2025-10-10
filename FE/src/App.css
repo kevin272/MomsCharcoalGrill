@@ -17,6 +17,7 @@ body {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+
 }
 
 /* Touch-friendly interactive elements */
@@ -1639,135 +1640,169 @@ html {
   justify-items: center;
 }
 /* === SAUCES: layout fixes & responsive cleanups === */
+/* === SAUCE PAGE STYLING (updated to match the reference) === */
+.sauces-page {
+  background-color: #000;
+  min-height: 100vh;
+}
 
-/* Card: switch from hard fixed box + absolute content to a flexible padded layout */
+.sauces-grid-section {
+  padding: 100px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.sauces-container {
+  width: 90%;
+  max-width: 1500px;
+}
+
+.sauces-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 60px 100px;
+  justify-items: center;
+}
+
+/* --- Each sauce card --- */
 .sauce-item {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 40px 60px;
   width: 100%;
-  max-width: 950px;          /* was fixed 795px */
-  min-height: 254px;         /* matches bg shape height */
-  padding: 24px 110px 24px 300px; /* room for image + cart icon */
+  max-width: 600px;
+  min-height: 220px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Keep the gradient shape as a background layer */
-.sauce-background {
-  position: absolute;
-  inset: 0 auto auto 0;
-  z-index: 1;
-  opacity: 0.4;
-}
-.sauce-bg-shape {
-  width: 524px;
-  height: 254px;
+.sauce-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
 }
 
-/* Image: no rotation, vertically centered on the left */
+/* --- Sauce Image --- */
 .sauce-image-container {
-  position: absolute;
-  left: 40px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
+  flex-shrink: 0;
+  margin-right: 40px;
 }
+
 .sauce-image {
-  width: 240px;
-  height: 240px;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   object-fit: cover;
-  transform: none !important; /* remove 90deg rotation */
+  border: 4px solid #000;
 }
 
-/* Content: stop absolutely positioning; let it flow */
+/* --- Text Content --- */
 .sauce-content {
-  position: relative;
-  left: 0;
-  top: 0;
-  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
 }
 
-/* Name, price inline flow */
 .sauce-name {
-  margin: 0;
+  font-family: 'Afacad', sans-serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: #fff;
 }
+
 .sauce-price {
-  position: static;          /* was absolute; prevents overlap */
-  margin: 0 0 6px 0;
+  font-family: 'Afacad', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #FAEB30;
 }
 
-/* Description keeps its max width for neat wrapping */
 .sauce-description {
-  margin-top: 6px;           /* was big to compensate for abs pos */
-  max-width: 420px;
+  font-family: 'Afacad', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  color: #e0e0e0;
+  max-width: 350px;
+  line-height: 1.5;
 }
 
-/* Cart button stays on the right but anchors to padding box */
+/* --- Cart Icon Button --- */
+/* === Cart Button Cleanup === */
 .sauce-cart-button {
   position: absolute;
-  right: 40px;               /* was 76px; aligns with new padding */
+  right: 32px;
   bottom: 24px;
-  z-index: 3;
+  width: 80px;
+  height: 60px;
   background: none;
   border: none;
+  outline: none;
   cursor: pointer;
-  padding: 8px;
-  transition: transform .3s ease;
-}
-.sauce-cart-button:hover { transform: scale(1.06); }
-
-/* ====== Responsive tweaks ====== */
-@media (max-width: 1200px) {
-  .sauce-item {
-    max-width: 860px;
-    padding: 22px 90px 22px 260px;
-  }
-  .sauce-image { width: 200px; height: 200px; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, filter 0.25s ease;
+  z-index: 3;
 }
 
-@media (max-width: 992px) {
-  .sauce-item {
-    max-width: 100%;
-    padding: 20px 80px 20px 230px;
-  }
-  .sauce-bg-shape { width: 400px; height: 200px; }
-  .sauce-image { width: 180px; height: 180px; }
+.sauce-cart-button svg {
+  width: 42px;
+  height: 42px;
+  stroke: #FAEB30;
+  fill: none;
+  transition: transform 0.25s ease;
 }
 
+.sauce-cart-button:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 6px rgba(250, 235, 48, 0.6));
+}
+
+.sauce-cart-button:hover svg {
+  transform: scale(1.08);
+}
+
+/* === Mobile tweak === */
 @media (max-width: 768px) {
-  /* Single column is already defined; ensure content spacing works */
-  .sauce-item {
-    padding: 18px 70px 18px 200px;
-    min-height: 200px;
+  .sauce-cart-button {
+    position: static;
+    margin-top: 16px;
+    transform: none;
   }
-  .sauce-bg-shape { width: 300px; height: 150px; }
-  .sauce-image { width: 150px; height: 150px; }
 }
 
-@media (max-width: 520px) {
-  /* Stack image above text for very small screens */
-  .sauce-item {
-    display: block;
-    padding: 16px 16px 64px 16px; /* bottom room for cart button */
-    min-height: unset;
-  }
-  .sauce-image-container {
-    position: relative;
-    left: 0; top: 0; transform: none;
-    margin: 0 auto 14px;
-    text-align: center;
-  }
-  .sauce-bg-shape {
-    width: 100%;
-    height: 160px;
-  }
-  .sauce-content { text-align: center; align-items: center; }
-  .sauce-description { max-width: 90%; }
-  .sauce-cart-button { right: 16px; bottom: 16px; }
+
+.sauce-cart-button:hover {
+  transform: scale(1.1);
 }
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .sauces-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .sauce-item {
+    flex-direction: column;
+    text-align: center;
+    padding: 30px 20px 60px;
+  }
+
+  .sauce-image-container {
+    margin: 0 0 20px 0;
+  }
+
+  .sauce-cart-button {
+    right: 50%;
+    bottom: 20px;
+    transform: translateX(50%);
+  }
+}
+
 
 
 /* Hot Dishes Page Styles */
