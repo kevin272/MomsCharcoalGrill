@@ -24,6 +24,7 @@ import { Toaster } from 'react-hot-toast';
 import MenuDashboard from './pages/Dashboardpages/MenuDashboard';
 import MenuForm from './pages/Dashboardpages/MenuForm';
 import OrderDashboard from './pages/Dashboardpages/OrderDashboard';
+import CateringDashboard from './pages/Dashboardpages/CateringDashboard';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
           <Route path="/admin/sauces" element={<SauceDashboard />} />
           <Route path="/admin/sauces/new" element={<SauceForm />} />
           <Route path="/admin/sauces/:id/edit" element={<SauceForm />} />
+          <Route path ="admin/catering" element= {<CateringDashboard/>}/>
         </Route>
       </Routes>
     </>

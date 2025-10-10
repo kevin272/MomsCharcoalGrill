@@ -22,7 +22,7 @@ const galleryRoutes = require('./routes/gallery');
 const contactRoutes = require('./routes/contact');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
-const menuAliasRoutes = require('./routes/menu'); // <- new
+const menuAliasRoutes = require('./routes/menu'); 
 
 
 const app = express();
