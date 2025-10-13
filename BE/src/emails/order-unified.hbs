@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{shop.name}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* ===== MOM’S CHARCOAL GRILL - DashboardTable Styled Email ===== */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f6f6f6;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+      line-height: 1.55;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 10px 0;
+      color: #111827;
+      letter-spacing: 0.02em;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #111827;
+    }
+
+    p { margin: 0 0 10px 0; }
+    a { color: #111827; text-decoration: none; }
+
+    .muted { color: #6b7280; font-size: 12px; }
+    .divider { height: 1px; background: #e5e7eb; margin: 18px 0; }
+
+    /* ===== Status pills ===== */
+    .status {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status--paid {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+
+    .status--completed {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    /* ===== Code chip ===== */
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      background: #f9fafb;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* ===== Table (DashboardTable style) ===== */
+    .table-wrap {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #111827;
+      color: #FFF200;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    tbody td {
+      padding: 14px;
+      color: #111827;
+      font-size: 14px;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-right { text-align: right; white-space: nowrap; }
+
+    /* ===== Totals section ===== */
+    .totals { margin-top: 10px; }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 6px 0;
+    }
+
+    .total-row span { color: #374151; font-size: 14px; }
+    .total-row strong { color: #111827; font-size: 14px; }
+    .grand {
+      font-size: 18px;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    /* ===== CTA Button (Brand Yellow) ===== */
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: #FFF200;
+      color: #111827 !important;
+      border-radius: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border: 1px solid #e5e7eb;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .btn:hover {
+      background: #fef08a;
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      margin-top: 18px;
+      color: #6b7280;
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ===== Mobile Responsive ===== */
+    @media (max-width: 480px) {
+      .card { padding: 18px; }
+      thead th, tbody td { padding: 10px; font-size: 13px; }
+      .grand { font-size: 16px; }
+      .btn { padding: 10px 16px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+
+      {{!-- Header based on order mode --}}
+      {{#if (eq mode "receipt")}}
+        <h2>Thanks {{customer.name}}, we’ve received your order!</h2>
+        <div class="status">New</div>
+      {{/if}}
+      {{#if (eq mode "paid")}}
+        <h2>Payment confirmed 🎉</h2>
+        <div class="status status--paid">Paid</div>
+      {{/if}}
+      {{#if (eq mode "completed")}}
+        <h2>Your order is complete ✅</h2>
+        <div class="status status--completed">Completed</div>
+      {{/if}}
+
+      <!-- Order meta -->
+      <p style="margin: 12px 0 0 0;">
+        Order ID: <span class="code">#{{#if order.id}}{{order.id}}{{else}}{{order._id}}{{/if}}</span><br/>
+        {{#if order.createdAt}}Placed: {{datetime order.createdAt}}<br/>{{/if}}
+        {{#if order.updatedAt}}Updated: {{datetime order.updatedAt}}{{/if}}
+      </p>
+
+      <div class="divider"></div>
+
+      <h3>Items</h3>
+      <div class="table-wrap">
+        <table role="presentation" cellspacing="0" cellpadding="0">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each items}}
+              <tr>
+                <td>{{this.name}}</td>
+                <td class="text-right">{{this.qty}}</td>
+                <td class="text-right">{{currency this.price ../currency}}</td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><strong>{{currency totals.subtotal currency}}</strong></div>
+        <div class="total-row"><span>GST</span><strong>{{currency totals.gst currency}}</strong></div>
+        <div class="total-row"><span>Delivery</span><strong>{{currency totals.delivery currency}}</strong></div>
+        <div class="divider"></div>
+        <div class="total-row grand"><span>Grand Total</span><strong>{{currency totals.grandTotal currency}}</strong></div>
+      </div>
+
+      {{#if (eq mode "receipt")}}
+        <p style="margin-top: 14px;">We’ll notify you when payment is confirmed.</p>
+      {{/if}}
+      {{#if (eq mode "paid")}}
+        <p style="margin-top: 14px;">Your order is now being prepared.</p>
+      {{/if}}
+      {{#if (eq mode "completed")}}
+        <p style="margin-top: 14px;">Thank you for choosing {{shop.name}}!</p>
+      {{/if}}
+
+      <a class="btn" href="{{order.trackingUrl}}" target="_blank" style="{{#unless order.trackingUrl}}display:none;{{/unless}}">
+        View Order
+      </a>
+
+      <div class="divider"></div>
+
+      <p class="footer">
+        {{shop.name}} • {{shop.address}} • {{shop.phone}}<br/>
+        <a href="mailto:{{shop.supportEmail}}">{{shop.supportEmail}}</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

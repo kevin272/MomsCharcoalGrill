@@ -1,17 +1,16 @@
+// src/routes/orders.js
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
+const {
+  sendOrderReceipt,
+  sendOrderPaid,
+  sendOrderCompleted,
+} = require('../utils/mailer');
 
-// -----------------------------------------------------------------------------
-// CRUD operations for orders
-//
-// The following routes provide basic list, get, create, update and delete
-// functionality for orders.  They mirror the original implementation from
-// upstream but are reproduced here so we can extend the router below.
-
-// GET /api/orders - list orders with simple pagination
+// -------------------- LIST --------------------
 router.get('/', async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -29,7 +28,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/orders/:id - return a single order by id
+// -------------------- GET ONE --------------------
 router.get('/:id', async (req, res) => {
   try {
     const item = await Order.findById(req.params.id);
@@ -40,7 +39,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/orders - create an order directly from provided body
+// -------------------- CREATE --------------------
 router.post('/', async (req, res) => {
   try {
     const item = await Order.create(req.body);
@@ -50,18 +49,33 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/orders/:id - update order fields or status
+// -------------------- UPDATE + EMAIL HOOKS --------------------
 router.put('/:id', async (req, res) => {
   try {
-    const item = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!item) return res.status(404).json({ success: false, message: 'Not found' });
-    res.json({ success: true, data: item });
+    const current = await Order.findById(req.params.id);
+    if (!current) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const prevStatus = current.status;
+    const next = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    // Email triggers on status transitions
+    if (prevStatus !== next.status) {
+      const s = String(next.status).toLowerCase();
+      if (s === 'paid') {
+        sendOrderPaid({ order: next }).catch(console.error);
+      }
+      if (s === 'completed' || s === 'delivered') {
+        sendOrderCompleted({ order: next }).catch(console.error);
+      }
+    }
+
+    res.json({ success: true, data: next });
   } catch (e) {
     res.status(400).json({ success: false, message: e.message });
   }
 });
 
-// DELETE /api/orders/:id - permanently delete an order
+// -------------------- DELETE --------------------
 router.delete('/:id', async (req, res) => {
   try {
     const item = await Order.findByIdAndDelete(req.params.id);
@@ -72,18 +86,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// -----------------------------------------------------------------------------
-// POST /api/orders/checkout
-//
-// Accepts a payload describing the items in the customer's cart, along with
-// customer details, payment mode and optional notes.  The route computes the
-// order totals (subtotal, GST, delivery, grand total), constructs the order
-// items by looking up menu items when possible and falls back to provided
-// name/price/image when not.  Each order item requires a valid ObjectId for
-// the `menuItem` field in the schema; if none is provided, a new ObjectId
-// placeholder is generated.  Finally, the order document is created and
-// returned.
-
+// -------------------- CHECKOUT + RECEIPT EMAIL --------------------
 router.post('/checkout', async (req, res) => {
   try {
     const { items = [], customer, paymentMode = 'COD', notes = '' } = req.body || {};
@@ -94,50 +97,32 @@ router.post('/checkout', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Customer details are required' });
     }
 
-    // Prepare order items and compute subtotal.  If an item includes a
-    // `menuItem` identifier, attempt to load the corresponding MenuItem from
-    // the database.  Otherwise, fall back to the name/price/image provided
-    // by the client and assign a dummy ObjectId so Mongoose validation passes.
     const orderItems = [];
     let subtotal = 0;
     for (const item of items) {
       const qty = Math.max(parseInt(item.qty) || 1, 1);
-      let menuItemId;
-      let name;
-      let price;
-      let image = '';
+      let menuItemId, name, price, image = '';
       if (item.menuItem) {
-          // Attempt to fetch the menu item from the database
-          const doc = await MenuItem.findById(item.menuItem);
-          if (doc) {
-            menuItemId = doc._id;
-            name = doc.name;
-            price = doc.price;
-            image = doc.image || '';
-          } else {
-            // Provided id did not match any MenuItem; generate a dummy id
-            menuItemId = new mongoose.Types.ObjectId();
-            name = item.name || '';
-            price = Number(item.price) || 0;
-            image = item.image || '';
-          }
+        const doc = await MenuItem.findById(item.menuItem);
+        if (doc) {
+          menuItemId = doc._id; name = doc.name; price = doc.price; image = doc.image || '';
+        } else {
+          menuItemId = new mongoose.Types.ObjectId();
+          name = item.name || ''; price = Number(item.price) || 0; image = item.image || '';
+        }
       } else {
-        // No menuItem id; use provided data and generate a dummy id
         menuItemId = new mongoose.Types.ObjectId();
-        name = item.name || '';
-        price = Number(item.price) || 0;
-        image = item.image || '';
+        name = item.name || ''; price = Number(item.price) || 0; image = item.image || '';
       }
       subtotal += price * qty;
       orderItems.push({ menuItem: menuItemId, name, price, qty, image });
     }
-    // Compute GST (10% of subtotal) and fixed delivery of 50 if there are items
+
     const gst = Math.round(subtotal * 0.1);
     const delivery = subtotal > 0 ? 50 : 0;
     const grandTotal = subtotal + gst + delivery;
     const totals = { subtotal, gst, delivery, grandTotal };
 
-    // Construct customer subdocument
     const customerDoc = {
       name: customer.name,
       phone: customer.phone,
@@ -145,14 +130,17 @@ router.post('/checkout', async (req, res) => {
       address: customer.address || '',
     };
 
-    // Create order
     const order = await Order.create({
       items: orderItems,
       customer: customerDoc,
       paymentMode: paymentMode || 'COD',
       totals,
       notes: notes || '',
+      status: 'new',
     });
+
+    // Send receipt email immediately after checkout
+    sendOrderReceipt({ order }).catch(console.error);
 
     res.status(201).json({ success: true, data: order });
   } catch (err) {

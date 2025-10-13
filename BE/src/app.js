@@ -23,7 +23,8 @@ const contactRoutes = require('./routes/contact');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const menuAliasRoutes = require('./routes/menu'); 
-
+const cateringOptionRoutes = require('./routes/CateringOption');
+const bannerRoutes =  require('./routes/banner');
 
 const app = express();
 
@@ -63,6 +64,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/catering-packages', cateringPackagesRoutes);
 app.use('/api/catering-orders', cateringOrderRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/catering-options', cateringOptionRoutes);
+app.use('/api/banners', bannerRoutes);
 
 
 // Health check endpoint

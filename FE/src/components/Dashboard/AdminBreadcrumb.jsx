@@ -1,49 +1,29 @@
-import React from "react";
-import { Link } from "react-router-dom"; // use Link if you're using React Router
+import React from 'react'
 
-const Breadcrumb = ({ title, links =[] }) => {
+/**
+ * General-purpose Breadcrumb Hero
+ * Uses /AdminBc.jpg from the public folder as background.
+ *
+ * Props:
+ * - title: main heading text
+ * - children: optional breadcrumb trail or extra info
+ */
+function Breadcrumb({ title, children }) {
+  const background = '/AdminBc.jpg' // always from public folder
+
   return (
-    <div className="rts-bread-crumb-area bg_image bg-breadcrumb">
-      <div className="container ptb--65">
-        <div className="row">
-          <div className="col-lg-12">
-            <div className="con-tent-main">
-              <div className="wrapper">
-                {/* Background Text */}
-                <span className="bg-text-stok">{title}</span>
-
-                {/* Title */}
-                <div className="title skew-up">
-                  <a href="#">{title}</a>
-                </div>
-
-                {/* Breadcrumb Links */}
-                <div className="slug skew-up">
-                  {links.map((link, index) => (
-                    <span key={index}>
-                      {link.to ? (
-                        <Link
-                          to={link.to}
-                          className={link.active ? "active" : ""}
-                        >
-                          {link.label}
-                        </Link>
-                      ) : (
-                        <span className={link.active ? "active" : ""}>
-                          {link.label}
-                        </span>
-                      )}
-                      {index < links.length - 1 && " / "}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <section className="breadcrumb-section">
+      <div className="breadcrumb-bg">
+        <img src={background} alt={`${title} Background`} />
+        <div className="breadcrumb-overlay"></div>
       </div>
-    </div>
-  );
-};
 
-export default Breadcrumb;
+      <div className="breadcrumb-content">
+        <h1 className="breadcrumb-title">{title}</h1>
+        {children && <div className="breadcrumb-extra">{children}</div>}
+      </div>
+    </section>
+  )
+}
+
+export default Breadcrumb

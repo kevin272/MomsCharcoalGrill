@@ -45,16 +45,9 @@ function CartPage() {
     setShowCustomerDetails(true);
   };
 
-  const handleCustomerDetailsSubmit = async () => {
+const handleCustomerDetailsSubmit = async () => {
     setShowCustomerDetails(false);
-    // Build payload for backend.  Each cart item may include a `menuItem`
-    // identifier referencing an existing MenuItem in the database.  If
-    // present, it is sent directly.  Otherwise we set it to null and
-    // include the item's name, numeric price and image.  The backend will
-    // generate a placeholder ID and use the provided name/price/image when
-    // computing totals.  This allows static items (such as our hardcoded
-    // hot dishes and sauces) to be ordered without a corresponding record
-    // in the MenuItem collection.
+
     const orderData = {
       items: cartItems.map((item) => ({
         menuItem: item.menuItem || null,
@@ -66,7 +59,7 @@ function CartPage() {
       customer: {
         name: customerDetails.fullName,
         phone: customerDetails.phoneNumber,
-        email: '',
+        email: customerDetails.email, // ✅ included
         address: [
           customerDetails.street,
           customerDetails.suburb,
@@ -79,6 +72,7 @@ function CartPage() {
       paymentMode: 'COD',
       notes: specialRequirements,
     };
+
     try {
       const resp = await fetch('/api/orders/checkout', {
         method: 'POST',
@@ -88,7 +82,7 @@ function CartPage() {
       const data = await resp.json();
       if (data.success) {
         clearCart();
-        alert('Order placed successfully!');
+        alert('Order placed successfully! You will receive an email confirmation.');
       } else {
         alert('Failed to place order: ' + (data.message || 'Unknown error'));
       }
@@ -251,6 +245,12 @@ function CartPage() {
                 placeholder="Phone Number"
                 value={customerDetails.phoneNumber}
                 onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              />
+              <input
+                type="email"
+                placeholder="Email (for order confirmation)"
+                value={customerDetails.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
               />
               <div className="form-row">
                 <input

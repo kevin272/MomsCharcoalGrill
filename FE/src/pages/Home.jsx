@@ -8,7 +8,6 @@ import ContactSection from '../components/common/ContactSection'
 function Home() {
   return (
     <div className="homepage">
-      <PromoBanner />
       <Hero />
       <MenuCarousel />
       <About />

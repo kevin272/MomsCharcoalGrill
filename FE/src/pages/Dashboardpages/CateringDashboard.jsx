@@ -1,320 +1,237 @@
-// src/admin/CateringDashboard.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "../../components/Dashboard/DashboardLayout";
-import DashboardTable from "../../components/Dashboard/DashboardTable";
+// src/pages/admin/CateringDashboard.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import axiosInstance from "../../config/axios.config.js";
+import DashboardLayout from "../../components/Dashboard/DashboardLayout.jsx";
+import DashboardTable from "../../components/Dashboard/DashboardTable.jsx";
+import CateringForm from "./CateringForm.jsx";
 
-const API = "/api/catering-packages";
+/* ---------- OrderDashboard-like Modal (inline) ---------- */
+function ODModal({ open, onClose, title, children, widthClass = "max-w-4xl" }) {
+  const mountTarget = document.getElementById("root") || document.body;
+  const dialogRef = useRef(null);
 
-// shape helper
-const emptyPkg = () => ({
-  _id: "",
-  title: "",
-  perPersonPrice: "",
-  trayPrice: "",
-  minPeople: 20,
-  description: "",
-  items: [],              // array of string names
-  image: "",
-  isActive: true,
-  order: 0,
-});
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && onClose?.();
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
+    // focus first focusable control
+    setTimeout(() => {
+      dialogRef.current
+        ?.querySelector("input,select,textarea,button")
+        ?.focus?.();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const onBackdrop = (e) => {
+    if (e.target === e.currentTarget) onClose?.();
+  };
+
+  return createPortal(
+    <div className="od-modal-overlay" onMouseDown={onBackdrop} role="dialog" aria-modal="true">
+      <div ref={dialogRef} className={`od-modal ${widthClass}`} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="od-modal-header">
+          <h5 className="od-modal-title">{title}</h5>
+          <button className="od-modal-close" onClick={onClose} aria-label="Close">×</button>
+        </div>
+        <div className="od-modal-body">{children}</div>
+      </div>
+    </div>,
+    mountTarget
+  );
+}
+
+/* ---------- Helpers ---------- */
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const SERVER_URL = API_URL.replace(/\/api$/, ""); // strip only a trailing /api
+
+function joinImageUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path; // already absolute
+  return `${SERVER_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+/** Try multiple endpoints gracefully (works with your older/newer route names). */
+async function fetchWithFallbacks(getterFns) {
+  let lastErr;
+  for (const fn of getterFns) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const res = await fn();
+      return res;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
+/* ---------- Page ---------- */
 export default function CateringDashboard() {
-  const [list, setList] = useState([]);
+  const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [editing, setEditing] = useState(null); // null or pkg
-  const [q, setQ] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  // load ALL (admin view shows inactive too)
-  const load = async () => {
+  const imgBase = useMemo(() => SERVER_URL || "", []);
+
+  const fetchOptions = async () => {
     setLoading(true);
     setError("");
     try {
-      const r = await fetch(`${API}/all`);
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Failed to load");
-      setList(j.data || []);
+      const res = await fetchWithFallbacks([
+        () => axiosInstance.get("/catering/list"),
+        () => axiosInstance.get("/catering-options"),
+        () => axiosInstance.get("/catering"), // final fallback
+      ]);
+      const data = res?.data?.data || res?.data || [];
+      setOptions(Array.isArray(data) ? data : []);
     } catch (e) {
-      setError(e.message);
+      setError(e?.response?.data?.message || e?.message || "Failed to load catering options");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    fetchOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const filtered = useMemo(() => {
-    if (!q.trim()) return list;
-    const s = q.toLowerCase();
-    return list.filter(p =>
-      [p.title, p.description, (p.items || []).join(", ")].join(" ").toLowerCase().includes(s)
-    );
-  }, [q, list]);
-
-  const startCreate = () => setEditing(emptyPkg());
-  const startEdit = (pkg) => setEditing({ ...pkg });
-
-  const save = async (e) => {
-    e.preventDefault();
-    if (!editing) return;
-    setSaving(true);
-    setError("");
-    try {
-      const payload = {
-        ...editing,
-        perPersonPrice: editing.perPersonPrice === "" ? undefined : Number(editing.perPersonPrice),
-        trayPrice: editing.trayPrice === "" ? undefined : Number(editing.trayPrice),
-        minPeople: Number(editing.minPeople) || 1,
-        order: Number(editing.order) || 0,
-        items: (editing.items || []).map(s => String(s).trim()).filter(Boolean),
-      };
-      const isNew = !payload._id;
-      const url = isNew ? API : `${API}/${payload._id}`;
-      const method = isNew ? "POST" : "PUT";
-      const { _id, ...body } = payload;
-
-      const r = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Save failed");
-
-      setEditing(null);
-      await load();
-    } catch (e2) {
-      setError(e2.message);
-    } finally {
-      setSaving(false);
-    }
+  const handleAdd = () => {
+    setEditing(null);
+    setShowForm(true);
   };
 
-  const remove = async (pkg) => {
-    if (!window.confirm(`Delete "${pkg.title}"? This cannot be undone.`)) return;
+  const handleEdit = (opt) => {
+    setEditing(opt);
+    setShowForm(true);
+  };
+
+  const handleClose = () => {
+    setShowForm(false);
+    setEditing(null);
+  };
+
+  const handleSuccess = () => {
+    handleClose();
+    fetchOptions();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this catering option?")) return;
     try {
-      const r = await fetch(`${API}/${pkg._id}`, { method: "DELETE" });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Delete failed");
-      await load();
+      await fetchWithFallbacks([
+        () => axiosInstance.delete(`/catering/${id}`),
+        () => axiosInstance.delete(`/catering-options/${id}`),
+      ]);
+      setOptions((prev) => prev.filter((x) => x._id !== id));
     } catch (e) {
-      setError(e.message);
+      alert(e?.response?.data?.message || e?.message || "Delete failed");
     }
   };
-
-  // ---------- DashboardTable wiring ----------
-  const headers = [
-    { label: "Order", className: "w-16" },
-    { label: "Title", className: "min-w-[220px]" },
-    { label: "Pricing", className: "min-w-[160px]" },
-    { label: "Min", className: "w-20" },
-    { label: "Items", className: "min-w-[260px]" },
-    { label: "Active", className: "w-20" },
-    { label: "Actions", className: "w-40" },
-  ];
-
-  const rows = (loading ? [] : filtered).map((p) => (
-    <tr key={p._id} className="hover:bg-gray-50">
-      <td className="px-4 py-3 text-center">{p.order ?? 0}</td>
-      <td className="px-4 py-3">
-        <div className="font-medium">{p.title}</div>
-        <div className="text-gray-500 text-xs line-clamp-1">{p.description}</div>
-      </td>
-      <td className="px-4 py-3">
-        {p.perPersonPrice !== undefined && p.perPersonPrice !== "" && (
-          <div className="text-sm">Per person: ${p.perPersonPrice}</div>
-        )}
-        {p.trayPrice !== undefined && p.trayPrice !== "" && (
-          <div className="text-sm">Per tray: ${p.trayPrice}</div>
-        )}
-      </td>
-      <td className="px-4 py-3 text-center">{p.minPeople}</td>
-      <td className="px-4 py-3">
-        <div className="text-sm text-gray-700 line-clamp-2">
-          {(p.items || []).join(", ")}
-        </div>
-      </td>
-      <td className="px-4 py-3 text-center">{p.isActive ? "Yes" : "No"}</td>
-      <td className="px-4 py-3 text-right">
-        <button
-          onClick={() => startEdit(p)}
-          className="inline-flex items-center px-3 py-1.5 border rounded-md mr-2"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => remove(p)}
-          className="inline-flex items-center px-3 py-1.5 border rounded-md text-red-600"
-        >
-          Delete
-        </button>
-      </td>
-    </tr>
-  ));
 
   return (
-    <DashboardLayout
-      title="Catering Packages"
-      actions={
-        <button onClick={startCreate} className="px-4 py-2 rounded-md bg-black text-white">
-          + New Package
+    <DashboardLayout title="Catering Options">
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-400">
+          {loading ? "Loading…" : `${options.length} option(s)`}
+          {error ? <span className="text-red-400 ml-3">• {error}</span> : null}
+        </div>
+        <button
+          onClick={handleAdd}
+          className="px-4 py-2 bg-yellow-400 text-black font-semibold rounded hover:bg-yellow-500 transition"
+        >
+          + Add New
         </button>
-      }
-    >
-      {/* Toolbar */}
-      <div className="mb-4 flex gap-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search title / items / description"
-          className="border rounded-md px-3 py-2 w-full"
-        />
-        <button onClick={load} className="px-3 py-2 border rounded-md">Refresh</button>
       </div>
 
-      {error && <div className="mb-4 text-red-600">{error}</div>}
-
       <DashboardTable
-        headers={headers}
-        rows={rows}
-        emptyMessage={loading ? "Loading…" : "No packages found"}
+        headers={[
+          { label: "Image", maxWidth: 120 },
+          { label: "Title" },
+          { label: "Price" },
+          { label: "Price Type" },
+          { label: "Active" },
+          { label: "Actions", className: "text-right", maxWidth: 160 },
+        ]}
+        rows={(loading ? [] : options).map((opt) => {
+          const {
+            _id,
+            title,
+            price,
+            priceType,
+            isActive,
+            image, // file path or url
+          } = opt;
+
+          // Safe image src: if it already looks like a full URL, keep it; else prefix with API_BASE
+          const imgSrc =
+            typeof image === "string" && /^https?:\/\//i.test(image)
+              ? image
+              : image
+              ? `${imgBase}/${image}`.replace(/([^:]\/)\/+/g, "$1")
+              : "";
+
+          return (
+            <tr key={_id}>
+              <td className="px-3 py-2">
+                {imgSrc ? (
+                  <img
+                    src={joinImageUrl(imgSrc)}
+                    alt={title || "Catering option"}
+                    className="w-16 h-16 object-cover rounded-md border border-gray-200/20"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-md bg-gray-800/70 border border-gray-200/10 grid place-items-center text-xs text-gray-400">
+                    No Image
+                  </div>
+                )}
+              </td>
+              <td className="px-3 py-2">{title || "-"}</td>
+              <td className="px-3 py-2">{price ?? "-"}</td>
+              <td className="px-3 py-2 capitalize">
+                {priceType === "per_person" ? "Per Person" : priceType === "per_tray" ? "Per Tray" : (priceType || "-")}
+              </td>
+              <td className="px-3 py-2">{isActive ? "✅" : "❌"}</td>
+              <td className="px-3 py-2 text-right whitespace-nowrap">
+                <button
+                  onClick={() => handleEdit(opt)}
+                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 mr-3"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(_id)}
+                  className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       />
 
-      {/* ---------- Form (dashboard form layout) ---------- */}
-      {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <form
-            onSubmit={save}
-            className="dashboard-form bg-white w-full max-w-3xl rounded-xl shadow-lg"
-          >
-            <div className="form-header px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">
-                {editing._id ? "Edit Catering Package" : "Create Catering Package"}
-              </h2>
-            </div>
-
-            <div className="form-body px-6 py-5">
-              <div className="form-grid grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-field">
-                  <label className="form-label text-sm font-medium">Title *</label>
-                  <input
-                    required
-                    value={editing.title}
-                    onChange={(e) => setEditing(v => ({ ...v, title: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="e.g., Party Pack"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label text-sm font-medium">Order</label>
-                  <input
-                    type="number"
-                    value={editing.order}
-                    onChange={(e) => setEditing(v => ({ ...v, order: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label text-sm font-medium">Per Person Price</label>
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={editing.perPersonPrice}
-                    onChange={(e) => setEditing(v => ({ ...v, perPersonPrice: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="e.g., 18.50"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label text-sm font-medium">Per Tray Price</label>
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={editing.trayPrice}
-                    onChange={(e) => setEditing(v => ({ ...v, trayPrice: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="e.g., 120"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label text-sm font-medium">Minimum People *</label>
-                  <input
-                    type="number" min="1" required
-                    value={editing.minPeople}
-                    onChange={(e) => setEditing(v => ({ ...v, minPeople: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="e.g., 20"
-                  />
-                </div>
-
-                <div className="form-field md:col-span-2">
-                  <label className="form-label text-sm font-medium">Description</label>
-                  <textarea
-                    rows={3}
-                    value={editing.description}
-                    onChange={(e) => setEditing(v => ({ ...v, description: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="Short summary..."
-                  />
-                </div>
-
-                <div className="form-field md:col-span-2">
-                  <label className="form-label text-sm font-medium">Items (comma separated)</label>
-                  <input
-                    value={(editing.items || []).join(", ")}
-                    onChange={(e) =>
-                      setEditing(v => ({ ...v, items: e.target.value.split(",").map(s => s.trim()) }))
-                    }
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="Chicken Tikka, Salad, Bread..."
-                  />
-                </div>
-
-                <div className="form-field md:col-span-2">
-                  <label className="form-label text-sm font-medium">Image URL</label>
-                  <input
-                    value={editing.image}
-                    onChange={(e) => setEditing(v => ({ ...v, image: e.target.value }))}
-                    className="form-control border rounded-md px-3 py-2 w-full"
-                    placeholder="https://..."
-                  />
-                </div>
-
-                <div className="form-field flex items-center gap-2">
-                  <input
-                    id="isActive"
-                    type="checkbox"
-                    checked={!!editing.isActive}
-                    onChange={(e) => setEditing(v => ({ ...v, isActive: e.target.checked }))}
-                  />
-                  <label htmlFor="isActive" className="form-label text-sm">Active</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-footer px-6 py-4 border-t flex items-center justify-end gap-3">
-              <button
-                type="button"
-                className="px-3 py-2 border rounded-md"
-                onClick={() => setEditing(null)}
-              >
-                Cancel
-              </button>
-              <button
-                disabled={saving}
-                className="px-4 py-2 rounded-md bg-black text-white"
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* ---------- Modal (exact OrderDashboard vibe) ---------- */}
+      <ODModal
+        open={showForm}
+        onClose={handleClose}
+        title={editing ? "Edit Catering Option" : "New Catering Option"}
+      >
+        <CateringForm initial={editing} onClose={handleClose} onSuccess={handleSuccess} />
+      </ODModal>
     </DashboardLayout>
   );
 }

@@ -5,7 +5,7 @@ import axiosInstance from "../config/axios.config";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from?.pathname || "/admin";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,14 +70,14 @@ const res = await axiosInstance.post("/auth/login", {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-group" style={{ marginBottom: 16 }}>
                   <label htmlFor="email" className="form-label">
-                    Email
+                    Username
                   </label>
                   <input
                     id="email"
                     name="email"
                     type="email"
                     className="form-control"
-                    placeholder="you@example.com"
+                    placeholder="Admin"
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

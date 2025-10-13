@@ -17,7 +17,6 @@ import AdminLayout from './components/Dashboard/AdminLayout';
 import AdminDashboard from './pages/Dashboardpages/AdminDashboard';
 import GalleryDashboard from './pages/Dashboardpages/GalleryDashboard';
 import GalleryForm from './pages/Dashboardpages/GalleryForm';
-import ProjectDashboard from './pages/Dashboardpages/ProjectDashboard';
 import ContactDashboard from './pages/Dashboardpages/ContactDashboard';
 import Login from './pages/Login';;
 import { Toaster } from 'react-hot-toast';
@@ -25,6 +24,9 @@ import MenuDashboard from './pages/Dashboardpages/MenuDashboard';
 import MenuForm from './pages/Dashboardpages/MenuForm';
 import OrderDashboard from './pages/Dashboardpages/OrderDashboard';
 import CateringDashboard from './pages/Dashboardpages/CateringDashboard';
+import CateringMenu from './components/CateringMenuItems';
+import BannerDashboard from './pages/Dashboardpages/BannerDashboard';
+import BannerForm from './pages/Dashboardpages/BannerForm';
 
 function App() {
   return (
@@ -42,6 +44,8 @@ function App() {
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/catering" element={<Catering />} />
+          <Route path="/catering/package/:optionId" element={<CateringMenu />} />
+
           {/* Specific catering routes: hot dishes and option menus must be declared before the generic :optionId */}
           <Route path="/catering/hot-dishes" element={<HotDishes />} />
           <Route path="/catering/:optionId" element={<CateringOptionPage />} />
@@ -54,7 +58,6 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/gallery" element={<GalleryDashboard />} />
           <Route path="/admin/gallery/add" element={<GalleryForm />} />
-          <Route path="/admin/projects" element={<ProjectDashboard />} />
           <Route path="/admin/contact" element={<ContactDashboard />} />
           <Route path="/admin/menu" element={<MenuDashboard />} />
           <Route path="/admin/menu/new" element={<MenuForm />} />
@@ -66,6 +69,10 @@ function App() {
           <Route path="/admin/sauces/new" element={<SauceForm />} />
           <Route path="/admin/sauces/:id/edit" element={<SauceForm />} />
           <Route path ="admin/catering" element= {<CateringDashboard/>}/>
+          <Route path="/admin/banners" element={<BannerDashboard />} />
+          <Route path="/admin/banners/new" element={<BannerForm />} />
+                    <Route path="/admin/banners/:id/edit" element={<BannerForm />} />
+
         </Route>
       </Routes>
     </>
