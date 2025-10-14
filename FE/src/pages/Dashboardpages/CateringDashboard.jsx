@@ -38,13 +38,13 @@ function ODModal({ open, onClose, title, children, widthClass = "max-w-4xl" }) {
   };
 
   return createPortal(
-    <div className="od-modal-overlay" onMouseDown={onBackdrop} role="dialog" aria-modal="true">
-      <div ref={dialogRef} className={`od-modal ${widthClass}`} onMouseDown={(e) => e.stopPropagation()}>
-        <div className="od-modal-header">
-          <h5 className="od-modal-title">{title}</h5>
-          <button className="od-modal-close" onClick={onClose} aria-label="Close">×</button>
+    <div className="od-modal__overlay" onMouseDown={onBackdrop} role="dialog" aria-modal="true">
+      <div ref={dialogRef} className={`od-modal__card ${widthClass}`} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="od-modal__card-header">
+          <h5 className="od-modal__card-title">{title}</h5>
+          <button className="od-modal__card-close" onClick={onClose} aria-label="Close">×</button>
         </div>
-        <div className="od-modal-body">{children}</div>
+        <div className="od-modal__card-body">{children}</div>
       </div>
     </div>,
     mountTarget
@@ -52,7 +52,6 @@ function ODModal({ open, onClose, title, children, widthClass = "max-w-4xl" }) {
 }
 
 /* ---------- Helpers ---------- */
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api$/, ""); // strip only a trailing /api
 
@@ -91,9 +90,7 @@ export default function CateringDashboard() {
     setError("");
     try {
       const res = await fetchWithFallbacks([
-        () => axiosInstance.get("/catering/list"),
         () => axiosInstance.get("/catering-options"),
-        () => axiosInstance.get("/catering"), // final fallback
       ]);
       const data = res?.data?.data || res?.data || [];
       setOptions(Array.isArray(data) ? data : []);
@@ -151,7 +148,7 @@ export default function CateringDashboard() {
         </div>
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-yellow-400 text-black font-semibold rounded hover:bg-yellow-500 transition"
+          className="od-btn"
         >
           + Add New
         </button>
@@ -186,7 +183,8 @@ export default function CateringDashboard() {
 
           return (
             <tr key={_id}>
-              <td className="px-3 py-2">
+              <td className="px-3 py-2" style={{ width: 160, height: 160 }}>
+                  <div className="thumb-fixed">
                 {imgSrc ? (
                   <img
                     src={joinImageUrl(imgSrc)}
@@ -198,6 +196,7 @@ export default function CateringDashboard() {
                     No Image
                   </div>
                 )}
+                </div>
               </td>
               <td className="px-3 py-2">{title || "-"}</td>
               <td className="px-3 py-2">{price ?? "-"}</td>
@@ -208,13 +207,13 @@ export default function CateringDashboard() {
               <td className="px-3 py-2 text-right whitespace-nowrap">
                 <button
                   onClick={() => handleEdit(opt)}
-                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 mr-3"
+                  className="od-btn"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(_id)}
-                  className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                  className="od-btn od-btn--danger"
                 >
                   Delete
                 </button>
@@ -225,13 +224,18 @@ export default function CateringDashboard() {
       />
 
       {/* ---------- Modal (exact OrderDashboard vibe) ---------- */}
-      <ODModal
-        open={showForm}
-        onClose={handleClose}
-        title={editing ? "Edit Catering Option" : "New Catering Option"}
-      >
-        <CateringForm initial={editing} onClose={handleClose} onSuccess={handleSuccess} />
-      </ODModal>
-    </DashboardLayout>
+<CateringForm
+    open={showForm}
+    initial={editing}
+    onClose={() => {
+      setShowForm(false);
+      setEditing(null);
+    }}
+    onSuccess={() => {
+      setShowForm(false);
+      setEditing(null);
+      fetchOptions();
+    }}
+  />    </DashboardLayout>
   );
 }

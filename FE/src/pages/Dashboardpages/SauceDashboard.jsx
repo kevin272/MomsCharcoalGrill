@@ -111,7 +111,7 @@ export default function SauceDashboard() {
           <td className="px-4 py-3">{idx + 1}</td>
 
           {/* Image */}
-          <td className="px-4 py-3">
+          <td className="px-4 py-3" style={{ width: 160, height: 160 }}>
             {row.image ? (
               <img
                 src={
@@ -149,13 +149,13 @@ export default function SauceDashboard() {
           <td className="px-4 py-3">
             <div className="flex gap-2 justify-center">
               <button
-                className="btn btn-sm btn-primary"
+                className="od-btn"
                 onClick={() => navigate(`/admin/sauces/${row.id}/edit`)}
               >
                 Edit
               </button>
               <button
-                className="btn btn-sm btn-danger"
+                className="od-btn od-btn--danger"
                 onClick={() => confirmDelete(row.id)}
               >
                 Delete

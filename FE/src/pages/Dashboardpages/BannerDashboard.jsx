@@ -42,9 +42,9 @@ export default function BannerDashboard() {
       <td className="px-4 py-3">{b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "—"}</td>
       <td className="px-4 py-3">
         <div className="flex gap-2">
-          <Link to={`/admin/banners/${b._id}/edit`} className="admin-btn">Edit</Link>
+          <Link to={`/admin/banners/${b._id}/edit`} className="od-btn">Edit</Link>
           <button
-            className="admin-danger-btn"
+            className="od-btn od-btn--danger"
             onClick={async () => {
               if (!confirm("Delete?")) return;
               // FIX: remove leading slash here too
@@ -62,7 +62,7 @@ export default function BannerDashboard() {
   return (
     <DashboardLayout
       title="Hero Banners"
-      actions={<Link to="/admin/banners/new" className="admin-primary-btn">+ New Banner</Link>}
+      actions={<Link to="/admin/banners/new" className="od-btn">+ New Banner</Link>}
     >
       <DashboardTable
         headers={headers}

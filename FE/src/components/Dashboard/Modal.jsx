@@ -1,81 +1,40 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 
-export default function Modal({
-  open,
-  onClose,
-  title = "Dialog",
-  children,
-  maxWidth = 720,
-}) {
-  const overlayRef = useRef(null);
-  const dialogRef = useRef(null);
-
-  // Body scroll lock
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [open]);
-
-  // ESC to close + focus
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
-      if (e.key === "Tab") {
-        // basic focus trap
-        const focusables = dialogRef.current?.querySelectorAll(
-          'a,button,input,textarea,select,[tabindex]:not([tabindex="-1"])'
-        );
-        if (!focusables || focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          last.focus(); e.preventDefault();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          first.focus(); e.preventDefault();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    // focus the first element inside
-    setTimeout(() => {
-      const el = dialogRef.current?.querySelector(
-        'input,textarea,select,button,[tabindex]:not([tabindex="-1"])'
-      );
-      el?.focus();
-    }, 0);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
+export default function Modal({ open, onClose, children }) {
   if (!open) return null;
 
+  const target =
+    document.querySelector(".dashboard-layout") ||
+    document.getElementById("root") ||
+    document.body;
+
+  // Close when clicking outside the modal content
+  const onBackdrop = (e) => {
+    if (e.target === e.currentTarget) {
+      e.stopPropagation();
+      onClose?.();
+    }
+  };
+
+  // Close when pressing Escape key
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
   return createPortal(
-    <div
-      ref={overlayRef}
-      className="mcg-modal__overlay"
-      onMouseDown={(e) => {
-        // close on backdrop click (but not when clicking inside dialog)
-        if (e.target === overlayRef.current) onClose?.();
-      }}
-    >
+    <div className="od-modal__overlay" onMouseDown={onBackdrop}>
       <div
-        className="mcg-modal__dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        ref={dialogRef}
-        style={{ maxWidth }}
+        className="od-modal__card"
+        onMouseDown={(e) => e.stopPropagation()} // Prevent clicks inside from closing
       >
-        <div className="mcg-modal__header">
-          <h3 className="mcg-modal__title">{title}</h3>
-          <button className="mcg-modal__close" onClick={onClose} aria-label="Close">×</button>
-        </div>
-        <div className="mcg-modal__body">{children}</div>
+        {children}
       </div>
     </div>,
-    document.body
+    target
   );
 }

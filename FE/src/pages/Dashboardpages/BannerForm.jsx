@@ -145,7 +145,7 @@ export default function BannerForm() {
   return (
     <DashboardLayout
       title={isEdit ? "Edit Hero Banner" : "New Hero Banner"}
-      actions={<Link to="/admin/banners" className="admin-btn">Back</Link>}
+      actions={<Link to="/admin/banners" className="od-btn">Back</Link>}
     >
       <form className="admin-form" onSubmit={onSubmit}>
         {error && (
@@ -255,9 +255,9 @@ export default function BannerForm() {
                   </label>
 
                   <div className="selected-actions">
-                    <button type="button" className="admin-btn" onClick={() => move(idx, -1)}>↑</button>
-                    <button type="button" className="admin-btn" onClick={() => move(idx, 1)}>↓</button>
-                    <button type="button" className="admin-danger-btn" onClick={() => removeItem(mi._id)}>Remove</button>
+                    <button type="button" className="od-btn" onClick={() => move(idx, -1)}>↑</button>
+                    <button type="button" className="od-btn" onClick={() => move(idx, 1)}>↓</button>
+                    <button type="button" className="od-btn od-btn--danger" onClick={() => removeItem(mi._id)}>Remove</button>
                   </div>
                 </li>
               ))}
@@ -266,10 +266,10 @@ export default function BannerForm() {
         </div>
 
         <div className="mt-8 flex items-center gap-3">
-          <button className="admin-primary-btn" type="submit" disabled={saving}>
+          <button className="od-btn" type="submit" disabled={saving}>
             {saving ? "Saving…" : isEdit ? "Update Banner" : "Create Banner"}
           </button>
-          <Link className="admin-btn" to="/admin/banners">Cancel</Link>
+          <Link className="od-btn" to="/admin/banners">Cancel</Link>
         </div>
       </form>
     </DashboardLayout>

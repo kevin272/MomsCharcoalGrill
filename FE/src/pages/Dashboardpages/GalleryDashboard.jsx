@@ -99,7 +99,7 @@ export default function GalleryDashboard() {
 
             <td>
               <button
-                className="btn btn-sm btn-danger"
+                className="od-btn od-btn--danger"
                 onClick={() => handleDelete(img._id)}
               >
                 Delete

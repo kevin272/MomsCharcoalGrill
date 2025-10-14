@@ -94,7 +94,7 @@ const SaucePage = () => {
 
   return (
     <div className="sauces-page">
-      <Breadcrumb title="SAUCES" backgroundImage="/Saus.png" />
+      <Breadcrumb title="SAUCES" backgroundImage="/Saus.jpg" />
       <section className="sauces-grid-section">
         <div className="sauces-container">
           {loading && <p>Loading…</p>}

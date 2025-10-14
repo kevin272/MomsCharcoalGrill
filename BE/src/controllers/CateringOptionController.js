@@ -63,7 +63,18 @@ exports.create = async (req, res) => {
       slug = `${slugBase}-${i++}`;
     }
 
-    const image = req.file ? req.file.filename : '';
+// Compute relative path that matches how Express serves /uploads
+let image = '';
+if (req.file) {
+  // Get subfolder relative to /uploads
+  const fullPath = req.file.path.replace(/\\/g, '/'); // normalize backslashes on Windows
+  const idx = fullPath.lastIndexOf('/uploads');
+  if (idx !== -1) {
+    image = fullPath.substring(idx); // e.g. /uploads/menu/image_123.png
+  } else {
+    image = `/uploads/${req.file.filename}`;
+  }
+}
 
     const doc = await CateringOption.create({
       title, slug, description, priceType, price, minPeople, feeds,

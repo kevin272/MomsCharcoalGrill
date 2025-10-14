@@ -126,11 +126,11 @@ export default function MenuDashboard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onSearchKey}
-            className="form-control"
+            className="od-input"
             style={{ minWidth: 280 }}
           />
-          <button className="btn btn-primary" onClick={onSearch}>Search</button>
-          <Link className="btn btn-success" to="/admin/menu/new">➕ Add Item</Link>
+          <button className="od-btn od-btn--ghost" onClick={onSearch}>Search</button>
+          <Link className="od-btn" to="/admin/menu/new">Add Item</Link>
         </div>
       }
     >
@@ -187,13 +187,13 @@ export default function MenuDashboard() {
                 <td>
                   <div className="d-flex g-3 justify-content-center">
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="od-btn"
                       onClick={() => navigate(`/admin/menu/${row.id}/edit`)}
                     >
                       Edit
                     </button>
                     <button
-                      className="btn btn-sm btn-danger"
+                      className="od-btn od-btn--danger"
                       onClick={() => confirmDelete(row.id)}
                     >
                       Delete

@@ -46,11 +46,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout
       title="Admin Dashboard"
-      actions={
-        <button className="btn btn-success" onClick={() => navigate("/admin/add")}>
-          ➕ Add Admin
-        </button>
-      }
+
     >
       <DashboardTable
         headers={[
@@ -83,15 +79,12 @@ export default function AdminDashboard() {
               )}
             </td>
             <td>
-              <button className="btn btn-sm btn-primary me-2" onClick={() => navigate(`/admin/edit/${admin._id}`)}>
-                Edit
-              </button>
-              <button className="btn btn-sm btn-warning me-2" onClick={() => handleResetPassword(admin._id)}>
+              <button className="od-btn" onClick={() => handleResetPassword(admin._id)}>
                 Reset
               </button>
-              <button className="btn btn-sm btn-danger" onClick={() => handleDelete(admin._id)}>
+              {/* <button className="od-btn od-btn--danger" onClick={() => handleDelete(admin._id)}>
                 Delete
-              </button>
+              </button> */}
             </td>
           </tr>
         ))}

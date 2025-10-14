@@ -7,7 +7,7 @@ export default function DashboardLayout({ title, actions, children }) {
 
     <div className="container-fluid py-4">
       {/* Header Section */}
-      <div className="d-flex justify-content-end align-items-center mb-4">
+      <div className="od-toolbar">
         <div>{actions}</div>
       </div>
 

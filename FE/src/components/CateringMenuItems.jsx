@@ -3,22 +3,43 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const SERVER_URL = API_URL.replace(/\/api$/, ""); // http://localhost:5000
 
-const toFileUrl = (f) =>
-  f ? `${API_ORIGIN}/${f}` : "https://via.placeholder.com/480x320?text=Image";
+// Build a public URL from whatever BE stored (filename OR /uploads/... OR absolute)
+function toPublicUrl(p) {
+  if (!p) return "";
+  if (/^https?:\/\//i.test(p)) return p; // already absolute
+  let rel = String(p).replace(/\\/g, "/");
+  if (!rel.startsWith("/uploads/")) rel = "/uploads/" + rel.replace(/^\/+/, "");
+  return `${SERVER_URL}${rel}`;
+}
 
+const PLACEHOLDER = "https://via.placeholder.com/480x320?text=Item";
 const isHexId = (s = "") => /^[a-f0-9]{24}$/i.test(s);
 
+function DishImage({ src, alt, className }) {
+  const [broken, setBroken] = React.useState(false);
+  return (
+    <img
+      src={broken ? PLACEHOLDER : src || PLACEHOLDER}
+      alt={alt}
+      className={className}
+      onError={() => setBroken(true)}
+      loading="lazy"
+    />
+  );
+}
+
 export default function CateringMenu() {
-  const { optionId } = useParams(); // expects /catering/package/:optionId
+  const { optionId } = useParams(); // /catering/package/:optionId
   const { addToCart } = useCart();
 
   const [option, setOption] = React.useState(null);
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState("");
-  const [debug, setDebug] = React.useState(null); // shows raw error/body
+  const [debug, setDebug] = React.useState(null);
 
   React.useEffect(() => {
     let alive = true;
@@ -28,9 +49,9 @@ export default function CateringMenu() {
       setErr("");
       setDebug(null);
 
-      // 1) Try by ID if it looks like a Mongo ObjectId
+      // 1) Try by ObjectId
       if (isHexId(optionId)) {
-        const url = `${API_ORIGIN}/catering-options/${optionId}?populate=1`;
+        const url = `${API_URL}/catering-options/${optionId}?populate=1`;
         try {
           const res = await fetch(url, { headers: { Accept: "application/json" } });
           const body = await res.json().catch(() => ({}));
@@ -46,7 +67,7 @@ export default function CateringMenu() {
               name: it.name || it.title || "Item",
               price: Number(it.price || 0),
               description: it.description || "",
-              image: it.image?.startsWith?.("http") ? it.image : toFileUrl(it.image),
+              image: toPublicUrl(it.image) || PLACEHOLDER,
             }))
           );
           setLoading(false);
@@ -54,13 +75,13 @@ export default function CateringMenu() {
         } catch (e) {
           if (!alive) return;
           setDebug({ where: "byId", url, error: String(e), status: e?.status, body: e?.body });
-          // fall through to slug attempt
+          // fallthrough
         }
       }
 
-      // 2) Try by slug
+      // 2) Try by slug (FIX: do NOT double /api)
       {
-        const url = `${API_ORIGIN}/api/catering-options?slug=${encodeURIComponent(optionId)}&populate=1`;
+        const url = `${API_URL}/catering-options?slug=${encodeURIComponent(optionId)}&populate=1`;
         try {
           const res = await fetch(url, { headers: { Accept: "application/json" } });
           const body = await res.json().catch(() => ({}));
@@ -78,7 +99,7 @@ export default function CateringMenu() {
               name: it.name || it.title || "Item",
               price: Number(it.price || 0),
               description: it.description || "",
-              image: it.image?.startsWith?.("http") ? it.image : toFileUrl(it.image),
+              image: toPublicUrl(it.image) || PLACEHOLDER,
             }))
           );
           setLoading(false);
@@ -121,14 +142,13 @@ export default function CateringMenu() {
               overflowX: "auto",
             }}
           >
-{JSON.stringify({ optionId, ...debug }, null, 2)}
+            {JSON.stringify({ optionId, ...debug }, null, 2)}
           </pre>
         )}
       </div>
     );
   if (!option) return null;
 
-  // ——— below uses your HotDishes CSS so it matches that layout ———
   const priceHeader =
     option.priceType === "per_person"
       ? `(${Number(option.price || 0).toFixed(2)} per person)`
@@ -156,26 +176,42 @@ export default function CateringMenu() {
               {items.map((dish) => (
                 <div key={dish.id} className="hot-dish-card">
                   <div className="hot-dish-image-container">
-                    <img
-                      src={dish.image}
-                      alt={dish.name}
-                      className="hot-dish-image"
-                      onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/480x320?text=Item")}
-                    />
+                    <DishImage src={dish.image} alt={dish.name} className="hot-dish-image" />
                   </div>
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
                       <h3 className="hot-dish-name">{dish.name}</h3>
-                      <span className="hot-dish-price">Rs. {dish.price.toFixed(2)}</span>
+                      <span className="hot-dish-price">A$ {dish.price.toFixed(2)}</span>
                     </div>
                     <p className="hot-dish-description">{dish.description}</p>
-                    <button className="hot-dish-cart-btn" onClick={() => handleAddToCart(dish)} aria-label="Add to cart">
-                      {/* same cart icon as your HotDishes */}
+                    <button
+                      className="hot-dish-cart-btn"
+                      onClick={() => handleAddToCart(dish)}
+                      aria-label="Add to cart"
+                    >
                       <svg width="47" height="47" viewBox="0 0 47 47" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z" fill="#FAEB30" />
-                        <path d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z" stroke="#FAEB30" strokeWidth="1.28" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z" stroke="#FAEB30" strokeWidth="1.28" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z" stroke="#FAEB30" strokeWidth="1.28" strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
+                          stroke="#FAEB30"
+                          strokeWidth="1.28"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
+                          stroke="#FAEB30"
+                          strokeWidth="1.28"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
+                          stroke="#FAEB30"
+                          strokeWidth="1.28"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </button>
                   </div>
