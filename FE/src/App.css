@@ -2,12 +2,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Amarante&display=swap');
 
-
+:root { --header-h: 72px; }
 /* Reset and base styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html, body, #root, .app-layout {
+  height: auto;
+  overflow-y: visible;          /* no inner vertical scrollers above header */
+}
+
+#root, .app-layout {
+  transform: none !important;
+  filter: none !important;
+  contain: none !important;
+}
+
+/* Ensure sections don’t block sticky with overflow */
+main, .homepage {
+  overflow-y: visible;          /* keep vertical overflow visible */
 }
 
 body {
@@ -49,9 +65,11 @@ html {
 /* Header */
 /* ===== Header (like the mock) ===== */
 .header {
-  position: relative;
-  z-index: 100;
-  background: #000;                 /* black header bar */
+  position: sticky;              /* make it stick to the top */
+  top: 0;                        /* anchor to top of viewport */
+  z-index: 100;                  /* stay above other elements */
+  background: #000;              /* black header bar */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); /* optional subtle shadow for depth */
 }
 
 /* three blocks: logo | nav | cart */
@@ -81,7 +99,7 @@ html {
 .nav-link {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 15 px;                  /* smaller like mock */
+  font-size: 15px;                  /* smaller like mock */
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #fff;
@@ -407,6 +425,108 @@ html {
 .dot.active {
   background-color: #D9D9D9;
 }
+@media (max-width: 900px) {
+  .menu-carousel { gap: 18px; }
+  .menu-items {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(12px, 2.5vw, 20px);
+    width: 100%;
+  }
+}
+
+/* ≤ 768px: your “mobile” view—hide arrows, 2 columns */
+@media (max-width: 768px) {
+  .menu-carousel {
+    flex-direction: column;
+    padding: clamp(24px, 5vw, 40px) clamp(12px, 4vw, 16px) clamp(32px, 6vw, 48px);
+  }
+  .carousel-nav { display: none; }
+  .menu-items {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(12px, 3vw, 16px);
+    width: 100%;
+  }
+  .carousel-dots { bottom: clamp(10px, 3vw, 14px); gap: clamp(6px, 2.5vw, 8px); }
+}
+
+/* ≤ 600px: give a bit more breathing room & safe areas */
+@media (max-width: 600px) {
+  .menu-carousel {
+    padding-left: calc(12px + env(safe-area-inset-left));
+    padding-right: calc(12px + env(safe-area-inset-right));
+  }
+}
+
+/* ≤ 480px: smaller images + tighter headings */
+@media (max-width: 480px) {
+  .menu-item img { width: 120px; height: 120px; }
+  .menu-item h3 { font-size: 16px; }
+} 
+
+/* --- Mobile optimization: show 2 items comfortably --- */
+@media (max-width: 768px) {
+  .menu-carousel {
+    flex-direction: column;
+    padding: 40px 15px 50px;
+  }
+
+  /* Hide arrows */
+  .carousel-nav { display: none; }
+
+  /* Keep only one slide visible */
+  .menu-items {
+    display: block !important;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  /* Slide track */
+  .menu-track {
+    display: flex !important;
+  }
+  .menu-page {
+    flex: 0 0 100% !important;
+  }
+
+  /* Two items per page */
+  .menu-page-inner {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px !important;
+    justify-items: center;
+  }
+
+  /* Make images proportionate */
+  .menu-item img {
+    width: 120px;
+    height: 120px;
+  }
+
+  /* Adjust title size & spacing */
+  .menu-item h3 {
+    font-size: 16px;
+    margin-top: 6px;
+  }
+
+  /* Bring items slightly closer vertically */
+  .menu-item {
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  /* Center dots & enlarge tap area */
+  .carousel-dots {
+    bottom: 12px;
+    gap: 8px;
+  }
+  .dot {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 
 /* About Section */
 .about-section {
@@ -440,11 +560,13 @@ html {
   flex: 1;
 }
 
-.about-image img {
-  width: 599px;
-  height: 676px;
+.about-image img{
+  width: min(100%, 599px);   /* cap at original width, shrink fluidly */
+  aspect-ratio: 599 / 676;   /* keeps the original proportions */
+  height: auto;              /* let height follow width */
   object-fit: cover;
   border-radius: 8px;
+  max-height: 76vh;          /* avoid overflowing very short viewports */
 }
 
 .about-content {
@@ -470,6 +592,25 @@ html {
   margin-bottom: 20px;
     padding-right: 20px;
 
+}
+@media (max-width: 768px){
+  .about-image{
+    flex: 1 1 auto;
+    min-width: 0;            /* allow full shrink */
+  }
+  .about-image img{
+    width: 100%;
+    max-width: 480px;
+    border-radius: 10px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px){
+  .about-image img{
+    max-width: 100%;
+    border-radius: 8px;
+  }
 }
 
 /* Contact Section */
@@ -710,7 +851,45 @@ html {
   max-width: 313px;
   border-radius: 4px;
 }
+@media (max-width: 1024px) {
+  .contact-form {
+    gap: 40px;
+  }
+}
 
+/* Mobile (≤768px): stack columns vertically */
+@media (max-width: 768px) {
+  .contact-form {
+    flex-direction: column;
+    gap: 30px;
+    padding: 0 15px;
+  }
+
+  .form-left,
+  .form-right {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .contact-form input,
+  .contact-form textarea {
+    font-size: 18px;
+    padding: 16px;
+  }
+}
+
+/* Extra small phones (≤480px): tighter spacing */
+@media (max-width: 480px) {
+  .contact-form {
+    gap: 24px;
+  }
+  .contact-form input {
+    height: 56px;
+  }
+  .contact-form textarea {
+    height: 200px;
+  }
+}
 /* Responsive Design */
 @media (max-width: 1200px) {
   .container {
@@ -752,10 +931,7 @@ html {
     gap: 40px;
   }
 
-  .contact-form {
-    flex-direction: column;
-    gap: 30px;
-  }
+  
 
   .footer-content {
     grid-template-columns: repeat(2, 1fr);
@@ -765,7 +941,7 @@ html {
 
 @media (max-width: 768px) {
   .header .container {
-    flex-direction: column;
+    flex-direction: row;
     gap: 15px;
     padding: 15px;
   }
@@ -826,32 +1002,6 @@ html {
   .hero-decoration {
     top: 50px;
     left: 50px;
-  }
-
-  .menu-carousel {
-    flex-direction: column;
-    padding: 40px 15px;
-  }
-
-  .carousel-nav {
-    display: none;
-  }
-
-  .menu-items {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    width: 100%;
-  }
-
-  .menu-item img {
-    width: 140px;
-    height: 140px;
-  }
-
-  .menu-item h3 {
-    font-size: 20px;
-    margin-top: 8px;
   }
 
   .about-section {
@@ -1721,6 +1871,9 @@ html {
 
   .catering-option-description {
     max-width: 550px;
+  }
+  .catering-view-menu-btn{
+    align-self: center;
   }
 }
 
@@ -3874,34 +4027,55 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 @media (min-width: 1024px) {
   .contact-dashboard .grid { grid-template-columns: repeat(3, 1fr); }
 }
-
 /* ===========================
-   MESSAGE CARD
+   CONTACT DASHBOARD – OD THEME ADAPTER
+   (scoped to .contact-dashboard)
 =========================== */
+
+/* Palette bridge so your old CSS vars resolve to OD colors */
+.contact-dashboard {
+  --cd-bg: #0f0f0f;
+  --cd-surface: #111;                  /* table / subtle blocks */
+  --cd-card: #0f0f0f;                  /* card background */
+  --cd-border: rgba(255,255,255,.12);
+  --cd-border-strong: rgba(255,255,255,.18);
+  --cd-text: #f3f3f3;
+  --cd-muted: #c9c9c9;
+  --cd-accent: #FFF200;                /* OD yellow */
+  --cd-blue: #a7c7ff;
+  --cd-blue-bg: rgba(167,199,255,.12);
+  --cd-green: #b4f5c8;
+  --cd-green-bg: rgba(180,245,200,.10);
+  --cd-danger: #ff6b6b;
+}
+
+/* Cards */
 .contact-dashboard .contact-card {
   background: var(--cd-card);
   border: 1px solid var(--cd-border);
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-  transition: transform .18s ease, box-shadow .18s ease;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px;
+  padding: 16px;
 }
-
 .contact-dashboard .contact-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0,0,0,.10);
+  transform: translateY(-1px);
+  border-color: var(--cd-border-strong);
+  box-shadow: 0 14px 38px rgba(0,0,0,.45);
 }
 
+/* Text */
 .contact-dashboard .contact-card h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 800;
   color: var(--cd-text);
   margin: 0 0 6px;
+  letter-spacing: .01em;
 }
-
 .contact-dashboard .contact-card p {
   margin: 2px 0;
   color: var(--cd-muted);
@@ -3911,7 +4085,7 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
   white-space: nowrap;
 }
 
-/* Footer row */
+/* Footer row (actions / badges) */
 .contact-dashboard .contact-card .flex.items-center {
   display: flex;
   align-items: center;
@@ -3919,90 +4093,129 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
   margin-top: 10px;
 }
 
-/* Status badges */
+/* Badges (OD look) */
 .contact-dashboard .status-badge,
 .contact-dashboard .contact-card .inline-block {
   display: inline-block;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: .75rem;
-  font-weight: 700;
-  letter-spacing: .2px;
+  font-weight: 800;
+  letter-spacing: .24px;
+  border: 1px solid var(--cd-border);
+  background: #0b0b0b;
+  color: var(--cd-text);
 }
-
 .contact-dashboard .badge-new,
 .contact-dashboard .contact-card .bg-blue-100 {
   background: var(--cd-blue-bg) !important;
   color: var(--cd-blue) !important;
+  border-color: rgba(167,199,255,.25);
 }
-
 .contact-dashboard .badge-read,
 .contact-dashboard .contact-card .bg-green-100 {
   background: var(--cd-green-bg) !important;
   color: var(--cd-green) !important;
+  border-color: rgba(180,245,200,.22);
 }
 
-/* Delete button */
+/* Delete button (OD danger) */
 .contact-dashboard .delete-btn,
 .contact-dashboard .contact-card .text-red-500 {
-  color: #ef4444 !important;
+  color: #ffd6d6 !important;
   font-weight: 700;
-  border: none;
-  background: transparent;
+  border: 1px solid rgba(255,0,0,.28);
+  background: #260f10;
+  border-radius: 10px;
+  padding: 6px 10px;
   cursor: pointer;
+  transition: filter .15s ease, border-color .15s ease, background .15s ease, transform .02s ease-in-out;
 }
 .contact-dashboard .delete-btn:hover,
 .contact-dashboard .contact-card .hover\:text-red-700:hover {
-  color: #b91c1c !important;
+  color: #ffecec !important;
+  background: #3a1719 !important;
+  border-color: var(--cd-danger) !important;
+  filter: brightness(1.06);
 }
+.contact-dashboard .delete-btn:active { transform: translateY(1px); }
 
-/* ===========================
-   EMPTY STATE
-=========================== */
+/* Empty state */
 .contact-dashboard .text-gray-500 {
-  color: #9ca3af !important;
-  background: #111;
-  border: 1px dashed #2a2a2a;
+  color: var(--cd-muted) !important;
+  background: var(--cd-surface);
+  border: 1px dashed var(--cd-border);
   padding: 24px;
   border-radius: 12px;
 }
 
 /* ===========================
-   MODAL (VIEW MESSAGE)
+   MODAL (VIEW MESSAGE) — OD style
+   (keeps your existing JSX classes but matches .od-modal look)
 =========================== */
 .contact-dashboard .fixed.inset-0 {
+  margin-top: 90px;                    /* like .od-modal__overlay */
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
-  z-index: 50;
+  z-index: 60;
+  padding: 24px;
+  overflow-y: auto;                     /* ✅ enables page scroll when tall */
+  background: rgba(0,0,0,.6);
   backdrop-filter: blur(2px);
 }
-
 .contact-dashboard .bg-black.bg-opacity-40 {
-  background: rgba(0,0,0,.45) !important;
+  background: transparent !important;   /* overlay handled above */
 }
 
+/* Modal card = OD card */
 .contact-dashboard .modal-card,
 .contact-dashboard .bg-white.rounded-2xl.shadow-xl {
-  background: #ffffff;
+  width: 100%;
+  max-width: 900px;
+  background: var(--cd-bg);
   color: var(--cd-text);
-  width: min(92vw, 680px);
-  max-height: 88vh;
-  overflow: auto;
-  border-radius: 18px;
-  box-shadow: 0 20px 55px rgba(0,0,0,.25);
+  border: 1px solid var(--cd-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
   position: relative;
-  padding: 24px;
+
+  /* Make header/footer fixed and body scroll (OD pattern) */
+  display: flex;
+  flex-direction: column;
+  max-height: min(86vh, 960px);
+  overflow: hidden;                     /* body scrolls, not the card */
 }
 
+/* Header */
+.contact-dashboard .modal-card .modal-header,
+.contact-dashboard .bg-white.rounded-2xl.shadow-xl .modal-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: #0b0b0b;
+}
 .contact-dashboard .modal-card h2,
 .contact-dashboard .bg-white.rounded-2xl.shadow-xl h2 {
-  font-size: 1.2rem;
+  font-size: 16px;
   font-weight: 800;
-  margin: 0 0 14px;
+  margin: 0;
+  color: var(--cd-accent);
+  letter-spacing: .02em;
 }
+.contact-dashboard .modal-sub { font-size: 12px; color: var(--cd-muted); margin-top: 2px; }
 
+/* Body */
+.contact-dashboard .modal-card .space-y-2,
+.contact-dashboard .bg-white.rounded-2xl.shadow-xl .space-y-2 {
+  flex: 1 1 auto;
+  overflow: auto;                       /* ✅ scroll inside the modal body */
+  padding: 18px 20px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
 .contact-dashboard .modal-card .space-y-2 p,
 .contact-dashboard .bg-white.rounded-2xl.shadow-xl .space-y-2 p {
   margin: 6px 0;
@@ -4010,44 +4223,76 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
   font-size: .96rem;
 }
 
+/* Message block */
 .contact-dashboard .modal-card .mt-4.p-3.bg-gray-50,
 .contact-dashboard .bg-white.rounded-2xl.shadow-xl .mt-4.p-3.bg-gray-50 {
-  background: #f8fafc !important;
-  border: 1px solid #eef2f7 !important;
-  border-radius: 10px;
+  background: #111 !important;
+  border: 1px solid #2a2a2a !important;
+  border-radius: 12px;
   padding: 12px !important;
-  color: #334155;
+  color: #e5e7eb;
   line-height: 1.55;
   white-space: pre-wrap;
 }
 
+/* Footer (optional) sticks */
+.contact-dashboard .modal-footer {
+  position: sticky; bottom: 0;
+  background: linear-gradient(to top, rgba(11,11,11,.95), rgba(11,11,11,.85), transparent);
+  padding: 10px 20px 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+/* Close button */
 .contact-dashboard .close-btn,
 .contact-dashboard .absolute.top-3.right-3 {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  color: #6b7280 !important;
-  background: #f3f4f6;
-  width: 34px;
-  height: 34px;
+  top: 12px; right: 12px;
+  color: #c9c9c9 !important;
+  background: #141414;
+  width: 34px; height: 34px;
+  border: 1px solid var(--cd-border);
   border-radius: 8px;
-  display: grid;
-  place-items: center;
+  display: grid; place-items: center;
   cursor: pointer;
-  transition: transform .15s ease, background .15s ease, color .15s ease;
+  transition: transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease;
 }
 .contact-dashboard .close-btn:hover,
 .contact-dashboard .absolute.top-3.right-3:hover {
-  background: #e5e7eb;
-  color: #111827 !important;
+  background: #1a1a1a;
+  color: #fff !important;
+  border-color: var(--cd-border-strong);
   transform: scale(1.04);
 }
 
-/* Scrollbar nice-to-have */
-.contact-dashboard .modal-card::-webkit-scrollbar { width: 8px; }
-.contact-dashboard .modal-card::-webkit-scrollbar-thumb {
-  background: #d1d5db; border-radius: 6px;
+/* Scrollbar polish (modal body only) */
+.contact-dashboard .modal-card .space-y-2::-webkit-scrollbar { width: 10px; height: 10px; }
+.contact-dashboard .modal-card .space-y-2::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
+.contact-dashboard .modal-card .space-y-2::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* Global focus ring to OD yellow within contact scope */
+.contact-dashboard a,
+.contact-dashboard button,
+.contact-dashboard [role="button"],
+.contact-dashboard input,
+.contact-dashboard select,
+.contact-dashboard textarea { outline: none; }
+.contact-dashboard a:focus,
+.contact-dashboard button:focus,
+.contact-dashboard [role="button"]:focus,
+.contact-dashboard input:focus,
+.contact-dashboard select:focus,
+.contact-dashboard textarea:focus {
+  box-shadow: 0 0 0 3px rgba(255,242,0,.18) !important;
+  border-radius: 10px;
 }
+
+/* Optional: grid/list wrapper spacing */
+.contact-dashboard .grid,
+.contact-dashboard .list {
+  gap: 16px;
+}
+
 /* ===================== Order Dashboard (od-*) ===================== */
 /******************** ORDER DASHBOARD — BLACK & YELLOW THEME ********************/
 
@@ -4520,8 +4765,10 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 }
 
 .catering-form button[type="submit"] {
+  justify-content: center;
+  align-items: center;
   background: var(--od-accent);
-  color: #000;
+  color: #fafafa;
   border: 1px solid #e0d700;
 }
 .catering-form button[type="submit"]:hover {
@@ -4784,3 +5031,125 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
   backdrop-filter: blur(2px);
   border-top: 1px solid rgba(255,255,255,.08);
 }
+
+
+
+/* Make header sticky by default */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: box-shadow .25s ease, background-color .25s ease, transform .25s ease;
+}
+
+/* When stuck, fix it to top and add depth */
+.header.is-stuck {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #000;
+  box-shadow: 0 6px 24px rgba(0,0,0,.35);
+}
+
+/* Prevent layout jump by pushing content down by the header height */
+main { padding-top: var(--header-h); }
+
+/* Optional: tasteful shrink of the logo when stuck */
+.logo img {
+  transition: height .25s ease, transform .25s ease;
+}
+.header.is-stuck .logo img {
+  height: 120px;   /* was 200px; adjust to taste */
+  transform: translateY(0);
+}
+
+/* Optional: slightly tighter nav when stuck */
+.header.is-stuck .nav-link {
+  min-height: 36px;
+  padding: 4px 8px;
+}
+@media (max-width: 767px) {
+  .header.is-stuck .nav-link {
+    min-height: 32px;
+    padding: 2px 6px;
+  }
+}
+
+
+/* Optional: only if you don't already have modal styles */
+.od-modal { padding: 0; border: none; background: transparent; }
+.od-modal__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: grid; place-items: center; }
+.od-modal__panel { width: min(720px, 92vw); background:#0e0e0e; border-radius: 12px; padding: 18px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.od-modal__header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.od-modal__title{ margin:0; }
+.od-modal__close{ background:transparent; border:none; font-size:22px; cursor:pointer;}
+.od-form__grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+@media (max-width: 640px){ .od-form__grid{ grid-template-columns:1fr; } }
+/* give a wrapper so arrows can sit “outside” the image without being clipped *//* Ensure the whole component doesn't clip the arrows */
+.img-carousel{ position: relative; overflow: visible; }
+
+/* wrapper keeps viewport from clipping, arrows can sit outside */
+.img-carousel__wrap{ position: relative; overflow: visible; }
+
+/* viewport + image */
+.img-carousel__viewport{
+  position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 16/9;
+}
+.img-carousel__image{ width:100%; height:100%; object-fit: cover; display:block; }
+
+/* caption hidden (as you set) */
+.img-carousel__caption{
+  display:none;
+  position:absolute; left:0; right:0; bottom:0; padding:14px 18px; color:#fff;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.6));
+}
+
+/* dots */
+.img-carousel__dots{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:12px; display:flex; gap:6px; z-index:30; pointer-events:auto;
+}
+.img-carousel__dot{ width:8px; height:8px; border-radius:999px; border:none;
+  background:rgba(255,255,255,.55); cursor:pointer; }
+.img-carousel__dot.is-active{ background:#FFF200; }
+
+/* arrows OUTSIDE the viewport with safe z-index */
+.img-carousel__nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  z-index:40; background:none; border:none; padding:0; cursor:pointer; pointer-events:auto;
+}
+.img-carousel__nav--prev{ left:-56px; }   /* outside */
+.img-carousel__nav--next{ right:-56px; }  /* outside */
+
+.img-carousel__arrow{
+  width:40px; height:auto; display:block; opacity:.95; transition:opacity .2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
+}
+.img-carousel__arrow:hover{ opacity:1; }
+
+/* Mobile: don't crop images; pull arrows in slightly so they stay tappable */
+@media (max-width:640px){
+  .img-carousel__viewport{ aspect-ratio:auto; max-height:70vh; background:#000; }
+  .img-carousel__image{ height:auto; object-fit:contain; background:#000; }
+  .img-carousel__nav--prev{ left:-36px; }
+  .img-carousel__nav--next{ right:-36px; }
+  .img-carousel__arrow{ width:32px; }
+}
+/* Toasts */
+.mcg-toast__portal { z-index: 2147483647 !important; }
+
+.mcg-toast {
+  min-width: 240px;
+  max-width: 360px;
+  margin: 8px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font: 600 14px/1.35 'Afacad', system-ui, sans-serif;
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+  background: #1f2937; /* gray-800 for dark theme */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.mcg-toast--success { border-color: #34d399; }
+.mcg-toast--error   { border-color: #f87171; }
+.mcg-toast--info    { border-color: #60a5fa; }

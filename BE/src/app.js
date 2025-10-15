@@ -25,6 +25,8 @@ const adminRoutes = require('./routes/admin');
 const menuAliasRoutes = require('./routes/menu'); 
 const cateringOptionRoutes = require('./routes/CateringOption');
 const bannerRoutes =  require('./routes/banner');
+const menuSlidesRoutes = require('./routes/menuSlide');
+
 
 const app = express();
 
@@ -56,7 +58,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/menu', menuAliasRoutes); // <- add this alias
-
+app.use('/api/menu-slides', menuSlidesRoutes);
 app.use('/api/menu-categories', categoryRoutes);
 app.use('/api/menu-items', itemRoutes);
 app.use('/api/sauces', sauceRoutes);

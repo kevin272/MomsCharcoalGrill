@@ -1,8 +1,7 @@
 // src/context/CartContext.jsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-
+import { useToast } from '../components/common/ToastProvider';
 const STORAGE_KEY = 'mcg_cart_v1';
-
 const CartContext = createContext({
   items: [],
   addToCart: () => {},
@@ -12,6 +11,7 @@ const CartContext = createContext({
 });
 
 export function useCart() {
+
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error('useCart must be used within a CartProvider');
   return ctx;
@@ -29,6 +29,8 @@ function loadFromStorage() {
 }
 
 export function CartProvider({ children }) {
+  const toast = useToast();
+
   const [items, setItems] = useState(() => loadFromStorage());
 
   // persist to localStorage on change
@@ -45,7 +47,10 @@ export function CartProvider({ children }) {
         return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
+      
     });
+    const niceName = item?.name || item?.title || "Item";
+    toast.success(`${niceName} added to cart`);
   };
 
   const removeFromCart = (id) => setItems((prev) => prev.filter((i) => i.id !== id));

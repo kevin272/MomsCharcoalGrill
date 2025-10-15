@@ -119,7 +119,12 @@ export default function MenuDashboard() {
     <DashboardLayout
       title="Menu Dashboard"
       actions={
-        <div className="d-flex g-3">
+        
+          <div className="d-flex g-3" style={{ alignItems: "center" }}>
+      <div className="d-flex g-2" role="tablist" aria-label="Menu dashboards">
+        <Link className="od-btn od-btn--ghost" to="/admin/menu">Items</Link>
+        <Link className="od-btn od-btn--ghost" to="/admin/menu-slides">Slides</Link>
+      </div>
           <input
             type="search"
             placeholder="Search by name/category…"

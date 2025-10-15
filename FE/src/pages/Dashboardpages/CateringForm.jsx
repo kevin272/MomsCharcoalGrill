@@ -200,7 +200,7 @@ export default function CateringForm({
           <button
             type="submit"
             disabled={saving}
-            className="od-btn od-btn--danger"
+            className="od-btn od-btn--danger color-white"
           >
             {saving ? "Saving..." : (initial ? "Update" : "Create")}
           </button>

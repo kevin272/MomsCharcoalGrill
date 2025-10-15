@@ -19,7 +19,6 @@ import GalleryDashboard from './pages/Dashboardpages/GalleryDashboard';
 import GalleryForm from './pages/Dashboardpages/GalleryForm';
 import ContactDashboard from './pages/Dashboardpages/ContactDashboard';
 import Login from './pages/Login';;
-import { Toaster } from 'react-hot-toast';
 import MenuDashboard from './pages/Dashboardpages/MenuDashboard';
 import MenuForm from './pages/Dashboardpages/MenuForm';
 import OrderDashboard from './pages/Dashboardpages/OrderDashboard';
@@ -27,17 +26,12 @@ import CateringDashboard from './pages/Dashboardpages/CateringDashboard';
 import CateringMenu from './components/CateringMenuItems';
 import BannerDashboard from './pages/Dashboardpages/BannerDashboard';
 import BannerForm from './pages/Dashboardpages/BannerForm';
+import MenuSlidesDashboard from './pages/Dashboardpages/MenuSlidesDashboard';
+import {ToastProvider}  from './components/common/ToastProvider';
 
 function App() {
   return (
     <>
-      {/* Toast notifications */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-        }}
-      />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
@@ -62,6 +56,8 @@ function App() {
           <Route path="/admin/menu" element={<MenuDashboard />} />
           <Route path="/admin/menu/new" element={<MenuForm />} />
           <Route path="/admin/menu/:id/edit" element={<MenuForm />} />
+          <Route path="/admin/menu-slides" element={<MenuSlidesDashboard />} />
+
           {/* New orders dashboard route */}
           <Route path="/admin/order" element={<OrderDashboard />} />
           {/* Sauce dashboard and CRUD routes */}

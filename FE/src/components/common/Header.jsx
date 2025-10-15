@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 function Header() {
-  const location = useLocation()
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const location = useLocation();
+  const [isStuck, setIsStuck] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  const isActive = (path) => {
+  const headerRef = useRef(null);
+
+ const isActive = (path) => {
     return location.pathname === path ? 'nav-link active' : 'nav-link'
   }
 
@@ -17,8 +20,17 @@ function Header() {
     setMobileNavOpen(false)
   }
 
+
+  useEffect(() => {
+    const TRIGGER = 140; // should match --stick-offset for a coherent feel
+    const onScroll = () => setIsStuck(window.scrollY > TRIGGER);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="header">
+    <header ref={headerRef} className={`header ${isStuck ? 'is-stuck' : ''}`}>
       <div className="container">
         <div className="logo">
           <Link to="/">

@@ -1,44 +1,45 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
-const SERVER_URL = API_URL.replace(/\/api$/, ""); // http://localhost:5000
+const SERVER_URL = API_URL.replace(/\/api$/, "");
 
-// Make any backend image path public + robust
 function toPublicUrl(p) {
   if (!p) return "";
-  if (/^https?:\/\//i.test(p)) return p; // already absolute (e.g., CDN or absolute from BE)
-
-  // Ensure we have a single leading /uploads/ prefix
-  let rel = p.replace(/\\/g, "/"); // normalize windows slashes if any
-  if (!rel.startsWith("/uploads/")) {
-    rel = "/uploads/" + rel.replace(/^\/+/, ""); // ensure exactly one leading slash and 'uploads/'
-  }
+  if (/^https?:\/\//i.test(p)) return p;
+  let rel = p.replace(/\\/g, "/");
+  if (!rel.startsWith("/uploads/")) rel = "/uploads/" + rel.replace(/^\/+/, "");
   return `${SERVER_URL}${rel}`;
 }
 
-// Optional: you can remove this if you won't use it here
 function priceLabelFrom(option) {
   if (typeof option.price !== "number") return "";
   switch (option.priceType) {
-    case "per_person":
-      return `(${option.price.toFixed(2)} per person)`;
-    case "per_tray":
-      return `(${option.price.toFixed(2)} per tray)`;
-    case "fixed":
-      return `(${option.price.toFixed(2)})`;
-    default:
-      return "";
+    case "per_person": return `(${option.price.toFixed(2)} per person)`;
+    case "per_tray":   return `(${option.price.toFixed(2)} per tray)`;
+    case "fixed":      return `(${option.price.toFixed(2)})`;
+    default: return "";
   }
 }
 
 const PLACEHOLDER = "https://via.placeholder.com/600x400?text=Catering";
 
-function Card({ pkg }) {
-  const priceLabel = priceLabelFrom(pkg);
+/* ---------------- Card ---------------- */
+function Card({ pkg, itemsById }) {
   const [broken, setBroken] = useState(false);
-
   const src = broken ? PLACEHOLDER : toPublicUrl(pkg.image);
+  const priceLabel = priceLabelFrom(pkg);
+
+  // map IDs -> names
+  const itemNames = useMemo(() => {
+    if (!Array.isArray(pkg.items)) return [];
+    return pkg.items
+      .map((id) => itemsById[id]?.name || itemsById[id]?.title)
+      .filter(Boolean);
+  }, [pkg.items, itemsById]);
+
+  const preview = itemNames.slice(0, 4);
+  const more = itemNames.length > 4 ? itemNames.length - 4 : 0;
 
   return (
     <div className="catering-option-card">
@@ -65,9 +66,16 @@ function Card({ pkg }) {
         )}
 
         <div className="catering-option-meta">
-          <span className="opacity-70">
-            Items: {Array.isArray(pkg.items) ? pkg.items.length : 0}
-          </span>
+          {preview.length ? (
+            <p className="catering-items-list">
+              {preview.join(", ")}
+              {more > 0 && (
+                <span className="catering-item-more"> +{more} more</span>
+              )}
+            </p>
+          ) : (
+            <span className="opacity-70">No items listed</span>
+          )}
         </div>
 
         <Link to={`/catering/package/${pkg._id}`} className="catering-view-menu-btn">
@@ -78,21 +86,43 @@ function Card({ pkg }) {
   );
 }
 
+/* ---------------- Main Component ---------------- */
 export default function CateringOptions() {
   const [pkgs, setPkgs] = useState([]);
+  const [itemsById, setItemsById] = useState({});
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Fetch catering options
   useEffect(() => {
     (async () => {
       try {
-        // Use API_URL so it works in all envs
         const r = await fetch(`${API_URL}/catering-options?isActive=true`, {
           headers: { Accept: "application/json" },
         });
         const j = await r.json();
         if (!j?.success) throw new Error(j?.message || "Failed to load options");
-        setPkgs(Array.isArray(j.data) ? j.data : []);
+        const data = Array.isArray(j.data) ? j.data : [];
+        setPkgs(data);
+
+        // collect all item IDs from all packages
+        const allIds = data.flatMap((p) => p.items || []);
+        const uniqueIds = [...new Set(allIds)];
+
+        // fetch all items once (you can optimize with your /menu-items/bulk endpoint if you have one)
+        if (uniqueIds.length) {
+          const fetchedItems = {};
+          for (const id of uniqueIds) {
+            try {
+              const res = await fetch(`${API_URL}/menu-items/${id}`);
+              if (!res.ok) continue;
+              const item = await res.json();
+              const name = item?.data?.name || item?.data?.title;
+              if (name) fetchedItems[id] = { name };
+            } catch {}
+          }
+          setItemsById(fetchedItems);
+        }
       } catch (e) {
         setErr(e.message || "Something went wrong");
       } finally {
@@ -108,7 +138,7 @@ export default function CateringOptions() {
   return (
     <div className="catering-options-grid container">
       {pkgs.map((p) => (
-        <Card key={p._id} pkg={p} />
+        <Card key={p._id} pkg={p} itemsById={itemsById} />
       ))}
     </div>
   );

@@ -1,24 +1,53 @@
+import React from "react";
+import ImageCarousel from "./ImageCarousel";
+
 function MenuImageSection() {
   return (
     <section className="menu-content">
       <div className="menu-image">
-        <img src="/image 2.png" alt="Menu Content" />
+        <ImageCarousel
+          type="menu"
+          autoplay
+          interval={4500}
+          className="menu-page-carousel"
+        />
       </div>
     </section>
-  )
+  );
 }
 
-export default MenuImageSection
+export default MenuImageSection;
 
-import React from 'react'
-
+// ---------- DOWNLOAD BUTTON ----------
 export function DownloadMenuButton() {
+  const fileUrl = `./Menu.pdf`;
+
+  const handleDownload = () => {
+    // open directly, letting browser download or preview PDF
+    const a = document.createElement("a");
+    a.href = fileUrl;
+    a.download = "MomsCharcoal_Menu.pdf"; // force download name
+    a.target = "_blank";
+    a.click();
+  };
+
   return (
-    <section className="download-section">
-      <button className="download-button">
+    <section className="download-section" style={{ textAlign: "center", marginTop: "2rem" }}>
+      <button
+        className="download-button"
+        onClick={handleDownload}
+        style={{
+          background: "#FFF200",
+          color: "#000",
+          padding: "14px 24px",
+          fontWeight: 600,
+          borderRadius: 6,
+          cursor: "pointer",
+          border: "none",
+        }}
+      >
         Click here to download menu
       </button>
     </section>
-  )
+  );
 }
-
