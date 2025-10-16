@@ -104,8 +104,8 @@ export default function Hero() {
         <p className="hero-offer-banner">Upto 30% off on Catering Menu</p>
         <h1 className="hero-title">{title}</h1>
 
-        <div className="specialty-button">
-          <span>
+        <div className="specialty-button" >
+          <span role="button" tabIndex={0} onClick={()=>window.location.href="/menu"}>
             <img src="Group 1000002314.png" alt="cta" />
           </span>
         </div>
