@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Amarante&display=swap');
 
-:root { --header-h: 72px; }
+:root { --header-h: 39px; }
 /* Reset and base styles */
 * {
   margin: 0;
@@ -77,15 +77,18 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;               /* tighter like the design */
-  gap: 24px;
+  padding: 8px 20px; /* reduced padding for slimmer header */
+    height: 200px;                  /* fixed, compact height */
+  
+  gap: 16px;
 }
-
 /* logo at left (small round mark in mock) */
 .logo img {
   height: 200px;                     /* was 80px */
   width: auto;
   object-fit: contain;
+  padding-top :10px;
+  padding-left: 40px
 }
 
 /* compact, uppercase nav centered between logo and cart */
@@ -93,7 +96,8 @@ html {
   display: flex;
   align-items: center;
   gap: 26px;
-  margin-left: auto;                /* ensures nav fills middle */
+  margin-left: auto;
+  padding-right: 50px;                /* ensures nav fills middle */
 }
 
 .nav-link {
@@ -944,7 +948,8 @@ html {
     flex-direction: row;
     gap: 15px;
     padding: 15px;
-  }
+    height: min-content;
+  } 
 
   .logo img {
     height: 100px;
@@ -3077,7 +3082,7 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999999;
 }
 
 .special-requirements-modal,
@@ -4334,7 +4339,7 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 /* Table rows */
 .od-row{transition:background .12s ease;}
 .od-row:hover{background:#1a1a1a;}
-.od-cell{padding:12px 16px;color:#fff;}
+.od-cell{padding:12px 16px;color:#fff; align-items: center;}
 .od-cell--right{text-align:right;}
 .od-cell--center{text-align:center;}
 .od-code{
@@ -4343,9 +4348,9 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 }
 
 /* Status + inline select */
-.od-status{display:flex;align-items:center;gap:8px;}
+.od-status{display:grid;align-items:center;gap:8px;}
 .od-badge{
-  display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:1;
+  display:flex;align-items:center;gap:6px;font-size:12px;line-height:1;
   padding:6px 10px;border-radius:999px;border:1px dashed rgba(255,255,255,.22);
   background:#111;color:#fff;
 }
@@ -5052,7 +5057,7 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
 }
 
 /* Prevent layout jump by pushing content down by the header height */
-main { padding-top: var(--header-h); }
+/* main { padding-top: var(--header-h); } */
 
 /* Optional: tasteful shrink of the logo when stuck */
 .logo img {
@@ -5153,3 +5158,32 @@ main { padding-top: var(--header-h); }
 .mcg-toast--success { border-color: #34d399; }
 .mcg-toast--error   { border-color: #f87171; }
 .mcg-toast--info    { border-color: #60a5fa; }
+
+.payment-options {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+.payment-option {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.95rem;
+  color: black;
+}
+.account-box {
+  margin: 8px 0 10px;
+  padding: 10px;
+  border: 1px dashed #444;
+  border-radius: 8px;
+  background: #161616;
+  color: white;
+}
+.account-number {
+  font-weight: 700;
+  color: white;
+}
+.account-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}

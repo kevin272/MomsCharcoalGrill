@@ -102,6 +102,20 @@
                   <td align="right" class="grand" style="padding:4px 0; font:800 18px/1.6 Arial,Helvetica,sans-serif; color:#FFF200;">{{currency totals.grandTotal currency}}</td>
                 </tr>
               </table>
+              {{!-- PAYMENT MODE BLOCK --}}
+{{#if (eq order.paymentMode "COD")}}
+  <p><strong>Payment Mode:</strong> Cash on Delivery (COD)</p>
+{{else if (eq order.paymentMode "PAY_TO_CALL")}}
+  <div style="margin-top:10px;padding:12px;border:1px dashed #ddd;border-radius:6px;">
+    <p><strong>Payment Mode:</strong> Pay to Call</p>
+    <p><strong>Bank Details:</strong></p>
+    <ul style="margin:0 0 0 16px;padding:0;">
+      <li>Account Name: Mom’s Charcoal & Grill</li>
+      <li>Account No: 123 222 222323 2</li>
+      <li>After payment, please call us at 732-398-9022 to confirm.</li>
+    </ul>
+  </div>
+{{/if}}
 
               <!-- Mode-specific note -->
               {{#if (eq mode "receipt")}}

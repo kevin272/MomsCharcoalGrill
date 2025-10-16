@@ -11,6 +11,7 @@ import { useCart } from '../context/CartContext.jsx';
  */
 function CartPage() {
   const { items: cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+  const [paymentMode, setPaymentMode] = useState('COD');
   const [showSpecialRequirements, setShowSpecialRequirements] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
@@ -55,6 +56,7 @@ const handleCustomerDetailsSubmit = async () => {
         price: item.price,
         image: item.image,
         qty: item.quantity,
+        
       })),
       customer: {
         name: customerDetails.fullName,
@@ -69,7 +71,8 @@ const handleCustomerDetailsSubmit = async () => {
           .filter(Boolean)
           .join(', '),
       },
-      paymentMode: 'COD',
+      paymentMode, // ✅ dynamic selection from user
+
       notes: specialRequirements,
     };
 
@@ -165,41 +168,59 @@ const handleCustomerDetailsSubmit = async () => {
               <span className="order-total-amount">${subtotal}</span>
             </div>
             <div className="payment-details">
-              <div className="payment-mode-label">Payment Mode</div>
-              <div className="payment-dropdown">
-                <span>Cash on Delivery</span>
-                <svg
-                  width="12"
-                  height="8"
-                  viewBox="0 0 12 8"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M0.125 0.914795L5.81234 7.26313L11.4997 0.914795H0.125Z"
-                    fill="#A0A0A0"
-                  />
-                </svg>
-              </div>
-              <div className="account-number">Account No. 123 222 222323 2</div>
-              <div className="order-breakdown">
-                <div className="breakdown-item">
-                  <span>GST (10%)</span>
-                  <span>$ {gst}</span>
-                </div>
-                <div className="breakdown-item">
-                  <span>Delivery Charge</span>
-                  <span>$ {deliveryCharge}</span>
-                </div>
-                <div className="breakdown-divider"></div>
-                <div className="breakdown-total">
-                  <span>Grand Total</span>
-                  <span>$ {grandTotal}</span>
-                </div>
-              </div>
-            </div>
+  <div className="payment-mode-label">Payment Mode</div>
+
+  {/* --- Radio Buttons for Payment Mode --- */}
+  <div className="payment-options">
+    <label className="payment-option">
+      <input
+        type="radio"
+        name="paymentMode"
+        value="COD"
+        checked={paymentMode === 'COD'}
+        onChange={() => setPaymentMode('COD')}
+      />
+      <span>Cash on Delivery (COD)</span>
+    </label>
+
+    <label className="payment-option">
+      <input
+        type="radio"
+        name="paymentMode"
+        value="PAY_TO_CALL"
+        checked={paymentMode === 'PAY_TO_CALL'}
+        onChange={() => setPaymentMode('PAY_TO_CALL')}
+      />
+      <span>Pay to Call</span>
+    </label>
+  </div>
+
+  {/* --- Show Account Info only for Pay to Call --- */}
+  {paymentMode === 'PAY_TO_CALL' && (
+    <div className="account-box">
+      <div className="account-number">Account No. 123 222 222323 2</div>
+      <div className="account-note">
+        After payment, please call us to confirm your reference.
+      </div>
+    </div>
+  )}
+
+  <div className="order-breakdown">
+    <div className="breakdown-item">
+      <span>GST (10%)</span>
+      <span>$ {gst}</span>
+    </div>
+    <div className="breakdown-item">
+      <span>Delivery Charge</span>
+      <span>$ {deliveryCharge}</span>
+    </div>
+    <div className="breakdown-divider"></div>
+    <div className="breakdown-total">
+      <span>Grand Total</span>
+      <span>$ {grandTotal}</span>
+    </div>
+  </div>
+</div>
             <button className="place-order-btn" onClick={handlePlaceOrder}>
               Place Order
             </button>

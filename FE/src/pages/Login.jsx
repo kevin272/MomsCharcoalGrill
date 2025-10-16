@@ -157,19 +157,6 @@ const res = await axiosInstance.post("/auth/login", {
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="card-body" style={{ textAlign: "center" }}>
-              <p style={{ marginBottom: 12 }}>Or continue with</p>
-              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                <button className="btn btn-outline" type="button">
-                  Google
-                </button>
-                <button className="btn btn-outline" type="button">
-                  Facebook
-                </button>
-              </div>
-            </div>
-          </div>
 
           <p style={{ marginTop: 16, fontSize: 12, color: "var(--muted, #666)", textAlign: "center" }}>
             By continuing, you agree to our{" "}

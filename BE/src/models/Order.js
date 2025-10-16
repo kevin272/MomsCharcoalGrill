@@ -58,11 +58,11 @@ const OrderSchema = new Schema(
   {
     items: { type: [OrderItemSchema], validate: (v) => v.length > 0 },
     customer: { type: CustomerSchema, required: true },
-    paymentMode: {
-      type: String,
-      enum: ['COD', 'CallToPay', 'Card'],
-      default: 'COD',
-    },
+    paymentMode: { 
+    type: String, 
+    enum: ['COD','PAY_TO_CALL'], 
+    required: true 
+  },
     totals: { type: TotalsSchema, required: true },
     status: {
       type: String,

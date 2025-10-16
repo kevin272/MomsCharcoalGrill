@@ -97,11 +97,20 @@ router.post('/checkout', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Customer details are required' });
     }
 
+    // Normalize/sanitize paymentMode into a valid string
+    const normalizedMode = typeof paymentMode === 'string'
+      ? String(paymentMode).toUpperCase().trim()
+      : '';
+    const safePaymentMode = ['COD', 'PAY_TO_CALL'].includes(normalizedMode)
+      ? normalizedMode
+      : 'COD';
+
     const orderItems = [];
     let subtotal = 0;
     for (const item of items) {
       const qty = Math.max(parseInt(item.qty) || 1, 1);
       let menuItemId, name, price, image = '';
+
       if (item.menuItem) {
         const doc = await MenuItem.findById(item.menuItem);
         if (doc) {
@@ -114,6 +123,7 @@ router.post('/checkout', async (req, res) => {
         menuItemId = new mongoose.Types.ObjectId();
         name = item.name || ''; price = Number(item.price) || 0; image = item.image || '';
       }
+
       subtotal += price * qty;
       orderItems.push({ menuItem: menuItemId, name, price, qty, image });
     }
@@ -133,20 +143,19 @@ router.post('/checkout', async (req, res) => {
     const order = await Order.create({
       items: orderItems,
       customer: customerDoc,
-      paymentMode: paymentMode || 'COD',
+      paymentMode: safePaymentMode, // ✅ string, not a schema object
       totals,
       notes: notes || '',
       status: 'new',
     });
 
-    // Send receipt email immediately after checkout
     sendOrderReceipt({ order }).catch(console.error);
-
     res.status(201).json({ success: true, data: order });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Unable to checkout' });
   }
 });
+
 
 module.exports = router;
