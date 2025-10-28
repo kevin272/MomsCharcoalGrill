@@ -29,10 +29,14 @@ const menuSlidesRoutes = require('./routes/menuSlide');
 
 
 const app = express();
+const allowedOrigins = [
+  'https://momscharcoalgrill.netlify.app',
+  'http://localhost:5173', // for local dev
+];
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true
 }));
 
