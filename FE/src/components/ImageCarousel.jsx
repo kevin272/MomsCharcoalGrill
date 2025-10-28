@@ -79,6 +79,7 @@ export default function ImageCarousel({
 return (
   <div className={`img-carousel ${className}`} style={{ position: "relative" }}>
     {/* wrap to position arrows outside the image but inside component */}
+    
     <div className="img-carousel__wrap">
       {/* viewport */}
       <div
@@ -134,6 +135,16 @@ return (
           </button>
         </>
       )}
+      {/* right arrow button */}
+<button
+  className="img-carousel__arrow img-carousel__arrow--right"
+  onClick={next}
+  aria-label="Next slide"
+>
+  <img src="/CarouselArrow.svg" alt="Next" />
+</button>
+
+      </div>
 
       {/* dots */}
       {len > 1 && (
@@ -149,7 +160,6 @@ return (
         </div>
       )}
     </div>
-  </div>
 );
 
 }

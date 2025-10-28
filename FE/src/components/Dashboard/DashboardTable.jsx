@@ -13,7 +13,7 @@ export default function DashboardTable({
           <th
             key={idx}
             scope="col"
-            className={`px-4 py-3 text-center text-sm font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap ${header.className || ""}`}
+            className={`px-4 py-3 text-center align-middle text-sm font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap ${header.className || ""}`}
             style={{ ...header.style, maxWidth: header.maxWidth || "none" }}
           >
             {header.label}
@@ -49,7 +49,7 @@ export default function DashboardTable({
           {rows.map((cells, rIdx) => (
             <tr key={rIdx} className="text-center">
               {cells.map((cell, cIdx) => (
-                <td key={cIdx} className="px-4 py-3">
+                <td key={cIdx} className="px-4 py-3 text-center align-middle">
                   {cell}
                 </td>
               ))}
@@ -66,7 +66,7 @@ export default function DashboardTable({
           {rows.map((row, rIdx) => (
             <tr key={rIdx} className="text-center">
               {row.cells.map((cell, cIdx) => (
-                <td key={cIdx} className="px-4 py-3">
+                <td key={cIdx} className="px-4 py-3 text-center align-middle">
                   {cell}
                 </td>
               ))}
@@ -81,7 +81,7 @@ export default function DashboardTable({
       <tbody className="bg-white divide-y divide-gray-200">
         {rows.map((row, rIdx) => (
           <tr key={rIdx} className="text-center">
-            <td className="px-4 py-3 text-left" colSpan={Math.max(headers.length, 1)}>
+            <td className="px-4 py-3 text-center align-middle text-left" colSpan={Math.max(headers.length, 1)}>
               <pre className="text-xs bg-gray-50 p-2 rounded border border-gray-100 overflow-x-auto">
                 {JSON.stringify(row, null, 2)}
               </pre>

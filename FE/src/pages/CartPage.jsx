@@ -168,42 +168,21 @@ const handleCustomerDetailsSubmit = async () => {
               <span className="order-total-amount">${subtotal}</span>
             </div>
             <div className="payment-details">
+<div className="payment-details">
   <div className="payment-mode-label">Payment Mode</div>
 
-  {/* --- Radio Buttons for Payment Mode --- */}
-  <div className="payment-options">
-    <label className="payment-option">
-      <input
-        type="radio"
-        name="paymentMode"
-        value="COD"
-        checked={paymentMode === 'COD'}
-        onChange={() => setPaymentMode('COD')}
-      />
-      <span>Cash on Delivery (COD)</span>
-    </label>
-
-    <label className="payment-option">
-      <input
-        type="radio"
-        name="paymentMode"
-        value="PAY_TO_CALL"
-        checked={paymentMode === 'PAY_TO_CALL'}
-        onChange={() => setPaymentMode('PAY_TO_CALL')}
-      />
-      <span>Pay to Call</span>
-    </label>
-  </div>
-
-  {/* --- Show Account Info only for Pay to Call --- */}
-  {paymentMode === 'PAY_TO_CALL' && (
-    <div className="account-box">
-      <div className="account-number">Account No. 123 222 222323 2</div>
-      <div className="account-note">
-        After payment, please call us to confirm your reference.
-      </div>
-    </div>
-  )}
+  <label className="select-wrap">
+    <select
+      className="payment-select"
+      value={paymentMode}
+      onChange={(e) => setPaymentMode(e.target.value)}
+    >
+      <option value="COD">Cash on Delivery</option>
+      <option value="PAY_TO_CALL">Call to pay</option>
+    </select>
+  </label>
+</div>
+<p className="account-hint">Account No. <strong>123 222 223232 2</strong></p>
 
   <div className="order-breakdown">
     <div className="breakdown-item">

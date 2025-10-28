@@ -78,13 +78,17 @@ export default function CateringOptionPage() {
             <div className="hot-dishes-grid">
               {(pkg.items || []).map((name, idx) => (
                 <div key={idx} className="hot-dish-card">
+                    <div className="hot-dish-hover-bg" aria-hidden />
+
                   <div className="hot-dish-image-container">
                     <img
                       src={pkg.image || "https://via.placeholder.com/640x480?text=Catering+Item"}
                       alt={name}
                       className="hot-dish-image"
                     />
+                    
                   </div>
+                  
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
                       <h3 className="hot-dish-name">{name}</h3>

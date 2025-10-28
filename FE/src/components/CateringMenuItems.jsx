@@ -174,7 +174,10 @@ export default function CateringMenu() {
           <div className="container">
             <div className="hot-dishes-grid">
               {items.map((dish) => (
+                <>
                 <div key={dish.id} className="hot-dish-card">
+                <div className="hot-dish-hover-bg" aria-hidden />
+
                   <div className="hot-dish-image-container">
                     <DishImage src={dish.image} alt={dish.name} className="hot-dish-image" />
                   </div>
@@ -216,6 +219,7 @@ export default function CateringMenu() {
                     </button>
                   </div>
                 </div>
+                </>
               ))}
             </div>
 

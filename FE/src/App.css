@@ -78,7 +78,7 @@ html {
   align-items: center;
   justify-content: space-between;
   padding: 8px 20px; /* reduced padding for slimmer header */
-    height: 200px;                  /* fixed, compact height */
+    height: 170px;                  /* fixed, compact height */
   
   gap: 16px;
 }
@@ -103,7 +103,7 @@ html {
 .nav-link {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 15px;                  /* smaller like mock */
+  font-size: 19px;                  /* smaller like mock */
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #fff;
@@ -138,7 +138,7 @@ html {
 .contact-info p {
   font-family: 'Afacad', sans-serif;
   font-weight: 600;
-  font-size: 12px;                  /* small like the mock */
+  font-size: 18px;                  /* small like the mock */
   color: #fff;
   letter-spacing: .01em;
   line-height: 1.25;
@@ -193,10 +193,15 @@ html {
   position:relative; width:100%; height:100%; border-radius:50%;
   overflow:visible; isolation:isolate; transform: translateX(4%); /* less push than before */
 }
-.hero-figure>img{
-  width:100%; height:100%; object-fit:cover; border-radius:50%;
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
-}.hero-figure{
+.hero-figure > img.hero-main-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.hero-figure{
   position: relative;
   width: 100%;
   height: 100%;
@@ -214,37 +219,71 @@ html {
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
 }
 
-/* Rings on the LEFT side */
-.hero-figure::before,
-.hero-figure::after{
-  content:"";
-  position:absolute;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:-1;
+/* Rings: keep them free from the main-img styles */
+.hero-figure > img.hero-ring{
+  border-radius: 0;        /* don’t clip the ring PNGs */
+  box-shadow: none;
+  pointer-events: none;    /* clicks pass through */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* center the PNG perfectly */
 }
 
-/* Yellow (thin) */
-.hero-figure::before{
-  inset:-10px;                 /* just larger than the photo */
-  border:18px solid #FFF200;
-  clip-path: inset(0 52 0 0 round 50%); /* show LEFT half */
-  transform: translate(-6%, 1%);         /* push outward to the left */
+/* Make rings larger than the photo and animate */
+.yellow-ring{
+  position: absolute;
+  top : -10%;
+  width: 120%;
+  z-index: 1;
+  animation: spin 20s linear infinite;
+}
+.black-ring{
+  width: 145%;
+  z-index: 0;
+  animation: spin 25s linear infinite reverse;
 }
 
-/* Black (thicker, outside) */
-.hero-figure::after{
-  scale: 0.95;
-  z-index: -100;
-  inset:-24px;
-  border:40px solid #000;
-  clip-path: inset(0 50 0 0 0); /* LEFT half */
-  transform: translate(-2.5%, 1%);
-  box-shadow: 0 0 0 6px #2b2a0f;
-    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
 
-  
+.hero-figure {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.hero-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+  max-width: none;
+}
+.black-ring {
+  z-index: 0;
+  width: 150%;
+  transform: translate(calc(-50% - 18%), -50%);
+}
+.yellow-ring {
+  z-index: 1;
+  width: 125%;
+  transform: translate(calc(-50% - 9%), -50%);
+}
+
+.hero-main-img {
+  position: relative;
+  width: 420px;
+  z-index: 2;
+  border-radius: 50%;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 
 /* Hide carousel arrows; style dots */
 .hero-nav{ display:none !important; }
@@ -461,6 +500,7 @@ html {
 }
 
 .carousel-nav {
+  background: none !important;
   cursor: pointer;
   padding: 20px;
 }
@@ -468,7 +508,6 @@ html {
 .carousel-nav img {
   width: 33px;
   height: 45px;
-  filter: invert(1);
 }
 
 .menu-items {
@@ -476,32 +515,56 @@ html {
   gap: 60px;
   align-items: center;
 }
-
 .menu-item {
+  position: relative;
   text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  z-index: 1;
 }
 
 .menu-item img {
-  width: 250px;
-  height: 250px;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 15px;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
+  position: relative;
+  z-index: 2;  /* keep image above hover.png */
 }
 
-.menu-item:hover img {
-  transform: scale(1.05);
+/* hover background directly behind image */
+.menu-item::before {
+  content: "";
+  position: absolute;
+  top: 50%;                        /* align to image center */
+  left: 50%;
+  width: 260px;                    /* same as image */
+  height: 260px;
+  background: url("/hover.png") no-repeat center/cover;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 1;                      /* sits behind image */
+  pointer-events: none;
+  /* transform: translateY(-100%); */
 }
+
+.menu-item:hover::before {
+  opacity: 1;
+  transform: translate(-50%, -30%) scale(1);
+}
+
 
 .menu-item h3 {
-  font-family: 'Afacad', sans-serif;
+  margin-top: 18px;
+  font-family: "Afacad", sans-serif;
   font-weight: 700;
-  font-size: 32px;
   color: #fff;
-  letter-spacing: -0.5px;
-  line-height: 1.4;
+  transition: color 0.3s ease;
 }
+
+
+
 
 .carousel-dots {
   position: absolute;
@@ -632,31 +695,31 @@ html {
   padding: 60px 20px;
   background: rgba(0, 0, 0, 0.9);
   position: relative;
+  z-index: 0;
 }
-
-.about-section::before {
-  content: '';
+.about-section::after {
+  content: "";
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
-  bottom: 0;
-  background-image: url('/Rectangle 162.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.2;
-  z-index: -1;
+  margin-right: 30px;
+  width: 90%; /* yellow covers only right portion */
+  height: 100%;
+  background: url("/YellowBg.png") no-repeat center right/cover;
+  z-index: 1;
 }
 
 .about-section .container {
   display: flex;
   gap: 60px;
   align-items: center;
+
 }
 
 .about-image {
   flex: 1;
+      z-index: 2;
+
 }
 
 .about-image img{
@@ -670,6 +733,8 @@ html {
 
 .about-content {
   flex: 1;
+      z-index: 2;
+
 }
 
 .about-content h2 {
@@ -711,72 +776,110 @@ html {
     border-radius: 8px;
   }
 }
-
-/* Contact Section */
-.contact-section {
-  padding: 80px 20px;
-  text-align: center;
+.contact-section{
+  background:#000;            /* black background like mock */
+  padding:80px 20px;
+  text-align:center;
+  margin-right: 300px;
+  margin-left: 300px;
 }
 
-.contact-section h2 {
-  font-family: 'Afacad', sans-serif;
-  font-weight: 700;
-  font-size: 52px;
-  color: #FAEB30;
-  margin-bottom: 50px;
+.contact-section h2{
+  font-family:'Afacad',sans-serif;
+  font-weight:700;
+  font-size:52px;
+  letter-spacing:.03em;
+  color:#FAEB30;              /* yellow title */
+  margin-bottom:50px;
 }
 
-.contact-form {
-  display: flex;
-  gap: 60px;
-  max-width: 1200px;
-  margin: 0 auto 40px;
-  align-items: flex-start;
+/* Two-column form */
+.contact-form{
+  display:grid;
+  grid-template-columns: 1fr 1fr; /* left and right */
+  column-gap:60px;
+  row-gap:24px;
+  max-width:1200px;
+  margin:0 auto 0;
+  align-items:start;
+}
+@media (max-width: 1366px){
+  .contact-section {
+    padding: 40px 15px;
+    margin: 100px 30px;
+  }
 }
 
-.form-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+.form-left{
+  display:grid;
+  gap:20px;
+}.form-right{ flex:1; }
 
-.form-right {
-  flex: 1;
-}
-
+/* Fields */
 .contact-form input,
-.contact-form textarea {
-  width: 100%;
-  background-color: #000;
-  border: 2.4px solid #FFF8F8;
-  padding: 20px;
-  font-family: 'Afacad', sans-serif;
-  font-size: 26px;
-  color: #fff;
-  outline: none;
-  transition: border-color 0.3s ease;
+.contact-form textarea{
+  width:100%;
+  box-sizing:border-box;
+  background:#000;
+  border:2px solid #FFF;      /* thin white outline */
+  padding:18px 20px;
+  font-family:'Afacad',sans-serif;
+  font-weight:600;
+  font-size:20px;             /* closer to mock field text */
+  color:#fff;
+  outline:none;
+  transition:border-color .2s ease, box-shadow .2s ease;
+  border-radius:4px;          /* subtle radius; set 0 if you want sharp corners */
 }
 
-.contact-form input {
-  height: 70px;
-}
+.contact-form input{ height:58px; }
+.contact-form textarea{ height:320px; resize:vertical; }
 
-.contact-form textarea {
-  height: 320px;
-  resize: vertical;
-}
-
+/* Placeholder -> uppercase and dim white */
 .contact-form input::placeholder,
-.contact-form textarea::placeholder {
-  color: #fff;
-  opacity: 0.7;
+.contact-form textarea::placeholder{
+  color:#fff;
+  opacity:.8;
+  text-transform:uppercase;
+  letter-spacing:.06em;
 }
 
+/* Focus state -> yellow outline */
 .contact-form input:focus,
-.contact-form textarea:focus {
-  border-color: #FAEB30;
+.contact-form textarea:focus{
+  border-color:#FAEB30;
+  box-shadow:0 0 0 2px rgba(250,235,48,.15);
 }
+
+/* Submit button */
+.contact-submit{
+  display:flex;
+  justify-content:center;
+}
+
+.contact-form button[type="submit"],
+.contact-form .submit-row{
+  grid-column:1 / -1;          /* span both columns */
+  justify-self:center;         /* center horizontally */
+  margin-top:8px;
+}
+
+.contact-submit .btn{
+  background:#FAEB30;         /* yellow button */
+  color:#000;                 /* black text */
+  border:none;
+  padding:16px 28px;
+  min-width:240px;
+  font-family:'Afacad',sans-serif;
+  font-weight:700;
+  font-size:20px;
+  letter-spacing:.02em;
+  border-radius:6px;
+  cursor:pointer;
+  transition:transform .08s ease, opacity .2s ease;
+}
+.contact-submit .btn:hover{ opacity:.95; }
+.contact-submit .btn:active{ transform:translateY(1px); }
 
 .send-button {
   background-color: #FFF200;
@@ -801,70 +904,6 @@ html {
   background-color: #e6d42b;
 }
 
-/* Footer *//* === Footer === */
-.footer {
-  padding: 46px 0 60px;
-  background: var(--card);
-}
-
-.footer .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 40px;
-}
-
-/* central round logo with yellow rails */
-/* --- Footer logo + yellow rails --- */
-.footer-logo{
-  position: relative;
-  display: grid;
-  place-items: center;
-  margin: 10px 0 26px;
-  /* control sizes from here */
-    --logo-diameter: 280px;
-  --rail-gap: 0px;         /* space between bar end and logo edge */
-  --rail-width: 400px;     /* 🟢 add missing semicolon here */
-  --rail-height: 30px;
-}
-
-.footer-logo > img{
-  width: var(--logo-diameter);
-  height: var(--logo-diameter);
-  object-fit: contain;
-  padding: 12px;           /* matches the mock’s inner padding */
-  position: relative;
-  z-index: 2;              /* above the rails */
-}
-
-.footer-rails{
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;              /* behind the logo */
-}
-
-/* Each rail is centered vertically and pulled away from the logo edge */
-.footer-rails .rail{
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  height: var(--rail-height);
-  width: var(--rail-width);
-  object-fit: cover;
-  border-radius: 20px;
-}
-
-/* Left rail: ends just before the logo’s left edge */
-.footer-rails .rail.left{
-  right: calc(50% + (var(--logo-diameter) / 2) + var(--rail-gap));
-}
-
-/* Right rail: mirror of the left rail */
-.footer-rails .rail.right{
-  left: calc(50% + (var(--logo-diameter) / 2) + var(--rail-gap));
-  transform: translateY(-50%) scaleX(-1); /* flip so the SVG gradient/orientation matches */
-}
 
 /* Responsive tuning */
 @media (max-width: 992px){
@@ -883,22 +922,6 @@ html {
     --rail-gap: 10px;
   }
 }
-
-.footer-logo::before,
-.footer-logo::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 30vw;
-  max-width: 220px;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--yellow);
-  transform: translateY(-50%);
-}
-.footer-logo::before { left: -240px; }
-.footer-logo::after  { right: -240px; }
-
 /* content columns */
 .footer-content {
   display: grid;
@@ -1120,9 +1143,14 @@ html {
     line-height: 1.5;
   }
 
-  .contact-section {
+.contact-section {
     padding: 40px 15px;
+    margin: 50px 0px;
   }
+  .contact-form{
+  display:flex;
+
+}
 
   .contact-section h2 {
     font-size: 32px;
@@ -1169,7 +1197,7 @@ html {
   }
 
   .footer-logo img {
-    max-width: 200px;
+    max-width: 300px;
   }
 
   .footer-content {
@@ -1273,6 +1301,7 @@ html {
 
   .contact-section {
     padding: 30px 10px;
+    margin: 50px 0px;
   }
 
   .contact-section h2 {
@@ -1696,8 +1725,8 @@ html {
 }
 
 .menu-page .menu-image img {
-  width: 100%;
-  height: 790px;
+  width: 48px;
+  height: auto;
   object-fit: cover;
 }
 
@@ -2230,33 +2259,32 @@ html {
 }
 
 .hot-dish-card {
+  overflow: visible;
   position: relative;
   display: flex;
   align-items: center;
+  height:110%;
   gap: 22px;
   padding-right: 56px;           /* space for right-side cart */
 }
 
 /* Rounded/halo gradient on the LEFT like the mock */
-.hot-dish-card::before {
-  content: "";
+.hot-dish-hover-bg {
   position: absolute;
-  inset: -14px -1px;
-  z-index: 0;
-  border-radius: 140px;
-
-  /* 1) main round glow around left image
-     2) slight linear fade to the right for depth */
-  background:
-    radial-gradient(
-      circle at 140px 100%,
-      rgba(255,255,255,0.18) 0%,
-      rgba(255,255,255,0.12) 35%,
-      rgba(0,0,0,0.00) 70%
-    ),
-    linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
-  border: 1px solid rgba(255,255,255,0.08);
+  inset: 0;
+  background: url("/FaintBg.png") no-repeat center/cover;
+  opacity: .5;
+  transition: opacity 0.35s ease;
+  z-index: 0;                  /* <— behind image & text */
+  pointer-events: none;
+  scale: 1;
+  border-radius: 200px;
+  transform: translateX(-1%);
 }
+.hot-dish-card:hover .hot-dish-hover-bg {
+  opacity: 1; /* subtle faint overlay */
+}
+
 
 /* ——— Image ——— */
 .hot-dish-image-container {
@@ -2323,12 +2351,12 @@ html {
 /* ——— Cart icon like the mock: NO bg, right side, vertically centered ——— */
 .hot-dish-cart-btn {
   position: absolute;
-  right: 8px;                   /* place at right edge of the row */
+  right: 0px;                   /* place at right edge of the row */
   top: 100%;
   transform: translateY(-50%);
   z-index: 2;
 
-  background: transparent;       /* ⬅ no background */
+  background: transparent !important;       /* ⬅ no background */
   border: none;
   padding: 6px;
   cursor: pointer;
@@ -2336,6 +2364,7 @@ html {
   display: grid;
   place-items: center;
   transition: transform .15s ease;
+  scale: 1.2;
 }
 
 .hot-dish-cart-btn:hover {
@@ -2936,27 +2965,37 @@ html {
   font-weight: 700;
   line-height: 23px;
 }
-
 .remove-item-btn {
   position: absolute;
-  top: 0;
+  top: -20px;
   right: -24px;
   width: 48px;
   height: 48px;
-  background: transparent;
+  background: none !important;                    /* ✅ no background */
   border: none;
   cursor: pointer;
   transition: transform 0.3s ease;
+
+  display: flex;               /* center SVG */
+  align-items: center;
+  justify-content: center;
 }
+
+.remove-item-btn svg {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;              /* ✅ prevent flex from shrinking it */
+  transform-origin: center;    /* for precise centering */
+}
+
+
 
 .remove-item-btn:hover {
   transform: scale(1.1);
 }
 
-.remove-item-btn svg {
-  width: 100%;
-  height: 100%;
-}
+
 
 .order-summary-section {
   width: 466px;
@@ -3109,7 +3148,7 @@ html {
   height: 61px;
   padding: 21px 41px;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   align-self: stretch;
   background: #FAEB30;
@@ -3323,7 +3362,7 @@ html {
   height: 61px;
   padding: 21px 41px;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   align-self: stretch;
   background: #FAEB30;
@@ -3819,10 +3858,10 @@ td[colspan]{text-align:center;color:var(--text-muted)}
 a,button,[role="button"],input,select,textarea{
   outline:none
 }
-a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:focus{
+/* a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:focus{
   box-shadow:0 0 0 3px rgba(37,99,235,.35);
   border-radius:10px
-}
+} */
 
 /* ==== Utility + Admin Styles (themed) ==== */
 .d-flex{display:flex}
@@ -4951,9 +4990,25 @@ th{
   border-bottom:1px solid rgba(255,255,255,.12) !important;
 }
 
+table.mcg-table th,
+table.mcg-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  /* keep your padding coming from Tailwind; this only fixes alignment */
+}
+
+/* if a cell contains buttons/badges/icons, force perfect centering */
+table.mcg-table td > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
 /* Body cells */
 tbody{ background:#0f0f0f !important; }
 td{
+  justify-content: center;
+  align-items: center;
   padding:.9rem 1rem !important;
   color:#f3f3f3 !important;
   font-size:.95rem !important;
@@ -5084,9 +5139,9 @@ td[colspan]{ text-align:center; color:#c9c9c9 !important; background:#111 !impor
 
 /* Global focus ring swap to OD yellow */
 a,button,[role="button"],input,select,textarea{ outline:none; }
-a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:focus{
+/* a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:focus{
   box-shadow:0 0 0 3px rgba(255,242,0,.18) !important; border-radius:10px;
-}
+} */
 
 /* ---- Modal layout: make body scroll, header/footer fixed ---- */
 .od-modal__card{
@@ -5160,7 +5215,7 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
   transition: height .25s ease, transform .25s ease;
 }
 .header.is-stuck .logo img {
-  height: 120px;   /* was 200px; adjust to taste */
+  height: 150px;   /* was 200px; adjust to taste */
   transform: translateY(0);
 }
 
@@ -5190,13 +5245,13 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
 .img-carousel{ position: relative; overflow: visible; }
 
 /* wrapper keeps viewport from clipping, arrows can sit outside */
-.img-carousel__wrap{ position: relative; overflow: visible; }
+.img-carousel__wrap{ position: relative; overflow: visible; height: fit-content; }
 
 /* viewport + image */
 .img-carousel__viewport{
-  position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 16/9;
+  position: relative; border-radius: 12px;
 }
-.img-carousel__image{ width:100%; height:100%; object-fit: cover; display:block; }
+.img-carousel__image{ width:100%; height:100%; display:block; }
 
 /* caption hidden (as you set) */
 .img-carousel__caption{
@@ -5206,10 +5261,18 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
 }
 
 /* dots */
-.img-carousel__dots{
-  position:absolute; left:50%; transform:translateX(-50%);
-  bottom:12px; display:flex; gap:6px; z-index:30; pointer-events:auto;
+.img-carousel__dots {
+  position: absolute;
+  bottom: -30px; /* inside the image */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  z-index: 30;
+  pointer-events: auto;
 }
+
 .img-carousel__dot{ width:8px; height:8px; border-radius:999px; border:none;
   background:rgba(255,255,255,.55); cursor:pointer; }
 .img-carousel__dot.is-active{ background:#FFF200; }
@@ -5282,4 +5345,422 @@ a:focus,button:focus,[role="button"]:focus,input:focus,select:focus,textarea:foc
 .account-note {
   font-size: 0.9rem;
   opacity: 0.8;
+}
+
+
+/* === FOOTER (match mock) — overrides === */
+.footer{
+  background:#000;                     /* pure black like mock */
+  margin:60px 0 100px;                 /* no side margin */
+  padding:60px 0 80px;
+  --yellow:#FAEB30;
+}
+
+.footer .container{
+  max-width:1200px;                    /* keep content tight under rails */
+  margin:0 auto;
+  gap:48px;
+}
+
+/* Center logo + long yellow rails */
+.footer-logo{
+  --logo-diameter: 400px;              /* circle size (mock ≈ 250) */
+  --rail-gap: 18px;                    /* breathing room around circle */
+  --rail-height: 12px;                /* rail thickness */
+  --rail-width: 38vw;                  /* rail reach; scales with screen */
+}
+
+.footer-logo > img{
+  width:var(--logo-diameter);
+  height:var(--logo-diameter);
+  border-radius:100%;
+      object-fit: contain;
+
+}
+
+/* Use pseudo rails (cleaner than image rails) */
+.footer-logo::before,
+.footer-logo::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  height:var(--rail-height);
+  width:var(--rail-width);
+  background:var(--yellow);
+  border-radius:999px;
+  transform:translateY(-50%);
+  z-index:1; /* behind the circle image which has z-index:2 */
+}
+.footer-logo::before{
+  right:calc(50% + (var(--logo-diameter)/2) + var(--rail-gap));
+}
+.footer-logo::after{
+  left:calc(50% + (var(--logo-diameter)/2) + var(--rail-gap));
+}
+
+/* Remove the duplicate image-based rails if present */
+.footer-rails{ display:none; }
+
+/* Columns */
+.footer-content{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:64px;                            /* roomy columns like mock */
+  width:100%;
+}
+
+/* Typography (closer to mock) */
+.footer-section h3{
+  font-family:'Afacad',sans-serif;
+  color:#fff;
+  font-weight:700;
+  font-size:20px;                      /* headings are small in mock */
+  letter-spacing:.02em;
+  margin-bottom:18px;
+}
+.footer-section p,
+.footer-section address,
+.footer-section ul li a{
+  color:#E7E7E7;
+  font-size:16px;
+  line-height:1.9;                     /* airy copy */
+  text-decoration:none;
+}
+.footer-section ul{ list-style:none; display:grid; gap:10px; }
+
+.days-open{
+  font-weight:800;
+  letter-spacing:.1em;
+}
+
+/* Map thumbnail size like mock */
+.map-placeholder{ margin-top:18px; }
+.map-placeholder img{
+  width:313px;
+  max-width:100%;
+  height:auto;
+  border-radius:4px;
+}
+
+/* Responsiveness */
+@media (max-width: 1200px){
+  .footer-logo{ --logo-diameter:220px; --rail-width:32vw; }
+  .footer-content{ gap:40px; }
+}
+@media (max-width: 900px){
+  .footer-content{ grid-template-columns: 1fr 1fr; }
+   .footer-logo::before,
+.footer-logo::after{ --rail-gap: -20px !important; width: 250px !important;}
+}
+@media (max-width: 560px){
+  .footer-logo{ --logo-diameter:180px; --rail-width:26vw; --rail-height:18px; }
+  .footer-content{ grid-template-columns: 1fr; gap:28px; }
+  .footer-logo::before,
+.footer-logo::after{ --rail-gap: -20px !important; width: 70px !important;}
+}
+/* ===== FOOTER: lock to the mock ===== */
+.footer{
+  background:#000;
+  margin:0 0 90px;                 /* no side margins */
+  padding:60px 0 80px;
+  --yellow:#FAEB30;
+}
+
+.footer .container{
+  max-width:1400px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* Center logo with long rounded rails */
+.footer-logo{
+  position: relative;
+  display: grid;
+  place-items: center;
+  --logo-diameter: 300px !important;
+  --rail-gap: 8px;
+  --rail-height: 20px;
+}
+
+.footer-logo > img{
+  width:var(--logo-diameter);
+  height:var(--logo-diameter);
+  border-radius: 100% !important;
+  z-index:2;
+}
+
+
+/* columns under the rails */
+.footer-content{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  margin-left: 100px;
+}
+.footer-section{ text-align:left; width: fit-content; }
+.footer-section h3{
+  font:700 20px/1 'Afacad',sans-serif; /* small headings like mock */
+  margin:0 0 16px;
+  color:#fff;
+}
+.footer-section p,
+.footer-section address,
+.footer-section ul li a{
+  font-size:16px;
+  line-height:1.9;
+  color:#E7E7E7;
+  text-decoration:none;
+}
+.footer-section ul{ list-style:none; display:grid; gap:10px; }
+
+.days-open{ font-weight:800; letter-spacing:.1em; }
+
+.footer-map iframe,
+.map-placeholder img{
+  max-width:313px; width:100%; height:auto; border-radius:4px;
+}
+
+/* responsiveness */
+@media (max-width:1100px){
+  .footer-content{ gap:40px; }
+}
+@media (max-width:900px){
+  .footer-content{ grid-template-columns:1fr 1fr; }
+}
+@media (max-width:560px){
+  .footer-logo{
+    --logo-diameter: 180px;
+    --rail-height: 18px;
+    --rail-len: min(260px, 32vw);
+  }
+  .footer-content{ grid-template-columns:1fr; gap:28px; }
+}
+
+
+
+/* Reset for ring PNGs */
+.hero-figure > img.hero-ring {
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
+  object-fit: contain;
+  max-width: none;
+}
+
+
+.yellow-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 125%;
+  transform: translate(calc(-50% - 9%), -50%);
+  z-index: 2;
+}
+
+/* Optional spin animation */
+@keyframes ring-spin {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
+.yellow-ring { animation: ring-spin 22s linear infinite; }
+.black-ring  { animation: ring-spin 28s linear infinite reverse; }
+
+
+/* BACK black arc: larger + pushed further left */
+.hero-figure.crescent-left .black-ring{
+  z-index: 1 !important;
+  width: 160% !important;
+  transform: translate(calc(-50% - 23%), -50%) !important;
+}
+
+/* FRONT yellow arc: slightly smaller + less offset */
+.hero-figure.crescent-left .yellow-ring{
+  z-index: 2 !important;
+  width: 130% !important;
+  transform: translate(calc(-50% - 12%), -50%) !important;
+}
+
+/* no spin for exact match (uncomment if you want motion) */
+/*
+@keyframes ring-spin { from{rotate:0} to{rotate:360deg} }
+.hero-figure.crescent-left .yellow-ring{ animation: ring-spin 22s linear infinite; }
+.hero-figure.crescent-left .black-ring { animation: ring-spin 28s linear infinite reverse; }
+*/
+
+@media (max-width: 640px){
+  .hero-figure.crescent-left .yellow-ring{
+    width: 135% !important;
+    transform: translate(calc(-0% - 10%), -50%) !important;
+  }
+}
+
+/* === Shift main hero image slightly left === */
+.hero-figure.crescent-left .hero-main-img {
+  position: relative;
+  left: -20%;          /* move the circular image ~4% left */
+}
+
+/* optional: tweak for large screens if needed */
+@media (min-width: 1024px) {
+  .hero-figure.crescent-left .hero-main-img {
+    left: -8%;        /* a bit more shift on desktop */
+    size: 1.1;
+  }
+}
+
+/* === CART DROPDOWN EXACTLY LIKE MOCK === */
+
+.payment-details {
+  margin: 5px 0 8px;
+}
+
+.payment-mode-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #777;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.payment-select {
+  width: 100%;
+  height: 46px;
+  border-radius: 30px;
+  border: 1px solid #e5e5e5;
+  background-color: #fafafa;
+  color: #7a7a7a;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 42px 0 14px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.payment-select:hover {
+  background-color: #f0f0f0;
+}
+
+.payment-select:focus {
+  border-color: #d0d0d0;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom dropdown arrow (exact mock size/position) */
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #7a7a7a;
+  border-bottom: 2px solid #7a7a7a;
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* Account text below dropdown */
+.account-hint {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #7a7a7a;
+}
+
+.account-hint strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* Hide neighbors / streaks */
+.img-carousel__viewport {
+  position: relative;
+  overflow: hidden;         /* <- this removes the white streaks */
+  border-radius: 14px;      /* optional, matches your rounded look */
+}
+
+/* Track can be visible inside viewport; keep as-is otherwise */
+.img-carousel__wrap {
+  position: relative;
+}
+
+/* Arrow */
+.img-carousel__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.25s ease;
+  /* (optional) bigger tap area without changing visual size */
+  inline-size: 48px;
+  block-size: 48px;
+  display: grid;
+  place-items: center;
+}
+
+.img-carousel__arrow img {
+  width: 48px;        /* visual size */
+  height: auto;       /* don't squash */
+  display: block;
+  filter: brightness(0) invert(1); /* white arrow on dark bg */
+}
+
+/* Push the arrow slightly outside the frame like your mock */
+.img-carousel__arrow--right {
+  right: -60px;       /* tweak -50/-60 to taste */
+}
+
+.img-carousel__arrow:hover {
+  transform: translateY(-50%) scale(1.08);
+}
+
+.img-carousel {
+  position: relative;
+}
+
+.img-carousel__viewport {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;        /* so image doesn’t bleed */
+  z-index: 1;
+}
+
+.img-carousel__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 5;              /* above image */
+  padding: 0;
+  transition: transform 0.3s ease;
+}
+
+.img-carousel__arrow img {
+  width: 48px;
+  height: auto;
+  display: block;
+}
+
+.img-carousel__arrow--right {
+  right: -58px;            /* outside frame */
+}
+
+.img-carousel__arrow:hover {
+  transform: translateY(-50%) scale(1.1);
 }
