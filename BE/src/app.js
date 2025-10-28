@@ -29,16 +29,37 @@ const menuSlidesRoutes = require('./routes/menuSlide');
 
 
 const app = express();
+// ✅ FIXED: proper CORS handling
 const allowedOrigins = [
-  'https://mumscharcoalgrill.netlify.app/',
-  'http://localhost:5173', // for local dev
+  'https://mumscharcoalgrill.netlify.app',
+  'http://localhost:5173'
 ];
 
-// Middleware
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use((req, res, next) => {
+  next();
+});
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+    ],
+    credentials: true,
+  })
+);
+
+app.options('*', cors());
+
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
