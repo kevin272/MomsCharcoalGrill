@@ -24,8 +24,23 @@ function CartPage() {
     postCode: '',
   });
   const [specialRequirements, setSpecialRequirements] = useState('');
-    const IMG_BASE_URL = (import.meta.env.VITE_API_URL).replace(/\/+$/, "").replace(/\/api$/, "").replace("https://momscharcoalgrill.onrender.comhttps://momscharcoalgrill.onrender.com","https://momscharcoalgrill.onrender.com");
-
+function resolveImage(src) {
+  if (!src) return "";
+  const RAW_API = (import.meta?.env?.VITE_API_URL || "").trim();
+  const API = RAW_API.replace(/\/+$/, "");
+  const ORIGIN = API.replace(/\/api$/, "");
+  const escapeRe = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const ORIGIN_RE = new RegExp(`^${escapeRe(ORIGIN)}(?:${escapeRe(ORIGIN)})+`);
+  let s = String(src).trim();
+  s = s.replace(ORIGIN_RE, ORIGIN);
+  if (/^(?:https?:|data:|blob:)/i.test(s)) return s;
+  if (!s.startsWith("/")) s = `/${s}`;
+  try {
+    return new URL(s, ORIGIN).href;
+  } catch {
+    return `${ORIGIN}${s}`;
+  }
+}
 
   // Derived totals based off cart items
   const subtotal = cartItems.reduce(
@@ -114,7 +129,7 @@ const handleCustomerDetailsSubmit = async () => {
               <div key={item.id} className="cart-item">
                 <div className="cart-item-card">
                   <div className="cart-item-image">
-                    <img src={`${IMG_BASE_URL}${item.image}`} alt={item.name} />
+            <img src={resolveImage(item.image)} alt={item.name} />
                   </div>
                   <div className="cart-item-details">
                     <div className="cart-item-info">
