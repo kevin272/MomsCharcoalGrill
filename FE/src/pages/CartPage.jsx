@@ -14,6 +14,7 @@ function CartPage() {
   const [paymentMode, setPaymentMode] = useState('COD');
   const [showSpecialRequirements, setShowSpecialRequirements] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
+  
   const [customerDetails, setCustomerDetails] = useState({
     fullName: '',
     phoneNumber: '',
@@ -23,6 +24,8 @@ function CartPage() {
     postCode: '',
   });
   const [specialRequirements, setSpecialRequirements] = useState('');
+    const IMG_BASE_URL = (import.meta.env.VITE_API_URL).replace(/\/+$/, "").replace(/\/api$/, "");
+
 
   // Derived totals based off cart items
   const subtotal = cartItems.reduce(
@@ -111,7 +114,7 @@ const handleCustomerDetailsSubmit = async () => {
               <div key={item.id} className="cart-item">
                 <div className="cart-item-card">
                   <div className="cart-item-image">
-                    <img src={item.image} alt={item.name} />
+                    <img src={`${IMG_BASE_URL}${item.image}`} alt={item.name} />
                   </div>
                   <div className="cart-item-details">
                     <div className="cart-item-info">
