@@ -24,7 +24,7 @@ function CartPage() {
     postCode: '',
   });
   const [specialRequirements, setSpecialRequirements] = useState('');
-    const IMG_BASE_URL = (import.meta.env.VITE_API_URL).replace(/\/+$/, "").replace(/\/api$/, "").replace("https://momscharcoalgrill.onrender.com","");
+    const IMG_BASE_URL = (import.meta.env.VITE_API_URL).replace(/\/+$/, "").replace(/\/api$/, "").replace("https://momscharcoalgrill.onrender.comhttps://momscharcoalgrill.onrender.com","");
 
 
   // Derived totals based off cart items
