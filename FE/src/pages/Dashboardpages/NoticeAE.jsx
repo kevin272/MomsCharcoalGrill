@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "../../config/axios.config";
 import DashboardLayout from "../../components/Dashboard/DashboardLayout";
-import NoticeForm from "./NoticeFOrm";
+import NoticeForm from "./NoticeForm";
 
 export default function NoticeAE() {
   const { id } = useParams(); // /admin/notices/:id  → edit mode if present
