@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-const API = import.meta?.env?.VITE_API_URL || '';
+const RAW = import.meta?.env?.VITE_API_URL || "";         // "", "https://.../api", "https://..."
+const BASE = RAW.replace(/\/+$/, "");                      // trim trailing slashes
+// If provided, ensure it ends with /api. If not provided, default to same-origin /api
+const API = BASE ? (BASE.endsWith("/api") ? BASE : `${BASE}/api`) : "/api";
+
 
 const localKey = (id) => `notice:dismissed:${id}`;
 
@@ -13,7 +17,7 @@ export default function NoticeBanner() {
 
     (async () => {
       try {
-        const res = await fetch(`${API}/api/notices/active`, { credentials: 'include' });
+        const res = await fetch(`${API}/notices/active`, { credentials: 'include' });
         const data = await res.json();
         if (!mounted || !data) return;
 

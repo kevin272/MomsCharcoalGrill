@@ -5770,7 +5770,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.35);
-  z-index: 1999;
+  z-index: 99999;
 }
 
 /* Banner wrapper */
@@ -5796,7 +5796,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   box-shadow: 0 12px 30px rgba(0,0,0,.35);
   border-radius: 12px;
   overflow: auto;              /* ✅ scrolls internally only if content overflows */
-  max-height: 90vh;            /* ✅ prevents it from ever exceeding the viewport */
+  max-height: 95vh;            /* ✅ prevents it from ever exceeding the viewport */
   pointer-events: auto;        /* allow clicks inside */
 }
 
@@ -5823,7 +5823,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 .notice-banner-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;          /* ✅ never crops, scales proportionally */
 }
 
