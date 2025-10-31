@@ -1,97 +1,228 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function NoticeForm({ initial, onSubmit, saving }) {
+export default function NoticeForm({ initial, initialId, onSubmit, saving }) {
   const [form, setForm] = useState({
     title: "",
     linkUrl: "",
     isActive: true,
     dismissible: true,
     priority: 0,
-    startsAt: "",
+    startsAt: "", // "YYYY-MM-DDTHH:mm"
     endsAt: "",
   });
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [err, setErr] = useState("");
+  const [loadingInitial, setLoadingInitial] = useState(false);
 
+  const lastObjectUrlRef = useRef("");
+
+  // cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (lastObjectUrlRef.current) URL.revokeObjectURL(lastObjectUrlRef.current);
+    };
+  }, []);
+
+  // utils
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const hydrate = (n) => {
+    setForm({
+      title: n?.title || "",
+      linkUrl: n?.linkUrl || "",
+      isActive: !!n?.isActive,
+      dismissible: n?.dismissible !== false,
+      priority: Number(n?.priority || 0),
+      startsAt: n?.startsAt ? toLocalInput(n.startsAt) : "",
+      endsAt: n?.endsAt ? toLocalInput(n.endsAt) : "",
+    });
+    setPreview(n?.imageUrl || "");
+  };
+
+  // initial load (prop or fetch by id)
   useEffect(() => {
     if (initial) {
-      setForm({
-        title: initial.title || "",
-        linkUrl: initial.linkUrl || "",
-        isActive: !!initial.isActive,
-        dismissible: initial.dismissible !== false,
-        priority: Number(initial.priority || 0),
-        // Expect ISO string from API; trim for datetime-local
-        startsAt: initial.startsAt ? initial.startsAt.slice(0, 16) : "",
-        endsAt: initial.endsAt ? initial.endsAt.slice(0, 16) : "",
-      });
+      hydrate(initial);
+      return;
     }
-  }, [initial]);
+    if (!initialId) return;
 
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingInitial(true);
+        const res = await fetch(`/api/notices/${initialId}`, { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to load notice");
+        const data = await res.json();
+        if (!cancelled) hydrate(data);
+      } catch (e) {
+        if (!cancelled) setErr(e?.message || "Failed to load notice");
+      } finally {
+        if (!cancelled) setLoadingInitial(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [initial, initialId]);
+
+  // handlers
   const update = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }));
+    setForm((s) => ({
+      ...s,
+      [name]: type === "checkbox" ? checked : (name === "priority" ? Number(value) : value),
+    }));
   };
 
-  const submit = (e) => {
-    e.preventDefault();
-    onSubmit(form, file);
+  const onFileChange = (e) => {
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+    if (lastObjectUrlRef.current) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+      lastObjectUrlRef.current = "";
+    }
+    if (f) {
+      const url = URL.createObjectURL(f);
+      lastObjectUrlRef.current = url;
+      setPreview(url);
+    } else {
+      setPreview(initial?.imageUrl || "");
+    }
   };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr("");
+
+    if (typeof onSubmit !== "function") {
+      setErr("onSubmit is not a function (check the parent component).");
+      return;
+    }
+
+    // simple date guard
+    if (form.startsAt && form.endsAt) {
+      const a = new Date(form.startsAt);
+      const b = new Date(form.endsAt);
+      if (!isNaN(a) && !isNaN(b) && a > b) {
+        setErr("Ends at must be after Starts at.");
+        return;
+      }
+    }
+
+    try {
+      await onSubmit(
+        {
+          title: form.title.trim(),
+          linkUrl: form.linkUrl.trim(),
+          isActive: !!form.isActive,
+          dismissible: !!form.dismissible,
+          priority: Number(form.priority || 0),
+          startsAt: form.startsAt || "",
+          endsAt: form.endsAt || "",
+        },
+        file
+      );
+    } catch (e2) {
+      setErr(e2?.message || "Save failed");
+    }
+  };
+
+  const isEdit = !!(initial || initialId);
 
   return (
-    <form onSubmit={submit} className="grid gap-3" style={{ maxWidth: 560 }}>
-      <label className="grid gap-1">
-        <span>Title</span>
-        <input name="title" value={form.title} onChange={update} required />
-      </label>
+    <div className="container" style={{ maxWidth: 720 }}>
+      <h2 className="mb-3">{isEdit ? "Edit Notice" : "Create Notice"}</h2>
 
-      <label className="grid gap-1">
-        <span>Link URL (optional)</span>
-        <input name="linkUrl" value={form.linkUrl} onChange={update} placeholder="/catering or https://…" />
-      </label>
+      {loadingInitial && <p className="mb-2">Loading…</p>}
+      {err && <p className="mb-2" style={{ color: "tomato" }}>{err}</p>}
 
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="isActive" checked={form.isActive} onChange={update} />
-          <span>Active</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="dismissible" checked={form.dismissible} onChange={update} />
-          <span>Dismissible</span>
-        </label>
-      </div>
+      <form onSubmit={submit}>
+        <div className="mb-3">
+          <label className="form-label" htmlFor="nf-title">Title *</label>
+          <input id="nf-title" className="form-control" name="title" value={form.title} onChange={update} required />
+        </div>
 
-      <label className="grid gap-1">
-        <span>Priority</span>
-        <input type="number" name="priority" value={form.priority} onChange={update} />
-      </label>
+        <div className="mb-3">
+          <label className="form-label" htmlFor="nf-link">Link URL (optional)</label>
+          <input
+            id="nf-link"
+            className="form-control"
+            name="linkUrl"
+            value={form.linkUrl}
+            onChange={update}
+            placeholder="/catering or https://…"
+          />
+        </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <span>Starts at</span>
-          <input type="datetime-local" name="startsAt" value={form.startsAt} onChange={update} />
-        </label>
-        <label className="grid gap-1">
-          <span>Ends at</span>
-          <input type="datetime-local" name="endsAt" value={form.endsAt} onChange={update} />
-        </label>
-      </div>
-
-      <label className="grid gap-1">
-        <span>Banner Image</span>
-        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        {initial?.imageUrl && (
-          <div style={{ marginTop: 6 }}>
-            <small>Current:</small><br />
-            <img src={initial.imageUrl} alt="notice" style={{ maxWidth: 280, border: "1px solid #333" }} />
+        <div className="mb-3 d-flex gap-4 align-items-center">
+          <div className="form-check">
+            <input className="form-check-input" type="checkbox" id="nf-active" name="isActive" checked={form.isActive} onChange={update} />
+            <label className="form-check-label" htmlFor="nf-active">Active</label>
           </div>
-        )}
-      </label>
+          <div className="form-check">
+            <input className="form-check-input" type="checkbox" id="nf-dismiss" name="dismissible" checked={form.dismissible} onChange={update} />
+            <label className="form-check-label" htmlFor="nf-dismiss">Dismissible</label>
+          </div>
+        </div>
 
-      <div className="flex gap-2 pt-2">
-        <button type="submit" className="od-btn" disabled={saving}>
-          {saving ? "Saving…" : (initial ? "Update Notice" : "Create Notice")}
+        <div className="mb-3">
+          <label className="form-label" htmlFor="nf-priority">Priority</label>
+          <input
+            id="nf-priority"
+            className="form-control"
+            type="number"
+            name="priority"
+            value={Number.isFinite(form.priority) ? form.priority : 0}
+            onChange={update}
+          />
+        </div>
+
+        <div className="row g-3">
+          <div className="col-sm-6">
+            <label className="form-label" htmlFor="nf-starts">Starts at</label>
+            <input
+              id="nf-starts"
+              className="form-control"
+              type="datetime-local"
+              name="startsAt"
+              value={form.startsAt}
+              onChange={update}
+            />
+          </div>
+          <div className="col-sm-6">
+            <label className="form-label" htmlFor="nf-ends">Ends at</label>
+            <input
+              id="nf-ends"
+              className="form-control"
+              type="datetime-local"
+              name="endsAt"
+              value={form.endsAt}
+              onChange={update}
+            />
+          </div>
+        </div>
+
+        <div className="mb-3" style={{ marginTop: 12 }}>
+          <label className="form-label" htmlFor="nf-file">Banner Image</label>
+          <input id="nf-file" className="form-control" type="file" accept="image/*" onChange={onFileChange} />
+          {preview ? (
+            <div style={{ marginTop: 8 }}>
+              <img src={preview} alt="preview" style={{ maxWidth: 240, borderRadius: 8 }} />
+            </div>
+          ) : null}
+        </div>
+
+        <button className="btn btn-primary" disabled={saving}>
+          {saving ? "Saving…" : (isEdit ? "Update Notice" : "Create Notice")}
         </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
