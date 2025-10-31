@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 
 const NAV = [
   { name: 'Admin', href: '/admin' },
+  {name: 'Notices', href: '/admin/notices' },
   { name: 'Gallery', href: '/admin/gallery' },
   { name: 'Menu', href: '/admin/menu' },
   { name: 'Catering', href: '/admin/catering' },

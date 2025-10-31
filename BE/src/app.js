@@ -26,6 +26,8 @@ const menuAliasRoutes = require('./routes/menu');
 const cateringOptionRoutes = require('./routes/CateringOption');
 const bannerRoutes =  require('./routes/banner');
 const menuSlidesRoutes = require('./routes/menuSlide');
+const noticeRoutes = require('./routes/notice');
+
 
 
 const app = express();
@@ -93,6 +95,8 @@ app.use('/api/catering-orders', cateringOrderRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/catering-options', cateringOptionRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/notices', noticeRoutes);
+
 
 
 // Health check endpoint

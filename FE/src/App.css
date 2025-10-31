@@ -3844,7 +3844,7 @@ table.min-w-full{width:100%;border-collapse:separate;border-spacing:0}
 thead.bg-gray-50{background:#f9fafb}
 thead.sticky{position:sticky;top:0;z-index:2}
 th{font-weight:700;color:#374151;text-transform:uppercase;font-size:.78rem;letter-spacing:.06em;padding:.75rem 1rem;background:#f9fafb;white-space:nowrap}
-td{padding:.9rem 1rem;color:#111827;font-size:.95rem}
+td{padding:.9rem 1rem;color:#111827;font-size:.95rem; justify-content: center;}
 tbody.divide-y tr{border-top:1px solid var(--border)}
 tbody .italic{font-style:italic}
 .text-gray-400{color:var(--text-muted)}
@@ -3852,7 +3852,7 @@ tbody .italic{font-style:italic}
 .rounded-lg{border-radius:14px}
 .shadow-md{box-shadow:var(--shadow)}
 /* empty state row */
-td[colspan]{text-align:center;color:var(--text-muted)}
+td[colspan]{align-items: center;text-align:center;color:var(--text-muted)}
 
 /* ===== Nice focus rings for all focusable controls ===== */
 a,button,[role="button"],input,select,textarea{
@@ -3907,7 +3907,8 @@ a,button,[role="button"],input,select,textarea{
 }
 .card-body{padding:1.25rem}
 .table-auto th{color:#FFF200;background:#000}
-.table-auto td{color:#fff;background:#111}
+.table-auto td{color:#fff;background:#111;  text-align: center;
+  vertical-align: middle;}
 tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 
 /* ===== Admin Form – base card ===== */
@@ -5763,4 +5764,108 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 
 .img-carousel__arrow:hover {
   transform: translateY(-50%) scale(1.1);
+}
+/* Backdrop */
+.notice-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 1999;
+}
+
+/* Banner wrapper */
+.notice-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none; /* clicks pass through except inner */
+}
+
+/* Inner content bar */
+.notice-inner {
+  position: relative;
+  width: min(1100px, 96vw);
+  margin-top: 10px;
+  background: #0e0e0e;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  border-radius: 12px;
+  overflow: auto;              /* ✅ scrolls internally only if content overflows */
+  max-height: 90vh;            /* ✅ prevents it from ever exceeding the viewport */
+  pointer-events: auto;        /* allow clicks inside */
+}
+
+/* Scrollbar styling (optional aesthetic) */
+.notice-inner::-webkit-scrollbar {
+  width: 8px;
+}
+.notice-inner::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.2);
+  border-radius: 4px;
+}
+.notice-inner::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,.35);
+}
+
+/* Click-through wrapper */
+.notice-link {
+  display: block;
+  text-decoration: none;
+  outline: none;
+}
+
+/* Image scales responsively */
+.notice-banner-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;          /* ✅ never crops, scales proportionally */
+}
+
+/* Close button */
+.notice-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  appearance: none;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.15);
+  color: #fff;
+  border-radius: 50%;
+  padding: 6px;
+  line-height: 0;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.notice-dismiss:hover {
+  background: rgba(0,0,0,.75);
+}
+
+/* ---------------------------------- */
+/* Responsive adjustments             */
+/* ---------------------------------- */
+@media (max-width: 768px) {
+  .notice-inner {
+    width: 94vw;
+    max-height: 88vh;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notice-inner {
+    width: 96vw;
+    max-height: 85vh;
+    border-radius: 8px;
+  }
+  .notice-dismiss {
+    top: 4px;
+    right: 4px;
+    padding: 4px;
+  }
 }

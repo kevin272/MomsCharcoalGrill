@@ -28,6 +28,9 @@ import BannerDashboard from './pages/Dashboardpages/BannerDashboard';
 import BannerForm from './pages/Dashboardpages/BannerForm';
 import MenuSlidesDashboard from './pages/Dashboardpages/MenuSlidesDashboard';
 import {ToastProvider}  from './components/common/ToastProvider';
+import NoticeDashboard from './pages/Dashboardpages/NoticeDashboard';
+import NoticeAe from './pages/Dashboardpages/NoticeAE';
+
 
 function App() {
   return (
@@ -67,7 +70,10 @@ function App() {
           <Route path ="admin/catering" element= {<CateringDashboard/>}/>
           <Route path="/admin/banners" element={<BannerDashboard />} />
           <Route path="/admin/banners/new" element={<BannerForm />} />
-                    <Route path="/admin/banners/:id/edit" element={<BannerForm />} />
+          <Route path="/admin/banners/:id/edit" element={<BannerForm />} />
+          <Route path="/admin/notices/" element={<NoticeDashboard />} />
+          <Route path="/admin/notices/new" element={<NoticeAe />} />
+          <Route path="/admin/notices/:id" element={<NoticeAe />} />
 
         </Route>
       </Routes>
