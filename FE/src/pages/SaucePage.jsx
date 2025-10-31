@@ -8,6 +8,7 @@ const SaucePage = () => {
   const [sauces, setSauces] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const IMG_BASE_URL = (import.meta.env.VITE_API_URL).replace(/\/+$/, "").replace(/\/api$/, "");
 
   React.useEffect(() => {
     let isMounted = true;
@@ -81,7 +82,7 @@ const SaucePage = () => {
 
                   <div className="hot-dish-image-container">
                     <img
-                      src={sauce.image}
+                      src= {`${IMG_BASE_URL}{sauce.image}`}
                       alt={sauce.name}
                       className="hot-dish-image"
                     />
