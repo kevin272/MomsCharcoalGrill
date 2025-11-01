@@ -82,7 +82,7 @@ const SaucePage = () => {
 
                   <div className="hot-dish-image-container">
                     <img
-                      src= {`${IMG_BASE_URL}${sauce.image}`}
+                      src= {`${sauce.image}`}
                       alt={sauce.name}
                       className="hot-dish-image"
                     />
