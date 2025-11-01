@@ -52,58 +52,72 @@ router.get('/category/:category', async (req, res) => {
 });
 
 // Create new gallery item (admin endpoint)
-router.post('/', authenticateToken, requirePermission('manage-gallery'), upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return sendError(res, 400, 'Image file is required');
+router.post(
+  '/',
+  authenticateToken,
+  requirePermission('manage-gallery'),
+  upload.single('image'),
+  handleMulterError,
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return sendError(res, 400, 'Image file is required');
+      }
+
+      const galleryItem = new Gallery({
+        title: req.body.title,
+        description: req.body.description,
+        category: req.body.category || 'other',
+        tags: req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [],
+        image: req.file.path,
+        uploadedBy: req.body.uploadedBy || 'admin',
+        order: req.body.order || 0,
+        isPublic: req.body.isPublic !== 'false'
+      });
+
+      await galleryItem.save();
+      sendResponse(res, galleryItem, 'Gallery item created successfully', 201);
+    } catch (error) {
+      sendError(res, 400, 'Error creating gallery item', error.message);
     }
-    
-    const galleryItem = new Gallery({
-      title: req.body.title,
-      description: req.body.description,
-      category: req.body.category || 'other',
-      tags: req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [],
-      image: `/uploads/${req.file.filename}`,
-      uploadedBy: req.body.uploadedBy || 'admin',
-      order: req.body.order || 0,
-      isPublic: req.body.isPublic !== 'false'
-    });
-    
-    await galleryItem.save();
-    sendResponse(res, galleryItem, 'Gallery item created successfully', 201);
-  } catch (error) {
-    sendError(res, 400, 'Error creating gallery item', error.message);
   }
-});
+);
 
 // Update gallery item (admin endpoint)
-router.put('/:id', authenticateToken, requirePermission('manage-gallery'), upload.single('image'), async (req, res) => {
-  try {
-    const updateData = { ...req.body };
-    
-    if (req.file) {
-  updateData.image = `/uploads/${req.file.filename}`;
-}
-    
-    if (req.body.tags) {
-      updateData.tags = req.body.tags.split(',').map(tag => tag.trim());
+router.put(
+  '/:id',
+  authenticateToken,
+  requirePermission('manage-gallery'),
+  upload.single('image'),
+  handleMulterError,
+  async (req, res) => {
+    try {
+      const updateData = { ...req.body };
+
+      if (req.file) {
+        updateData.image = req.file.path;
+      }
+
+      if (req.body.tags) {
+        updateData.tags = req.body.tags.split(',').map(tag => tag.trim());
+      }
+
+      const galleryItem = await Gallery.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true, runValidators: true }
+      );
+
+      if (!galleryItem) {
+        return sendError(res, 404, 'Gallery item not found');
+      }
+
+      sendResponse(res, galleryItem, 'Gallery item updated successfully');
+    } catch (error) {
+      sendError(res, 400, 'Error updating gallery item', error.message);
     }
-    
-    const galleryItem = await Gallery.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-    
-    if (!galleryItem) {
-      return sendError(res, 404, 'Gallery item not found');
-    }
-    
-    sendResponse(res, galleryItem, 'Gallery item updated successfully');
-  } catch (error) {
-    sendError(res, 400, 'Error updating gallery item', error.message);
   }
-});
+);
 
 // Delete gallery item (admin endpoint)
 router.delete('/:id', authenticateToken, requirePermission('manage-gallery'), async (req, res) => {
@@ -131,8 +145,8 @@ router.post(
   '/bulk',
   authenticateToken,
   requirePermission('manage-gallery'),
-  handleMulterError,
   upload.array('images', 50), // up to 50 images at once; tweak as needed
+  handleMulterError,
   async (req, res) => {
     try {
       if (!req.files?.length) {
@@ -190,7 +204,7 @@ router.post(
           description,
           category: common.category,
           tags: rawTags,
-          image: `/uploads/${file.filename}`,
+          image: file.path,
           uploadedBy: common.uploadedBy,
           order: Number.isFinite(order) ? order : 0,
           isPublic: common.isPublic,

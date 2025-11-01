@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const MenuSlideSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ['menu', 'cateringmenu'], required: true, index: true },
-    image: { type: String, required: true }, // e.g. /uploads/<filename>
+    image: { type: String, required: true }, // Cloudinary secure URL
     title: { type: String, default: '' },
     caption: { type: String, default: '' },
     linkTo: { type: String, default: '' },

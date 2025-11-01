@@ -71,7 +71,7 @@ router.post('/', anyParser, async (req, res, next) => {
       price: b.price ?? 0,
       description: b.description || '',
       isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
-      image: req.file ? `/uploads/menu/${req.file.filename}` : (b.image || b.photo || ''),
+      image: req.file ? req.file.path : (b.image || b.photo || ''),
     };
 
     const doc = await MenuItem.create(payload);
@@ -99,7 +99,7 @@ router.put('/:id', anyParser, async (req, res, next) => {
       isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
     };
 
-    if (req.file) update.image = `/uploads/menu/${req.file.filename}`;
+    if (req.file) update.image = req.file.path;
     else if (b.image || b.photo) update.image = b.image || b.photo;
 
     const doc = await MenuItem.findByIdAndUpdate(req.params.id, update, {

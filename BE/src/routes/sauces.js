@@ -1,8 +1,6 @@
 const express = require('express');
 const Sauce = require('../models/Sauce');
 const { upload } = require('../middlewares/fileUpload');
-const fs = require('fs');
-const path = require('path');
 
 const router = express.Router();
 
@@ -32,8 +30,7 @@ router.post('/', upload.single('image'), async (req, res) => {
   try {
     const body = { ...req.body };
     if (req.file) {
-      // store a web path consumable by FE
-      body.image = `/uploads/${req.file.filename}`;
+      body.image = req.file.path;
     }
     const item = await Sauce.create(body);
     res.status(201).json({ success: true, data: item });
@@ -52,11 +49,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
     // if new file uploaded, delete old file (best-effort) and set new path
     if (req.file) {
-      if (current.image && current.image.startsWith('/uploads/')) {
-        const abs = path.join(process.cwd(), current.image);
-        fs.promises.unlink(abs).catch(() => {});
-      }
-      body.image = `/uploads/${req.file.filename}`;
+      body.image = req.file.path;
     }
 
     const item = await Sauce.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
@@ -71,11 +64,6 @@ router.delete('/:id', async (req, res) => {
   try {
     const item = await Sauce.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ success: false, message: 'Not found' });
-
-    if (item.image && item.image.startsWith('/uploads/')) {
-      const abs = path.join(process.cwd(), item.image);
-      fs.promises.unlink(abs).catch(() => {});
-    }
 
     res.json({ success: true, message: 'Deleted' });
   } catch (e) {

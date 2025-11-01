@@ -1,40 +1,28 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { v2: cloudinary } = require('cloudinary');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const REQUIRED_VARS = [
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
+];
+
+const missingVars = REQUIRED_VARS.filter((key) => !process.env[key]);
+if (missingVars.length) {
+  console.warn(
+    `⚠️  Cloudinary configuration incomplete. Missing: ${missingVars.join(', ')}. ` +
+    'File uploads will fail until these environment variables are provided.'
+  );
 }
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Default to /uploads
-    let targetDir = path.join(__dirname, '../../uploads');
-
-    // Use subfolder based on route
-    if (req.baseUrl.includes('projects')) {
-      targetDir = path.join(__dirname, '../../uploads');
-    } else if (req.baseUrl.includes('gallery')) {
-      targetDir = path.join(__dirname, '../../uploads');
-          } else if (req.baseUrl.includes('menu')) {
- targetDir = path.join(__dirname, '../../uploads/menu');
-    }
-
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-
-    cb(null, targetDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '_' + uniqueSuffix + path.extname(file.originalname));
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
+const storage = multer.memoryStorage();
 
 // File filter function
 const fileFilter = (req, file, cb) => {
@@ -50,14 +38,118 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+const uploadBase = multer({
+  storage,
+  fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
-  }
+    fileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024, // 5MB default
+  },
 });
+
+const baseFolder = process.env.CLOUDINARY_UPLOAD_FOLDER || 'uploads';
+
+const resolveFolder = (req = {}) => {
+  const url = (req.baseUrl || '').toLowerCase();
+  if (url.includes('menu-slides')) return `${baseFolder}/menu-slides`;
+  if (url.includes('menu')) return `${baseFolder}/menu`;
+  if (url.includes('gallery')) return `${baseFolder}/gallery`;
+  if (url.includes('notice')) return `${baseFolder}/notice`;
+  if (url.includes('sauce')) return `${baseFolder}/sauces`;
+  if (url.includes('catering')) return `${baseFolder}/catering`;
+  return baseFolder;
+};
+
+const uploadToCloudinary = async (file, folder) => {
+  const file64 = file.buffer?.toString('base64');
+  if (!file64) {
+    throw new Error('Unable to read uploaded file buffer');
+  }
+
+  const uploadOptions = {
+    folder,
+    resource_type: 'auto',
+  };
+
+  if (process.env.CLOUDINARY_UPLOAD_PRESET) {
+    uploadOptions.upload_preset = process.env.CLOUDINARY_UPLOAD_PRESET;
+  }
+
+  const result = await cloudinary.uploader.upload(
+    `data:${file.mimetype};base64,${file64}`,
+    uploadOptions,
+  );
+
+  return result;
+};
+
+const enrichFileWithCloudinaryData = (file, result) => {
+  file.path = result.secure_url;
+  file.filename = result.public_id;
+  file.size = result.bytes;
+  file.cloudinary = {
+    publicId: result.public_id,
+    version: result.version,
+    format: result.format,
+    resourceType: result.resource_type,
+    url: result.secure_url,
+  };
+  delete file.buffer; // no longer needed and can be large
+  return file;
+};
+
+const withCloudinary = (multerMiddleware, { isArray = false, isFields = false } = {}) => {
+  return (req, res, next) => {
+    multerMiddleware(req, res, async (err) => {
+      if (err) return next(err);
+
+      try {
+        const folder = resolveFolder(req);
+
+        if (!isArray && !isFields && req.file) {
+          const uploaded = await uploadToCloudinary(req.file, folder);
+          enrichFileWithCloudinaryData(req.file, uploaded);
+        } else if (isArray && Array.isArray(req.files) && req.files.length) {
+          const uploads = await Promise.all(
+            req.files.map((file) => uploadToCloudinary(file, folder))
+          );
+          req.files = req.files.map((file, idx) => enrichFileWithCloudinaryData(file, uploads[idx]));
+        } else if (isFields && req.files && typeof req.files === 'object') {
+          const entries = Object.entries(req.files);
+          for (const [key, list] of entries) {
+            if (!Array.isArray(list)) continue;
+            const uploads = await Promise.all(
+              list.map((file) => uploadToCloudinary(file, folder))
+            );
+            req.files[key] = list.map((file, idx) => enrichFileWithCloudinaryData(file, uploads[idx]));
+          }
+        }
+
+        next();
+      } catch (uploadErr) {
+        uploadErr.status = uploadErr.status || 400;
+        next(uploadErr);
+      }
+    });
+  };
+};
+
+const upload = {
+  single(fieldName) {
+    return withCloudinary(uploadBase.single(fieldName));
+  },
+  array(fieldName, maxCount) {
+    return withCloudinary(uploadBase.array(fieldName, maxCount), { isArray: true });
+  },
+  fields(fieldConfig) {
+    return withCloudinary(uploadBase.fields(fieldConfig), { isFields: true });
+  },
+  none() {
+    return uploadBase.none();
+  },
+  any() {
+    return withCloudinary(uploadBase.any(), { isArray: true });
+  },
+};
 
 // Error handling middleware
 const handleMulterError = (err, req, res, next) => {

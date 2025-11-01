@@ -6,7 +6,7 @@ A comprehensive Node.js backend API built with Express.js, MongoDB, and Mongoose
 
 - **RESTful API** with Express.js
 - **MongoDB** integration with Mongoose ODM
-- **File upload** handling with Multer
+- **File upload** handling with Multer + Cloudinary
 - **CORS** support for frontend integration
 - **Environment configuration** with dotenv
 - **Comprehensive error handling**
@@ -19,7 +19,8 @@ A comprehensive Node.js backend API built with Express.js, MongoDB, and Mongoose
 - Express.js
 - MongoDB
 - Mongoose
-- Multer (file uploads)
+- Multer (multipart parsing)
+- Cloudinary (asset storage)
 - CORS
 - dotenv
 
@@ -109,14 +110,36 @@ PORT=5000
 NODE_ENV=development
 MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+# Optional customisations
+CLOUDINARY_UPLOAD_FOLDER=uploads
+CLOUDINARY_UPLOAD_PRESET=
 ```
 
 ## File Uploads
 
-- Images are uploaded to the `/uploads` directory
-- Supported formats: JPEG, JPG, PNG, GIF, WebP
-- Maximum file size: 5MB (configurable)
-- Files are served statically at `/uploads/*`
+- Images are uploaded directly to Cloudinary using secure URLs
+- Supported formats: JPEG, JPG, PNG, GIF, WebP (configurable via `ALLOWED_FILE_TYPES`)
+- Maximum file size: 5MB by default (configurable via `MAX_FILE_SIZE`)
+- Uploaded files are grouped into folders based on the API route (e.g. `uploads/menu`, `uploads/gallery`)
+- Existing assets previously stored under `/uploads` remain accessible via Express static serving for backwards compatibility
+
+### Migrating existing local uploads
+
+If you previously stored images on disk in `BE/uploads`, run the migration script after
+configuring your Cloudinary and MongoDB credentials:
+
+```bash
+cd BE
+# ensure dependencies are installed and environment variables are set
+npm run migrate:uploads
+```
+
+The script uploads every referenced file to Cloudinary and updates database records to use the
+new secure URLs. Missing files are skipped with a warning so you can re-upload them manually.
+
 
 ## Database Models
 
