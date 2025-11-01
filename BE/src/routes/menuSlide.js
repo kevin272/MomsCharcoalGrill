@@ -40,8 +40,8 @@ router.post(
   '/',
   authenticateToken,
   requirePermission('manage-gallery'), // reuse an existing permission you already have
-  handleMulterError,
   upload.single('image'),
+  handleMulterError,
   async (req, res) => {
     try {
       if (!req.file) return sendError(res, 400, 'Image file is required');
@@ -49,7 +49,7 @@ router.post(
 
       const slide = await MenuSlide.create({
         type: req.body.type,
-        image: `/uploads/menu/${req.file.filename}`,
+        image: req.file.path,
         title: req.body.title || '',
         caption: req.body.caption || '',
         linkTo: req.body.linkTo || '',
@@ -69,8 +69,8 @@ router.put(
   '/:id',
   authenticateToken,
   requirePermission('manage-gallery'),
-  handleMulterError,
   upload.single('image'),
+  handleMulterError,
   async (req, res) => {
     try {
       const updateData = { ...req.body };
@@ -83,7 +83,7 @@ router.put(
         updateData.isActive = updateData.isActive !== 'false';
       }
       if (req.file) {
-        updateData.image = `/uploads/menu/${req.file.filename}`;
+        updateData.image = req.file.path;
       }
 
       const slide = await MenuSlide.findByIdAndUpdate(
@@ -125,8 +125,8 @@ router.post(
   '/bulk',
   authenticateToken,
   requirePermission('manage-gallery'),
-  handleMulterError,
   upload.array('images', 50),
+  handleMulterError,
   async (req, res) => {
     try {
       if (!req.files?.length) return sendError(res, 400, 'At least one image file is required');
@@ -167,7 +167,7 @@ router.post(
 
         return {
           ...common,
-          image: `/uploads/menu/${file.filename}`,
+          image: file.path,
           title,
           caption,
           linkTo,
@@ -188,7 +188,6 @@ router.post(
   '/reorder',
   authenticateToken,
   requirePermission('manage-gallery'),
-  handleMulterError,
   async (req, res) => {
     try {
       const { orders } = req.body;
