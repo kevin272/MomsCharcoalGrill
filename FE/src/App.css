@@ -1725,9 +1725,9 @@ html {
 }
 
 .menu-page .menu-image img {
-  width: 48px;
+  width: fit-content;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 /* Download Section */
