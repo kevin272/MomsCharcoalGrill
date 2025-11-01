@@ -60,9 +60,8 @@ router.post('/',
     try {
       const body = req.body;
 
-      // If a file is uploaded, store a relative URL that maps under /uploads
       if (req.file) {
-        body.imageUrl = `/uploads/${req.file.filename}`;
+        body.imageUrl = req.file.path;
       }
 
       const created = await Notice.create(body);
@@ -84,7 +83,7 @@ router.put('/:id',
       const updates = { ...req.body };
 
       if (req.file) {
-        updates.imageUrl = `/uploads/${req.file.filename}`;
+        updates.imageUrl = req.file.path;
       }
 
       const updated = await Notice.findByIdAndUpdate(id, updates, { new: true });

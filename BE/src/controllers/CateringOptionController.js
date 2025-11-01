@@ -63,18 +63,10 @@ exports.create = async (req, res) => {
       slug = `${slugBase}-${i++}`;
     }
 
-// Compute relative path that matches how Express serves /uploads
-let image = '';
-if (req.file) {
-  // Get subfolder relative to /uploads
-  const fullPath = req.file.path.replace(/\\/g, '/'); // normalize backslashes on Windows
-  const idx = fullPath.lastIndexOf('/uploads');
-  if (idx !== -1) {
-    image = fullPath.substring(idx); // e.g. /uploads/menu/image_123.png
-  } else {
-    image = `/uploads/${req.file.filename}`;
-  }
-}
+    let image = '';
+    if (req.file) {
+      image = req.file.path;
+    }
 
     const doc = await CateringOption.create({
       title, slug, description, priceType, price, minPeople, feeds,
@@ -105,7 +97,7 @@ exports.update = async (req, res) => {
       try { payload.items = JSON.parse(payload.items); } catch(_) { payload.items = []; }
     }
 
-    if (req.file) payload.image = req.file.filename;
+    if (req.file) payload.image = req.file.path;
 
     const doc = await CateringOption.findByIdAndUpdate(id, payload, { new: true }).populate('items');
     if (!doc) return res.status(404).json({ success: false, message: 'Not found' });
