@@ -115,6 +115,9 @@ CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
 # CLOUDINARY_URL=cloudinary://key:secret@your-cloud-name
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 # Optional customisations
 CLOUDINARY_UPLOAD_FOLDER=uploads
 CLOUDINARY_UPLOAD_PRESET=

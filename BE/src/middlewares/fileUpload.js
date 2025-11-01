@@ -33,6 +33,22 @@ Object.entries(configKeyMap).forEach(([envKey, configKey]) => {
 
 cloudinary.config(cloudinaryConfig);
 
+
+const missingVars = REQUIRED_VARS.filter((key) => !process.env[key]);
+if (missingVars.length) {
+  console.warn(
+    `⚠️  Cloudinary configuration incomplete. Missing: ${missingVars.join(', ')}. ` +
+    'File uploads will fail until these environment variables are provided.'
+  );
+}
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
 const storage = multer.memoryStorage();
 
 // File filter function
