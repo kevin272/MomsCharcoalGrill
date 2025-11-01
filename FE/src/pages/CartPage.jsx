@@ -50,7 +50,7 @@ function resolveImage(src) {
   const gst = Math.round(subtotal * 0.1);
   const deliveryCharge = cartItems.length > 0 ? 50 : 0;
   const grandTotal = subtotal + gst + deliveryCharge;
-  const API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");
+  const VITE_API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");
 
   const handlePlaceOrder = () => {
     if (cartItems.length === 0) {
@@ -66,52 +66,68 @@ function resolveImage(src) {
   };
 
 const handleCustomerDetailsSubmit = async () => {
-    setShowCustomerDetails(false);
+  setShowCustomerDetails(false);
 
-    const orderData = {
-      items: cartItems.map((item) => ({
-        menuItem: item.menuItem || null,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        qty: item.quantity,
-        
-      })),
-      customer: {
-        name: customerDetails.fullName,
-        phone: customerDetails.phoneNumber,
-        email: customerDetails.email, // ✅ included
-        address: [
-          customerDetails.street,
-          customerDetails.suburb,
-          customerDetails.state,
-          customerDetails.postCode,
-        ]
-          .filter(Boolean)
-          .join(', '),
-      },
-      paymentMode, // ✅ dynamic selection from user
-
-      notes: specialRequirements,
-    };
-
-    try {
-      const resp = await fetch(`${API}'orders/checkout'`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        clearCart();
-        alert('Order placed successfully! You will receive an email confirmation.');
-      } else {
-        alert('Failed to place order: ' + (data.message || 'Unknown error'));
-      }
-    } catch (err) {
-      alert('Failed to place order: ' + err.message);
-    }
+  const orderData = {
+    items: cartItems.map((item) => ({
+      menuItem: item.menuItem || null,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      qty: item.quantity,
+    })),
+    customer: {
+      name: customerDetails.fullName,
+      phone: customerDetails.phoneNumber,
+      email: customerDetails.email || '',
+      address: [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
+        .filter(Boolean)
+        .join(', '),
+    },
+    paymentMode,
+    notes: specialRequirements,
   };
+
+  // --- Resolve API base robustly ---
+  const RAW = (import.meta?.env?.VITE_API_URL || '').trim();
+  const devGuess = (() => {
+    const isLocal =
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1';
+    return isLocal ? 'http://localhost:5000/api/' : '';
+  })();
+  const API_BASE = (RAW || devGuess).replace(/\/+$/, '') + '/';
+  const url = new URL('orders/checkout', API_BASE).href;
+
+  console.log('Placing order →', url);
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(orderData),
+    });
+
+    const ct = resp.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const text = await resp.text().catch(() => '');
+      throw new Error(`Non-JSON response ${resp.status} ${resp.statusText}. Snippet: ${text.slice(0, 160)}`);
+    }
+
+    const data = await resp.json();
+    if (!resp.ok || data?.success === false) {
+      throw new Error(data?.message || `Request failed (${resp.status})`);
+    }
+
+    clearCart();
+    alert(`Order placed successfully! Order ID: ${data?.data?._id || data?.data?.id || 'N/A'}`);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to place order: ' + (err?.message || 'Unknown error'));
+  }
+};
+
 
   const handleInputChange = (field, value) => {
     setCustomerDetails((prev) => ({ ...prev, [field]: value }));
