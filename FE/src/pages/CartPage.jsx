@@ -50,6 +50,7 @@ function resolveImage(src) {
   const gst = Math.round(subtotal * 0.1);
   const deliveryCharge = cartItems.length > 0 ? 50 : 0;
   const grandTotal = subtotal + gst + deliveryCharge;
+  const API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");
 
   const handlePlaceOrder = () => {
     if (cartItems.length === 0) {
@@ -95,7 +96,7 @@ const handleCustomerDetailsSubmit = async () => {
     };
 
     try {
-      const resp = await fetch('/api/orders/checkout', {
+      const resp = await fetch(`${API}'orders/checkout'`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
