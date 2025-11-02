@@ -77,14 +77,14 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 20px; /* reduced padding for slimmer header */
-    height: 170px;                  /* fixed, compact height */
-  
-  gap: 16px;
+  padding: 10px 20px; /* reduced padding for slimmer header */
+    height: 200px;                  /* fixed, compact height */
+  padding-right: 50px;
+  gap: 0px;
 }
 /* logo at left (small round mark in mock) */
 .logo img {
-  height: 200px;                     /* was 80px */
+  height:220px;                     /* was 80px */
   width: auto;
   object-fit: contain;
   padding-top :10px;
@@ -96,14 +96,15 @@ html {
   display: flex;
   align-items: center;
   gap: 26px;
+  padding-top: 30px;
   margin-left: auto;
   padding-right: 50px;                /* ensures nav fills middle */
 }
 
 .nav-link {
   font-family: 'Afacad', sans-serif;
-  font-weight: 700;
-  font-size: 19px;                  /* smaller like mock */
+  font-weight: 100;
+  font-size: 16px;                  /* smaller like mock */
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #fff;
@@ -121,9 +122,12 @@ html {
 
 /* cart icon on far right */
 .cart-icon img {
+  position: absolute;
   width: 40px;
   height: 40px;
   display: block;
+  padding-top: 300px;
+  padding-right: 30px;
 }
 
 /* tiny top-right address line (white, phone in yellow + underline) */
@@ -132,8 +136,9 @@ html {
   top: 6px;
   right: 24px;
   background: transparent;
-  padding: 0;
+  padding-right: 100px;
   text-align: right;
+  margin-bottom: 20px;
 }
 .contact-info p {
   font-family: 'Afacad', sans-serif;
@@ -154,27 +159,39 @@ html {
 
 /* Hero Section *//* Canvas & layout */
 .hero-section {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 520px;
   gap: 32px;
   align-items: center;
   min-height: 72vh;
-  padding: 56px 64px;
+  padding: 0px 64px;
   overflow: hidden;
 
   background: linear-gradient(to right, #322f0a 0%, #322f0a 50%, #322f0a 50%, transparent 100%);
 }
 .hero-section::after { display: none !important; } /* kill extra overlay */
-.hero-crescent { display: none !important; }       /* use ring version */
+.hero-crescent { display: none !important; position: relative; }       /* use ring version */
 
 /* Left column */
-.hero-content { max-width: 560px; }
-.hero-offer-banner{
-  display:inline-block;background:#FFF200;color:#000;
-  font:600 18px/1.2 'Afacad',system-ui,sans-serif;
-  padding:14px 18px;border-radius:4px;margin-bottom:28px;
-  left: 0%;
-  top:  0%;
+.hero-content {
+  max-width: 560px;
+  padding-top: clamp(40px, 5vw, 64px);/* reserve space so title never collides */
+}
+
+
+.hero-section {
+  position: relative;            /* keep */
+  display: grid;
+  grid-template-columns: 1fr 520px;
+  gap: 32px;
+  align-items: center;
+  min-height: 72vh;
+  padding: 0 64px;
+  overflow: hidden;
+  background: linear-gradient(to right, #322f0a 0%, #322f0a 50%, #322f0a 50%, transparent 100%);
+  isolation: isolate;            /* NEW: isolates z-index and layout */
+  contain: layout paint;         /* NEW: prevents outside relayout jitter */
 }
 .hero-title{
   font-family:'Amarante',serif;
@@ -3349,6 +3366,7 @@ html {
   line-height: normal;
   text-align: center;
   align-self: stretch;
+  
 }
 
 .contact-number {
@@ -4125,17 +4143,7 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
   color: #222;
   border: 1px dashed rgba(0,0,0,.1);
 }
-.hero-offer-banner {
-  background: #FFF200;
-  color: #000;
-  font-family: 'Afacad', sans-serif;
-  font-weight: 700;
-  font-size: 22px;
-  padding: 10px 25px;
-  display: inline-block;
-  margin-bottom: 20px;
-  margin-left: none;
-}
+
 
 /* ===========================
    CONTACT DASHBOARD – BASE
@@ -5201,17 +5209,16 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 
 /* When stuck, fix it to top and add depth */
 .header.is-stuck {
+  margin-top: none !important; 
   position: fixed;
+  height: 150px;
   top: 0; left: 0; right: 0;
   z-index: 9999;
   background: #000;
   box-shadow: 0 6px 24px rgba(0,0,0,.35);
 }
 
-/* Prevent layout jump by pushing content down by the header height */
-/* main { padding-top: var(--header-h); } */
 
-/* Optional: tasteful shrink of the logo when stuck */
 .logo img {
   transition: height .25s ease, transform .25s ease;
 }
@@ -5219,11 +5226,26 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   height: 150px;   /* was 200px; adjust to taste */
   transform: translateY(0);
 }
+.header.is-stuck .container {
+  height: 140px;
+    padding-top: 0px !important;
+  padding-bottom: 0px !important;
 
+}
+.header.is-stuck .contact-info{
+  display: none;
+}
+
+.header.is-stuck .navigation {
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
 /* Optional: slightly tighter nav when stuck */
 .header.is-stuck .nav-link {
   min-height: 36px;
   padding: 4px 8px;
+    margin-top: none !important; 
+
 }
 @media (max-width: 767px) {
   .header.is-stuck .nav-link {
