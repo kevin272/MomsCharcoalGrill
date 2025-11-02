@@ -180,18 +180,23 @@ html {
 }
 
 
-.hero-section {
-  position: relative;            /* keep */
-  display: grid;
-  grid-template-columns: 1fr 520px;
-  gap: 32px;
-  align-items: center;
-  min-height: 72vh;
-  padding: 0 64px;
-  overflow: hidden;
-  background: linear-gradient(to right, #322f0a 0%, #322f0a 50%, #322f0a 50%, transparent 100%);
-  isolation: isolate;            /* NEW: isolates z-index and layout */
-  contain: layout paint;         /* NEW: prevents outside relayout jitter */
+
+.hero-offer-banner{
+  position: absolute;
+  top: clamp(8px, 2.2vw, 30px);       /* FIX: px/vw instead of % */
+  left: 0;
+  z-index: 2;
+
+  display:inline-block;
+  background:#FFF200; color:#000;
+  font:800 32px/1.2 'Afacad',system-ui,sans-serif;
+  padding:14px 18px; margin:0;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  width: 500px;
+  text-align: center;
+  /* Micro anti-jitter */
+  transform: translateZ(0);
+  will-change: transform;
 }
 .hero-title{
   font-family:'Amarante',serif;
