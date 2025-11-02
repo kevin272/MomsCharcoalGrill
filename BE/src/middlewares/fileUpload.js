@@ -7,6 +7,33 @@ const REQUIRED_VARS = [
   'CLOUDINARY_API_SECRET',
 ];
 
+const usingCloudinaryUrl = !!process.env.CLOUDINARY_URL;
+const missingVars = REQUIRED_VARS.filter((key) => !process.env[key]);
+
+if (!usingCloudinaryUrl && missingVars.length) {
+  console.warn(
+    `⚠️  Cloudinary configuration incomplete. Missing: ${missingVars.join(', ')}. ` +
+    'File uploads will fail until these environment variables are provided.'
+  );
+}
+
+const cloudinaryConfig = { secure: true };
+
+const configKeyMap = {
+  CLOUDINARY_CLOUD_NAME: 'cloud_name',
+  CLOUDINARY_API_KEY: 'api_key',
+  CLOUDINARY_API_SECRET: 'api_secret',
+};
+
+Object.entries(configKeyMap).forEach(([envKey, configKey]) => {
+  if (process.env[envKey]) {
+    cloudinaryConfig[configKey] = process.env[envKey];
+  }
+});
+
+cloudinary.config(cloudinaryConfig);
+
+
 const missingVars = REQUIRED_VARS.filter((key) => !process.env[key]);
 if (missingVars.length) {
   console.warn(
