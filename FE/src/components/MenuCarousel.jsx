@@ -33,6 +33,7 @@ function scoreItemForBucket(item, bucket) {
 }
 
 function pickMatches(items = [], minScore = 1) {
+  // returns [{ bucket, item, score }]
   const ranked = BUCKETS.map((b) => {
     const candidates = items
       .map((it, idx) => ({ it, idx, score: scoreItemForBucket(it, b) }))
@@ -59,26 +60,68 @@ export default function MenuCarousel({
   interval = 4000,
 }) {
   const [index, setIndex] = useState(0);
-  const [slides, setSlides] = useState([]); // normalized to exactly 4 when there is data
+  const [slides, setSlides] = useState([]); // will be EXACTLY 4 when we have data
   const [loading, setLoading] = useState(true);
 
-  const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "";
+  const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
   const SERVER_URL = API_URL.replace(/\/api$/, "");
 
-  function joinImageUrl(path) {
+  const joinImageUrl = (path) => {
     if (!path) return "";
     if (/^https?:\/\//i.test(path)) return path;
+    // If SERVER_URL is empty, leave relative path as-is
+    if (!SERVER_URL) return path.startsWith("/") ? path : `/${path}`;
     return `${SERVER_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-  }
+  };
 
-  // Normalize to exactly 4 items when we have data
-  const pickFour = (arr) => {
+  // Ensure exactly 4 card objects, padded/filled if needed
+  const ensureFour = (arr) => {
     const a = arr.slice(0, 4);
     if (a.length === 0) return [];
-    if (a.length === 1) return [a[0], a[0], a[0], a[0]];
-    if (a.length === 2) return [a[0], a[1], a[0], a[1]];
-    if (a.length === 3) return [a[0], a[1], a[2], a[0]];
-    return a;
+    while (a.length < 4) a.push(a[a.length % Math.min(arr.length, 1) || 0] || a[0]);
+    return a.slice(0, 4);
+  };
+
+  // Build up to 4 cards (two slides x 2 items)
+  const buildCards = (data) => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    // prefer items that have an image we can render
+    const withImg = data.filter((d) => !!(d?.image || d?.img));
+
+    const topMatches = pickMatches(withImg, 1);
+    const used = new Set(topMatches.map(({ item }) => item)); // same references, ok
+    const remaining = withImg.filter((it) => !used.has(it));
+    const secondMatches = pickMatches(remaining, 1);
+
+    const toCard = (bucket, item) => ({
+      title: bucket,
+      subtitle: item?.name || "",
+      src: joinImageUrl(item?.image || item?.img || ""),
+      alt: item?.name || bucket,
+    });
+
+    // Start with one per bucket (max 4)
+    const firstWave = topMatches.map(({ bucket, item }) => toCard(bucket, item));
+
+    // Fill any gaps (still keeping bucket titles consistent)
+    const secondWave = secondMatches.map(({ bucket, item }) => toCard(bucket, item));
+
+    // If still short, fallback to any remaining items with generic titles
+    const fallback = remaining
+      .filter((it) => !!(it?.image || it?.img))
+      .map((it) => ({
+        title: it?.category || "Featured",
+        subtitle: it?.name || "",
+        src: joinImageUrl(it?.image || it?.img || ""),
+        alt: it?.name || it?.category || "Featured",
+      }));
+
+    const combined = [...firstWave, ...secondWave, ...fallback].filter(
+      (c) => !!c.src
+    );
+
+    return ensureFour(combined);
   };
 
   useEffect(() => {
@@ -88,23 +131,16 @@ export default function MenuCarousel({
       try {
         const url = fetchUrl || `${API_URL}/menu-items`;
         const res = await axiosInstance.get(url);
-        const data = Array.isArray(res.data?.data)
+        const raw = Array.isArray(res.data?.data)
           ? res.data.data
           : (Array.isArray(res.data) ? res.data : []);
-
-        const matches = pickMatches(data, 1);
-        const built = matches.map(({ bucket, item }) => ({
-          title: bucket,
-          subtitle: item?.name || "",
-          src: joinImageUrl(item?.image || item?.img || ""),
-          alt: item?.name || bucket,
-        }));
+        const built = buildCards(raw);
 
         if (mounted) {
-          setSlides(pickFour(built));
+          setSlides(built);
           setIndex(0);
         }
-      } catch {
+      } catch (err) {
         if (mounted) {
           setSlides([]);
           setIndex(0);
@@ -119,7 +155,7 @@ export default function MenuCarousel({
   // Build EXACTLY two slides with two items each from `slides`
   const pages = useMemo(() => {
     if (slides.length === 0) return [];
-    // slides is exactly 4 when data exists
+    // slides is guaranteed to be 4 here
     return [slides.slice(0, 2), slides.slice(2, 4)];
   }, [slides]);
 
@@ -129,7 +165,7 @@ export default function MenuCarousel({
   const next = () => setIndex((i) => wrap(i + 1));
   const prev = () => setIndex((i) => wrap(i - 1));
 
-  // Autoplay
+  // Autoplay (only if we truly have 2 pages)
   useEffect(() => {
     if (!autoplay || pageCount <= 1) return;
     const id = setInterval(next, interval);
@@ -224,12 +260,14 @@ export default function MenuCarousel({
             >
               <div
                 className="menu-page-inner"
+                // FIX: 2 columns (not 4) because page shows exactly two cards
                 style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}
               >
                 {pair.map((it, i) => (
                   <div className="menu-item" key={`${it.title}-${i}`}>
                     <img src={it.src} alt={it.alt || it.title} />
                     <h3>{it.title}</h3>
+                    {it.subtitle ? <p className="subtitle">{it.subtitle}</p> : null}
                   </div>
                 ))}
               </div>

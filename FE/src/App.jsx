@@ -30,11 +30,14 @@ import MenuSlidesDashboard from './pages/Dashboardpages/MenuSlidesDashboard';
 import {ToastProvider}  from './components/common/ToastProvider';
 import NoticeDashboard from './pages/Dashboardpages/NoticeDashboard';
 import NoticeAe from './pages/Dashboardpages/NoticeAE';
+import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
   return (
     <>
+                      <ScrollToTop behavior="auto"/>
+
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />

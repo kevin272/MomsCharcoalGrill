@@ -1,95 +1,102 @@
-import React, { useState } from 'react'
-import axios from 'axios'
+import { useState } from "react";
 
-function ContactSection() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    contact: '',
-    enquiry: ''
-  })
-  const [success, setSuccess] = useState('')
-  const [error, setError] = useState('')
+export default function ContactSection() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    contact: "",
+    enquiry: "",
+  });
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+  const update = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}contact`, {
-        name: formData.name,
-        email: formData.email,
-        number: formData.contact,
-        subject: 'General Enquiry',
-        message: formData.enquiry
-      })
-      if (res.data.success) {
-        setSuccess('Your message has been sent successfully!')
-        setError('')
-        setFormData({ name: '', email: '', contact: '', enquiry: '' })
-      }
-    } catch (err) {
-      setError('Failed to send message. Please try again later.')
-      setSuccess('')
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    // minimal validation for the mock layout
+    if (!form.name || !form.email || !form.enquiry) {
+      setError("Please fill Name, Email and Enquiry.");
+      return;
     }
-  }
+
+    try {
+      setSending(true);
+      // If/when you hook this to your API, do it here:
+      // await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(form) });
+      // For now, just clear:
+      setForm({ name: "", email: "", contact: "", enquiry: "" });
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <section className="contact-section">
-    
+    <section className="contact-section" id="contact">
+      <h2>CONTACT US</h2>
 
-      <div className="container">
-        <h2>CONTACT US</h2>
+      <form className="contact-form" onSubmit={submit} noValidate>
+        {/* LEFT COLUMN */}
+        <div className="form-left">
+          <input
+            type="text"
+            name="name"
+            placeholder="NAME"
+            value={form.name}
+            onChange={update}
+            aria-label="Name"
+          />
 
-        <form onSubmit={handleSubmit} className="contact-form">
-          <div className="form-left">
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="NAME"
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="EMAIL"
-              required
-            />
-            <input
-              type="tel"
-              name="contact"
-              value={formData.contact}
-              onChange={handleInputChange}
-              placeholder="CONTACT"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            name="email"
+            placeholder="EMAIL"
+            value={form.email}
+            onChange={update}
+            aria-label="Email"
+          />
 
-          <div className="form-right">
-            <textarea
-              name="enquiry"
-              value={formData.enquiry}
-              onChange={handleInputChange}
-              placeholder="ENQUIRY"
-              required
-            />
-          </div>
+          <input
+            type="tel"
+            name="contact"
+            placeholder="CONTACT"
+            value={form.contact}
+            onChange={update}
+            aria-label="Contact number"
+          />
+        </div>
 
-          <button type="submit" className="send-button">Send Message</button>
-        </form>
+        {/* RIGHT COLUMN */}
+        <div className="form-right">
+          <textarea
+            name="enquiry"
+            placeholder="ENQUIRY"
+            value={form.enquiry}
+            onChange={update}
+            aria-label="Enquiry"
+          />
+        </div>
 
-        {success && <p className="contact-success">{success}</p>}
-        {error && <p className="contact-error">{error}</p>}
-      </div>
+        {/* SUBMIT */}
+        <div className="submit-row contact-submit">
+          <button type="submit" className="send-button" disabled={sending}>
+            {sending ? "Sending..." : "Send Message"}
+          </button>
+        </div>
+      </form>
+
+      {error ? (
+        <p style={{ color: "#FAEB30", marginTop: 12, fontFamily: "Afacad, sans-serif" }}>
+          {error}
+        </p>
+      ) : null}
     </section>
-  )
+  );
 }
-
-export default ContactSection

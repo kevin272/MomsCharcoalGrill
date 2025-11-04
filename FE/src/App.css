@@ -394,6 +394,7 @@ html {
   .hero-content > * { margin:0 !important; }
 
   .hero-offer-banner {
+    position: relative;
     font-size:16px;
     padding:12px 12px;
     margin:0 auto 4px !important;   /* reduce banner→next item gap */
@@ -725,15 +726,16 @@ html {
   top: 0;
   right: 0;
   margin-right: 30px;
-  width: 90%; /* yellow covers only right portion */
+  width: 80%;
   height: 100%;
   background: url("/YellowBg.png") no-repeat center right/cover;
   z-index: 1;
+  opacity: 1.2;
 }
 
 .about-section .container {
   display: flex;
-  gap: 60px;
+  gap: 10px;
   align-items: center;
 
 }
@@ -751,6 +753,7 @@ html {
   object-fit: cover;
   border-radius: 8px;
   max-height: 76vh;          /* avoid overflowing very short viewports */
+  padding-left: 100px;
 }
 
 .about-content {
@@ -762,11 +765,11 @@ html {
 .about-content h2 {
   font-family: 'Afacad', sans-serif;
   font-weight: 700;
-  font-size: 86px;
+  font-size: 78px;
   color: #FAEB30;
   line-height: 1.2;
   margin-bottom: 30px;
-  padding-right: 20px;
+  padding-right: 120px;
 }
 
 .about-content p {
@@ -776,7 +779,7 @@ html {
   color: #fff;
   line-height: 1.5;
   margin-bottom: 20px;
-    padding-right: 20px;
+    padding-right: 150px;
 
 }
 @media (max-width: 768px){
@@ -800,7 +803,7 @@ html {
 }
 .contact-section{
   background:#000;            /* black background like mock */
-  padding:80px 20px;
+  padding:0px 20px;
   text-align:center;
   margin-right: 300px;
   margin-left: 300px;
@@ -824,10 +827,11 @@ html {
   max-width:1200px;
   margin:0 auto 0;
   align-items:start;
+
 }
 @media (max-width: 1366px){
   .contact-section {
-    padding: 40px 15px;
+    padding: 0px 15px;
     margin: 100px 30px;
   }
 }
@@ -835,7 +839,9 @@ html {
 .form-left{
   display:grid;
   gap:20px;
-}.form-right{ flex:1; }
+
+}.form-right{ flex:1;
+}
 
 /* Fields */
 .contact-form input,
@@ -1826,7 +1832,7 @@ html {
 /* Catering Hero Section */
 .catering-hero {
   position: relative;
-  height: 400px;
+  height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2554,7 +2560,6 @@ html {
 .catering-download-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 100px;
 }
 
 .catering-download-btn {
@@ -4521,7 +4526,7 @@ tbody.divide-y tr{border-top:1px solid rgba(255,255,255,.1)}
 .breadcrumb-section {
   position: relative;
   width: 100%;
-  height: 250px; /* 🟡 general, balanced height */
+  height: 200px; /* 🟡 general, balanced height */
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -5379,14 +5384,14 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 /* === FOOTER (match mock) — overrides === */
 .footer{
   background:#000;                     /* pure black like mock */
-  margin:60px 0 100px;                 /* no side margin */
-  padding:60px 0 80px;
+  margin:60px 0px 0px;                 /* no side margin */
+  padding:0px 0px 80px;
   --yellow:#FAEB30;
 }
 
 .footer .container{
   max-width:1200px;                    /* keep content tight under rails */
-  margin:0 auto;
+  margin:0 0;
   gap:48px;
 }
 
@@ -5490,13 +5495,14 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 .footer{
   background:#000;
   margin:0 0 90px;                 /* no side margins */
-  padding:60px 0 80px;
+  padding:0px 0 0px;
+  padding-bottom: 90px;
   --yellow:#FAEB30;
 }
 
 .footer .container{
   max-width:1400px;
-  margin:0 auto;
+  margin:0px auto;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -5894,5 +5900,143 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
     top: 4px;
     right: 4px;
     padding: 4px;
+  }
+}
+
+
+.contact-section {
+  background: #000;
+  padding: 100px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Title */
+.contact-section h2 {
+  font-family: 'Afacad', sans-serif;
+  font-weight: 700;
+  font-size: 52px;
+  letter-spacing: 0.03em;
+  color: #FAEB30;
+  margin-bottom: 60px;
+}
+
+/* Grid wrapper */
+.contact-form {
+  display: grid;
+  grid-template-columns: .4fr .6fr;        /* 2-column layout */
+  gap: 40px 60px;                        /* row-gap & column-gap */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+/* Left side (three rows) */
+.form-left {
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 40px;
+}
+
+/* Right side spans full height of left */
+.form-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100% !important;
+}
+
+/* Fields */
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  background: #000;
+  border: 2px solid #fff;
+  padding: 18px 22px;
+  font-family: 'Afacad', sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-form input {
+  height: 60px;                         /* taller inputs like mock */
+}
+
+.contact-form textarea {
+  flex: 1;
+  height: 100%;
+  min-height: 100%;
+  resize: none;
+}
+
+/* Placeholder style */
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: #fff;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Focus */
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: #FAEB30;
+  box-shadow: 0 0 0 2px rgba(250, 235, 48, 0.2);
+}
+
+/* Submit row */
+.submit-row {
+  grid-column: 1 / -1; /* spans both columns */
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+/* Button */
+.send-button {
+  background-color: #FFF200;
+  border: none;
+  padding: 18px 40px;
+  font-family: 'Afacad', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #000;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.1s ease;
+  min-width: 300px;
+  border-radius: 6px;
+}
+
+.send-button:hover {
+  background-color: #e6d42b;
+}
+
+.send-button:active {
+  transform: translateY(1px);
+}
+
+/* Responsive behavior */
+@media (max-width: 992px) {
+  .contact-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-right {
+    order: 4; /* move below fields if stacked */
+  }
+
+  .contact-form textarea {
+    min-height: 220px;
+  }
+
+  .submit-row {
+    margin-top: 30px;
   }
 }

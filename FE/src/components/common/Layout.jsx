@@ -8,6 +8,7 @@ import NoticeBanner from "../NoticeBanner";
 const Layout = ({ wrapperClass = "" }) => {
   return (
     <div className={`app-layout ${wrapperClass}`}>
+      
       <NoticeBanner />
 
       <Header />

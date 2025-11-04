@@ -1,0 +1,95 @@
+diff --git a/src/components/MenuCarousel.jsx b/src/components/MenuCarousel.jsx
+@@
+-  // Normalize to exactly 4 items when we have data
+-  const pickFour = (arr) => {
+-    const a = arr.slice(0, 4);
+-    if (a.length === 0) return [];
+-    if (a.length === 1) return [a[0], a[0], a[0], a[0]];
+-    if (a.length === 2) return [a[0], a[1], a[0], a[1]];
+-    if (a.length === 3) return [a[0], a[1], a[2], a[0]];
+-    return a;
+-  };
++  // Normalize to exactly eight items when we have data. Each page shows
++  // four items so we want two pages of four items each (8 total). If
++  // there are fewer than eight built items, duplicate them in order
++  // until we reach eight.
++  const pickEight = (arr) => {
++    const a = arr.slice(0, 8);
++    if (a.length === 0) return [];
++    // Duplicate items in order until we have exactly 8
++    while (a.length < 8) {
++      for (const item of [...a]) {
++        if (a.length >= 8) break;
++        a.push(item);
++      }
++    }
++    return a;
++  };
+@@
+       try {
+@@
+-        const matches = pickMatches(data, 1);
+-        const built = matches.map(({ bucket, item }) => ({
+-          title: bucket,
+-          subtitle: item?.name || "",
+-          src: joinImageUrl(item?.image || item?.img || ""),
+-          alt: item?.name || bucket,
+-        }));
+-
+-        if (mounted) {
+-          setSlides(pickFour(built));
+-          setIndex(0);
+-        }
++        // Pick the top ranked item for each bucket. Then pick a second
++        // lower‑ranked item for each bucket from the remaining data. This
++        // allows us to fill a second slide with lower‑ranked candidates.
++        const topMatches = pickMatches(data, 1);
++        // Keep track of which items were used for the top picks to avoid
++        // re‑using the same item for the lower ranked slide.
++        const usedItems = new Set(topMatches.map(({ item }) => item));
++        const remaining = data.filter((it) => !usedItems.has(it));
++        const secondMatches = pickMatches(remaining, 1);
++
++        const builtTop = topMatches.map(({ bucket, item }) => ({
++          title: bucket,
++          subtitle: item?.name || "",
++          src: joinImageUrl(item?.image || item?.img || ""),
++          alt: item?.name || bucket,
++        }));
++        const builtSecond = secondMatches.map(({ bucket, item }) => ({
++          title: bucket,
++          subtitle: item?.name || "",
++          src: joinImageUrl(item?.image || item?.img || ""),
++          alt: item?.name || bucket,
++        }));
++        const built = [...builtTop, ...builtSecond];
++
++        if (mounted) {
++          setSlides(pickEight(built));
++          setIndex(0);
++        }
+@@
+   }, [fetchUrl, API_URL]);
+@@
+-  // Build EXACTLY two slides with two items each from `slides`
+-  const pages = useMemo(() => {
+-    if (slides.length === 0) return [];
+-    // slides is exactly 4 when data exists
+-    return [slides.slice(0, 2), slides.slice(2, 4)];
+-  }, [slides]);
++  // Build exactly two slides with four items each from `slides`.
++  const pages = useMemo(() => {
++    if (slides.length === 0) return [];
++    // slides will be exactly 8 when data exists (filled via pickEight).
++    return [slides.slice(0, 4), slides.slice(4, 8)];
++  }, [slides]);
+@@
+-               <div
+-                 className="menu-page-inner"
+-                 style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}
+-               >
++               <div
++                 className="menu-page-inner"
++                 style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
++               >
+*** End Patch
