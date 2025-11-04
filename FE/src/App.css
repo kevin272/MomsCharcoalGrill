@@ -795,6 +795,10 @@ html {
     border-radius: 10px;
     padding-left:0px;
   }
+  .about-section::after{
+    width: 90%;
+    border-radius: 2%;
+  }
 }
 
 /* Small phones */
@@ -5880,6 +5884,10 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 /* Responsive adjustments             */
 /* ---------------------------------- */
 @media (max-width: 768px) {
+  /* Prevent horizontal gaps on small screens */
+  .hero-figure { transform: none; }
+  .hero-section { overflow-x: hidden; }
+  .footer { overflow-x: hidden; }
   .notice-inner {
     width: 94vw;
     max-height: 88vh;
@@ -6066,9 +6074,23 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 
 
 html, body, #root, .app-layout, main, .homepage {
-  overflow-y: visible !important;
+  overflow: visible !important;
   transform: none !important;
   filter: none !important;
   contain: none !important;
 }
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; } /* fallback */
+  /* keep header ancestors clear so sticky works */
+  #root, .app-layout, main, .homepage { overflow: visible !important; }
+}
+
+
+@supports (overflow: clip) {
+  @media (max-width: 768px) {
+    html, body { overflow-x: clip; }
+  }
+}
+
+
 
