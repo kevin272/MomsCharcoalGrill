@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Amarante&display=swap');
 
-:root { --header-h: 39px; }
+:root { --header-h: 20px; --stick-offset: 140px; }
 /* Reset and base styles */
 * {
   margin: 0;
@@ -65,11 +65,12 @@ html {
 /* Header */
 /* ===== Header (like the mock) ===== */
 .header {
-  position: sticky;              /* make it stick to the top */
-  top: 0;                        /* anchor to top of viewport */
+  position: sticky;              /* sticky by default */
+  top: 0;                        /* pin at top */
   z-index: 100;                  /* stay above other elements */
   background: #000;              /* black header bar */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); /* optional subtle shadow for depth */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); /* subtle depth */
+  
 }
 
 /* three blocks: logo | nav | cart */
@@ -78,7 +79,7 @@ html {
   align-items: center;
   justify-content: space-between;
   padding: 10px 20px; /* reduced padding for slimmer header */
-    height: 200px;                  /* fixed, compact height */
+  height: 200px;
   padding-right: 50px;
   gap: 0px;
 }
@@ -395,9 +396,10 @@ html {
 
   .hero-offer-banner {
     position: relative;
+    width: 100% !important;
     font-size:16px;
     padding:12px 12px;
-    margin:0 auto 4px !important;   /* reduce banner→next item gap */
+  text-align: center;
   }
 
   /* True centering for the image */
@@ -791,6 +793,7 @@ html {
     width: 100%;
     max-width: 480px;
     border-radius: 10px;
+    padding-left:0px;
   }
 }
 
@@ -1161,12 +1164,15 @@ html {
   }
 
   .about-content h2 {
+    padding-right: 0px;
     font-size: 32px;
     line-height: 1.2;
     margin-bottom: 18px;
   }
 
   .about-content p {
+        padding-right: 0px;
+
     font-size: 16px;
     line-height: 1.5;
   }
@@ -5207,22 +5213,11 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   border-top: 1px solid rgba(255,255,255,.08);
 }
 
-
-
-/* Make header sticky by default */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: box-shadow .25s ease, background-color .25s ease, transform .25s ease;
-}
-
 /* When stuck, fix it to top and add depth */
 .header.is-stuck {
-  margin-top: none !important; 
-  position: fixed;
-  height: 150px;
-  top: 0; left: 0; right: 0;
+  height: auto;
+  position: sticky;
+  top: 0;                        /* slide into view once past offset */
   z-index: 9999;
   background: #000;
   box-shadow: 0 6px 24px rgba(0,0,0,.35);
@@ -5237,13 +5232,15 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   transform: translateY(0);
 }
 .header.is-stuck .container {
-  height: 140px;
-    padding-top: 0px !important;
+  /* Keep header height constant to avoid layout shift */
+  height: auto;
+  padding-top: 0px !important;
   padding-bottom: 0px !important;
-
 }
-.header.is-stuck .contact-info{
-  display: none;
+.header.is-stuck .contact-info {
+  transform: translateY(calc(-1 * var(--strip-h, 0px)));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .header.is-stuck .navigation {
@@ -5965,7 +5962,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 }
 
 .contact-form input {
-  height: 60px;                         /* taller inputs like mock */
+  height: 80px;                         /* taller inputs like mock */
 }
 
 .contact-form textarea {
@@ -6022,21 +6019,53 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   transform: translateY(1px);
 }
 
+/* ===== MenuCarousel pagination layout (override legacy styles) ===== */
+.menu-carousel > .menu-items { display:block; width:100%; overflow:hidden; }
+.menu-carousel > .menu-items > .menu-track { display:flex; transition: transform 400ms ease; }
+.menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100%; }
+.menu-carousel .menu-page-inner { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px; justify-items:center; }
+@media (max-width: 1024px){ .menu-carousel .menu-page-inner { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 768px){ .menu-carousel .menu-page-inner { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+/* Mobile-first hardening to ensure proper slides on small screens */
+@media (max-width: 768px) {
+  .menu-carousel > .menu-items { display:block !important; overflow:hidden !important; width:100% !important; }
+  .menu-carousel > .menu-items > .menu-track { display:flex !important; }
+  .menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100% !important; }
+  .menu-carousel .menu-page-inner { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 12px !important; }
+  .menu-carousel .carousel-nav { display:none !important; }
+  .menu-carousel .menu-item img { width: 140px; height: 140px; }
+  .menu-carousel .menu-item h3 { font-size: 16px; margin-top: 6px; }
+}
+@media (max-width: 480px) {
+  .menu-carousel .menu-item img { width: 120px; height: 120px; }
+}
+
 /* Responsive behavior */
 @media (max-width: 992px) {
   .contact-form {
+    display: grid;
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "right"
+      "submit";
+    gap: 20px;
   }
 
-  .form-right {
-    order: 4; /* move below fields if stacked */
-  }
+  .form-left { grid-area: left; }
+  .form-right { grid-area: right; order: 0; }
 
-  .contact-form textarea {
-    min-height: 220px;
-  }
+  .contact-form textarea { min-height: 220px; }
 
-  .submit-row {
-    margin-top: 30px;
-  }
+  .submit-row { grid-area: submit; grid-column: auto; margin-top: 12px; }
 }
+
+
+html, body, #root, .app-layout, main, .homepage {
+  overflow: visible !important;
+  transform: none !important;
+  filter: none !important;
+  contain: none !important;
+}
+

@@ -60,8 +60,12 @@ export default function MenuCarousel({
   interval = 4000,
 }) {
   const [index, setIndex] = useState(0);
-  const [slides, setSlides] = useState([]); // will be EXACTLY 4 when we have data
+  const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    if (typeof window === "undefined") return 4;
+    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches ? 2 : 4;
+  });
 
   const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
   const SERVER_URL = API_URL.replace(/\/api$/, "");
@@ -74,15 +78,14 @@ export default function MenuCarousel({
     return `${SERVER_URL}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
-  // Ensure exactly 4 card objects, padded/filled if needed
-  const ensureFour = (arr) => {
-    const a = arr.slice(0, 4);
-    if (a.length === 0) return [];
-    while (a.length < 4) a.push(a[a.length % Math.min(arr.length, 1) || 0] || a[0]);
-    return a.slice(0, 4);
+  // Chunk helper to build pages
+  const chunk = (arr, size) => {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
   };
 
-  // Build up to 4 cards (two slides x 2 items)
+  // Build a list of cards (not capped); grouping happens later per page
   const buildCards = (data) => {
     if (!Array.isArray(data) || data.length === 0) return [];
 
@@ -94,11 +97,17 @@ export default function MenuCarousel({
     const remaining = withImg.filter((it) => !used.has(it));
     const secondMatches = pickMatches(remaining, 1);
 
+    const safeText = (v, fallback = "") => {
+      if (v == null) return fallback;
+      if (typeof v === "object") return typeof v.name === "string" ? v.name : fallback;
+      return String(v);
+    };
+
     const toCard = (bucket, item) => ({
-      title: bucket,
-      subtitle: item?.name || "",
+      title: safeText(bucket, ""),
+      subtitle: safeText(item?.name, ""),
       src: joinImageUrl(item?.image || item?.img || ""),
-      alt: item?.name || bucket,
+      alt: safeText(item?.name, safeText(bucket, "")),
     });
 
     // Start with one per bucket (max 4)
@@ -110,18 +119,15 @@ export default function MenuCarousel({
     // If still short, fallback to any remaining items with generic titles
     const fallback = remaining
       .filter((it) => !!(it?.image || it?.img))
-      .map((it) => ({
-        title: it?.category || "Featured",
-        subtitle: it?.name || "",
-        src: joinImageUrl(it?.image || it?.img || ""),
-        alt: it?.name || it?.category || "Featured",
-      }));
+      .map((it) => {
+        const catName = typeof it?.category === "object" ? it?.category?.name : it?.category;
+        const title = safeText(catName, "Featured");
+        const name = safeText(it?.name, "");
+        return { title, subtitle: name, src: joinImageUrl(it?.image || it?.img || ""), alt: name || title };
+      });
 
-    const combined = [...firstWave, ...secondWave, ...fallback].filter(
-      (c) => !!c.src
-    );
-
-    return ensureFour(combined);
+    const combined = [...firstWave, ...secondWave, ...fallback].filter((c) => !!c.src);
+    return combined;
   };
 
   useEffect(() => {
@@ -152,12 +158,11 @@ export default function MenuCarousel({
     return () => { mounted = false; };
   }, [fetchUrl, API_URL]);
 
-  // Build EXACTLY two slides with two items each from `slides`
+  // Build pages of 4 items each
   const pages = useMemo(() => {
     if (slides.length === 0) return [];
-    // slides is guaranteed to be 4 here
-    return [slides.slice(0, 2), slides.slice(2, 4)];
-  }, [slides]);
+    return chunk(slides, itemsPerPage);
+  }, [slides, itemsPerPage]);
 
   const pageCount = pages.length; // 0 or 2
   const wrap = (n) => (n + Math.max(pageCount, 1)) % Math.max(pageCount, 1);
@@ -171,6 +176,23 @@ export default function MenuCarousel({
     const id = setInterval(next, interval);
     return () => clearInterval(id);
   }, [autoplay, interval, pageCount]);
+
+  // Update itemsPerPage on viewport changes (2 on mobile, 4 otherwise)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(max-width: 768px)");
+    const apply = () => setItemsPerPage(mql.matches ? 2 : 4);
+    apply();
+    mql.addEventListener ? mql.addEventListener("change", apply) : mql.addListener(apply);
+    return () => {
+      mql.removeEventListener ? mql.removeEventListener("change", apply) : mql.removeListener(apply);
+    };
+  }, []);
+
+  // Ensure index stays in range if pageCount changes (e.g., on resize)
+  useEffect(() => {
+    setIndex((i) => (pageCount > 0 ? i % pageCount : 0));
+  }, [pageCount]);
 
   // Keyboard arrows
   const rootRef = useRef(null);
@@ -203,20 +225,14 @@ export default function MenuCarousel({
     deltaX.current = 0;
   };
 
-  // Styles use pageCount (not item count)
+  // Styles use pageCount (not item count); rely on App.css for layout
   const trackStyle = useMemo(
     () => ({
-      display: "flex",
-      transition: "transform 400ms ease",
-      transform: `translateX(-${(pageCount ? index : 0) * 100}%)`,
-      width: `${Math.max(pageCount, 1) * 100}%`,
+      transform: `translateX(-${pageCount ? (index * (150 / pageCount)) : 0}%)`,
     }),
     [index, pageCount]
   );
-  const slideStyle = {
-    width: `${100 / Math.max(pageCount || 1, 1)}%`,
-    flex: "0 0 auto",
-  };
+
 
   if (!loading && slides.length === 0) {
     return (
@@ -247,32 +263,28 @@ export default function MenuCarousel({
         <img src="/Vector.png" alt="Previous" />
       </button>
 
-      {/* Track (each page shows 2 items) */}
-      <div className="menu-items" style={{ overflow: "hidden" }}>
+      {/* Track (each page shows 4 items) */}
+      <div className="menu-items">
         <div className="menu-track" style={trackStyle}>
-          {pages.map((pair, pageIdx) => (
+          {pages.map((group, pageIdx) => (
             <div
               className="menu-page"
-              style={slideStyle}
               key={`page-${pageIdx}`}
               aria-roledescription="slide"
               aria-label={`Slide ${pageIdx + 1} of ${pageCount}`}
             >
               <div
                 className="menu-page-inner"
-                // FIX: 2 columns (not 4) because page shows exactly two cards
-                style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}
               >
-                {pair.map((it, i) => (
+                {group.map((it, i) => (
                   <div className="menu-item" key={`${it.title}-${i}`}>
                     <img src={it.src} alt={it.alt || it.title} />
-                    <h3>{it.title}</h3>
-                    {it.subtitle ? <p className="subtitle">{it.subtitle}</p> : null}
-                  </div>
+                    <h3>{it.title}</h3>                  </div>
                 ))}
               </div>
             </div>
           ))}
+
         </div>
       </div>
 
