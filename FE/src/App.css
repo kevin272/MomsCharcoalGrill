@@ -5885,6 +5885,9 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
     max-height: 88vh;
     border-radius: 10px;
   }
+  .img-carousel__arrow{
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -6063,7 +6066,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 
 
 html, body, #root, .app-layout, main, .homepage {
-  overflow: visible !important;
+  overflow-y: visible !important;
   transform: none !important;
   filter: none !important;
   contain: none !important;
