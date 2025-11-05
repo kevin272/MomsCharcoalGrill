@@ -22,8 +22,34 @@ function Header() {
 
 
   useEffect(() => {
-    const TRIGGER = 140; // should match --stick-offset for a coherent feel
-    const onScroll = () => setIsStuck(window.scrollY > TRIGGER);
+    const cssOffset = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--stick-offset')
+    ) || 140;
+    const TRIGGER = cssOffset; // keep in sync with CSS var
+    const HYSTERESIS = 60; // px band to avoid flicker near threshold
+
+    let ticking = false;
+
+    const evaluate = (y) => {
+      setIsStuck((prev) => {
+        // When already stuck, only unstick well below the trigger.
+        if (prev) return y > TRIGGER - HYSTERESIS;
+        // When not stuck yet, only stick well above the trigger.
+        return y > TRIGGER + HYSTERESIS;
+      });
+    };
+
+    const onScroll = () => {
+      const y = window.scrollY || window.pageYOffset || 0;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          evaluate(y);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
