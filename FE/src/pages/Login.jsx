@@ -55,10 +55,10 @@ const res = await axiosInstance.post("/auth/login", {
           <div className="card auth-card">
             <div className="card-body">
               <h1 id="login-title" className="title" style={{ marginBottom: 8 }}>
-                Sign in
+                Admin Sign In
               </h1>
               <p className="subtitle" style={{ marginBottom: 24 }}>
-                Welcome back! Enter your details to continue.
+                Enter your details to continue.
               </p>
 
               {err && (
@@ -148,27 +148,8 @@ const res = await axiosInstance.post("/auth/login", {
                 </button>
               </form>
 
-              <p style={{ marginTop: 16, textAlign: "center" }}>
-                Don&apos;t have an account?{" "}
-                <Link to="/register" className="link">
-                  Create one
-                </Link>
-              </p>
             </div>
           </div>
-
-
-          <p style={{ marginTop: 16, fontSize: 12, color: "var(--muted, #666)", textAlign: "center" }}>
-            By continuing, you agree to our{" "}
-            <Link to="/terms" className="link">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy" className="link">
-              Privacy Policy
-            </Link>
-            .
-          </p>
         </div>
       </div>
     </main>
