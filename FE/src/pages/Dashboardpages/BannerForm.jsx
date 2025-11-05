@@ -37,12 +37,12 @@ export default function BannerForm() {
     (async () => {
       if (!isEdit) return;
       try {
-        const { data } = await axios.get(`banners/${id}`);
-        const b = data?.data;
+        const body = await axios.get(`banners/${id}`);
+        const b = body?.data?.data || body?.data || body; // handle unwrapped interceptor or wrapped shapes
         if (!b) return;
         setForm({
           items: normalizeMenuArray(b.items || []),
-          primaryItem: b.primaryItem?._id || "",
+          primaryItem: b.primaryItem?._id || b.primaryItem || "",
           isActive: !!b.isActive,
           order: b.order ?? 0,
         });

@@ -36,7 +36,7 @@ export default function MenuForm() {
         const body = await axiosInstance.get(`/menu/${id}`);
         const d = body?.data || body; // interceptor may unwrap
         setName(d.name || "");
-        setCategory(d.category || "");
+        setCategory(d.category?._id || d.category || "");
         setPrice(d.price ?? "");
         setDescription(d.description || "");
         setIsAvailable(!!d.isAvailable);
@@ -53,7 +53,8 @@ export default function MenuForm() {
     async function fetchCategories() {
       try {
         const res = await axiosInstance.get("/menu-categories"); // adjust route name
-        setCategories(res.data); // backend should return an array of categories
+        const list = res?.data?.data || res?.data || res || [];
+        setCategories(Array.isArray(list) ? list : []); // backend should return an array of categories
       } catch (err) {
         console.error("Failed to load categories", err);
       }

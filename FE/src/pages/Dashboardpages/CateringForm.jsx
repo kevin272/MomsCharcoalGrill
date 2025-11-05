@@ -18,6 +18,7 @@ export default function CateringForm({
   const [minPeople, setMinPeople] = useState(initial?.minPeople ?? "");
   const [isActive, setIsActive] = useState(Boolean(initial?.isActive));
   const [imageFile, setImageFile] = useState(null);
+  const [preview, setPreview] = useState("");
 
   const initialItemIds = useMemo(
     () => (Array.isArray(initial?.items) ? initial.items.map(String) : []),
@@ -27,6 +28,30 @@ export default function CateringForm({
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+
+  // Rehydrate when initial changes (editing existing item)
+  useEffect(() => {
+    if (!initial) return;
+    setTitle(initial.title || "");
+    setSlug(initial.slug || "");
+    setOrder(initial.order ?? 0);
+    setPrice(initial.price ?? "");
+    setPriceType(initial.priceType || "per_tray");
+    setMinPeople(initial.minPeople ?? "");
+    setIsActive(Boolean(initial.isActive));
+    setSelectedItemIds(
+      Array.isArray(initial.items) ? initial.items.map(String) : []
+    );
+    // hydrate preview image from existing data
+    const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+    const SERVER_URL = API_URL.replace(/\/api$/, "");
+    const joinImageUrl = (p = "") => {
+      if (!p) return "";
+      if (/^https?:\/\//i.test(p)) return p;
+      return `${SERVER_URL}${p.startsWith("/") ? "" : "/"}${p}`;
+    };
+    if (initial.image) setPreview(joinImageUrl(initial.image));
+  }, [initial]);
 
   useEffect(() => {
     if (!title) return;
@@ -179,8 +204,22 @@ export default function CateringForm({
               type="file"
               accept="image/*"
               className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                setImageFile(f);
+                if (f) setPreview(URL.createObjectURL(f));
+              }}
             />
+            {preview ? (
+              <div className="mt-2">
+                <img
+                  src={preview}
+                  alt="preview"
+                  style={{ maxWidth: 240, borderRadius: 8 }}
+                  onError={(e) => (e.currentTarget.style.opacity = 0.4)}
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="md:col-span-2">

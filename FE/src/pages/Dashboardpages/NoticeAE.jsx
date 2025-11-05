@@ -16,8 +16,10 @@ export default function NoticeAE() {
     if (!id) return;
     (async () => {
       try {
-        const res = await axios.get(`notices/${id}`);
-        setInitial(res?.data ?? res);
+        const body = await axios.get(`notices/${id}`);
+        const payload = body?.data?.data || body?.data || body;
+        const notice = payload?.notice || payload?.item || payload; // accept common shapes
+        setInitial(notice);
       } catch (e) {
         console.error("Failed to load notice:", e);
       } finally {

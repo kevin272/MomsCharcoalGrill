@@ -17,6 +17,15 @@ export default function NoticeForm({ initial, initialId, onSubmit, saving }) {
 
   const lastObjectUrlRef = useRef("");
 
+  // URL helpers for previewing images from API
+  const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+  const SERVER_URL = API_URL.replace(/\/api$/, "");
+  const absUrl = (u = "") => {
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u)) return u;
+    return `${SERVER_URL}${u.startsWith("/") ? "" : "/"}${u}`;
+  };
+
   // cleanup object URL on unmount
   useEffect(() => {
     return () => {
@@ -34,6 +43,7 @@ export default function NoticeForm({ initial, initialId, onSubmit, saving }) {
   };
 
   const hydrate = (n) => {
+    const src = n?.imageUrl || n?.image || "";
     setForm({
       title: n?.title || "",
       linkUrl: n?.linkUrl || "",
@@ -43,7 +53,7 @@ export default function NoticeForm({ initial, initialId, onSubmit, saving }) {
       startsAt: n?.startsAt ? toLocalInput(n.startsAt) : "",
       endsAt: n?.endsAt ? toLocalInput(n.endsAt) : "",
     });
-    setPreview(n?.imageUrl || "");
+    setPreview(absUrl(src));
   };
 
   // initial load (prop or fetch by id)
@@ -93,7 +103,8 @@ export default function NoticeForm({ initial, initialId, onSubmit, saving }) {
       lastObjectUrlRef.current = url;
       setPreview(url);
     } else {
-      setPreview(initial?.imageUrl || "");
+      const src = initial?.imageUrl || initial?.image || "";
+      setPreview(absUrl(src));
     }
   };
 

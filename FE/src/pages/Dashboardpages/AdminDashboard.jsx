@@ -14,8 +14,9 @@ export default function AdminDashboard() {
 
     (async () => {
       try {
-        const body = await axiosInstance.get("/admin"); // BODY
-        setAdmins(body.data || []);
+        const body = await axiosInstance.get("/admin");
+        const list = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+        setAdmins(list);
       } catch (err) {
         console.error("Fetch admins failed:", err);
         navigate("/login", { replace: true });
@@ -33,13 +34,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleResetPassword = async (id) => {
-    const newPassword = prompt("Enter new password:");
-    if (!newPassword) return;
+  const handleReset = async (admin) => {
+    const newUsername = prompt("Enter new username (leave blank to keep):", admin.username);
+    const newPassword = prompt("Enter new password (leave blank to keep):");
     try {
-      await axiosInstance.put(`/admin/${id}/reset-password`, { newPassword });
+      // Update username if provided and changed
+      if (newUsername && newUsername !== admin.username) {
+        const updated = await axiosInstance.put(`/admin/${admin._id}`, { username: newUsername });
+        const next = updated?.data || updated;
+        setAdmins((prev) => prev.map((a) => (a._id === admin._id ? { ...a, username: next?.username || newUsername } : a)));
+      }
+      // Update password if provided
+      if (newPassword) {
+        await axiosInstance.put(`/admin/${admin._id}/reset-password`, { newPassword });
+      }
     } catch (err) {
       console.error(err);
+      alert(err?.response?.data?.message || err?.message || 'Update failed');
     }
   };
 
@@ -79,7 +90,7 @@ export default function AdminDashboard() {
               )}
             </td>
             <td>
-              <button className="od-btn" onClick={() => handleResetPassword(admin._id)}>
+              <button className="od-btn" onClick={() => handleReset(admin)}>
                 Reset
               </button>
               {/* <button className="od-btn od-btn--danger" onClick={() => handleDelete(admin._id)}>
