@@ -1226,6 +1226,7 @@ html {
 
   .footer .container {
     flex-direction: column;
+    width: 90%;
     gap: 30px;
   }
 
@@ -1244,7 +1245,7 @@ html {
   }
 
   .footer-section {
-    text-align: center;
+    text-align: left;
   }
 
   .map-placeholder img {
@@ -3578,7 +3579,9 @@ html {
     color: #FFF200;
     font-size: 24px;
     cursor: pointer;
-    padding: 10px;;
+    padding: 10px;
+            position: fixed;
+        right: 11.5rem;
   }
 
 /* Mobile Navigation Toggle */
@@ -6091,6 +6094,4 @@ html, body, #root, .app-layout, main, .homepage {
     html, body { overflow-x: clip; }
   }
 }
-
-
 

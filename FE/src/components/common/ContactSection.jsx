@@ -9,34 +9,50 @@ export default function ContactSection() {
   });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+const API = (import.meta.env.VITE_API_URL || "").trim();
 
   const update = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
-
   const submit = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    // minimal validation for the mock layout
-    if (!form.name || !form.email || !form.enquiry) {
-      setError("Please fill Name, Email and Enquiry.");
-      return;
-    }
+  if (!form.name || !form.email || !form.enquiry) {
+    setError("Please fill Name, Email and Enquiry.");
+    return;
+  }
 
-    try {
-      setSending(true);
-      // If/when you hook this to your API, do it here:
-      // await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(form) });
-      // For now, just clear:
-      setForm({ name: "", email: "", contact: "", enquiry: "" });
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSending(false);
-    }
+  const payload = {
+    name: form.name,
+    email: form.email,
+    number: form.contact,
+    subject: "General enquiry", 
+    message: form.enquiry,
   };
+
+  try {
+    setSending(true);
+    const res = await fetch(`${API}contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || "Bad Request");
+    }
+
+    setForm({ name: "", email: "", contact: "", enquiry: "" });
+  } catch (err) {
+    setError("Something went wrong. Please try again.");
+    console.error("Submit error:", err);
+  } finally {
+    setSending(false);
+  }
+};
 
   return (
     <section className="contact-section" id="contact">

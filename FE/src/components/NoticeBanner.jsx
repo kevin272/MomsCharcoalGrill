@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const RAW = import.meta?.env?.VITE_API_URL || "";         // "", "https://.../api", "https://..."
+const RAW = import.meta.env.VITE_API_URL || "";         // "", "https://.../api", "https://..."
 const BASE = RAW.replace(/\/+$/, "");                      // trim trailing slashes
 // If provided, ensure it ends with /api. If not provided, default to same-origin /api
 const API = BASE ? (BASE.endsWith("/api") ? BASE : `${BASE}/api`) : "/api";
