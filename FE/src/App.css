@@ -3581,7 +3581,7 @@ html {
     cursor: pointer;
     padding: 10px;
             position: fixed;
-        right: 15rem;
+        left: 45%;
   }
 
 /* Mobile Navigation Toggle */
