@@ -1,6 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-const Footer = () => (
+const Footer = () => {
+  const [hoveredfb, setHoveredfb] = useState(false);
+    const [hoveredig, setHoveredig] = useState(false);
+
+ return (
+
   <footer className="footer dark-theme">
     <div className="container">
       <div className="footer-logo">
@@ -45,13 +50,28 @@ const Footer = () => (
   <p>M: 347.784.9269</p>
   <p>Fax: 732.658.3700</p>
   <p>Email: <a href="mailto:gurupalace@hotmail.com">gurupalace@hotmail.com</a></p>
-<a
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",             // ✅ controls spacing between icons
+    marginTop: "6px",        // optional, gives breathing from above text
+  }}
+>
+  <a
   href="https://www.facebook.com/mumscharcoalandgrill/"
   target="_blank"
   rel="noopener noreferrer"
-  style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    color: hoveredfb ? 'gold' : 'inherit',
+    transition: 'color 0.2s ease',
+  }}
+  onMouseEnter={() => setHoveredfb(true)}
+  onMouseLeave={() => setHoveredfb(false)}
 >
-  <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="20"
@@ -66,18 +86,22 @@ const Footer = () => (
     >
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     </svg>
-    facebook.com/mumscharcoalandgrill
-  </p>
   </a>
 
-<a
-  href="https://www.instagram.com/mumscharcoalandgrill/"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}
+  <a
+    href="https://www.instagram.com/mumscharcoalandgrill/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+    display: 'flex',
+    alignItems: 'center',
+    color: hoveredig ? 'gold' : 'inherit',
+    transition: 'color 0.2s ease',
+  }}
+  onMouseEnter={() => setHoveredig(true)}
+  onMouseLeave={() => setHoveredig(false)}
 >
-
-  <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="20"
@@ -94,9 +118,9 @@ const Footer = () => (
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
       <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
     </svg>
-    instagram.com/mumscharcoalandgrill
-  </p>
   </a>
+</div>
+
 </div>
 
         {/* Quick Links */}
@@ -121,6 +145,8 @@ const Footer = () => (
       </div>
     </div>
   </footer>
-)
+ );
+
+};
 
 export default Footer
