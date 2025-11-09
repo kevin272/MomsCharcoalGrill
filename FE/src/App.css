@@ -557,21 +557,20 @@ html {
   position: relative;
   z-index: 2;  /* keep image above hover.png */
 }
-
-/* hover background directly behind image */
 .menu-item::before {
   content: "";
   position: absolute;
-  top: 50%;                        /* align to image center */
+  top: 55%;
   left: 50%;
-  width: 260px;                    /* same as image */
+  width: 260px;
   height: 260px;
   background: url("/hover.png") no-repeat center/cover;
   opacity: 0;
   transition: opacity 0.35s ease, transform 0.35s ease;
-  z-index: 1;                      /* sits behind image */
+  z-index: 1;
   pointer-events: none;
-  /* transform: translateY(-100%); */
+
+  transform: translate(-50%, -80%) scale(.5);
 }
 
 .menu-item:hover::before {

@@ -24,6 +24,7 @@ export default function MenuForm() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
+  const [featured, setFeatured] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +41,7 @@ export default function MenuForm() {
         setPrice(d.price ?? "");
         setDescription(d.description || "");
         setIsAvailable(!!d.isAvailable);
+        setFeatured(!!d.featured);
         // set preview from existing image path
         if (d.image) setPreview(absUrl(d.image));
         else if (d.photo) setPreview(absUrl(d.photo));
@@ -91,7 +93,8 @@ export default function MenuForm() {
       category,                         // <-- must be _id if schema is ObjectId ref
       price: Number(price || 0),
       description,
-      isAvailable
+      isAvailable,
+      featured,
     };
 
     let payload, headers;
@@ -185,7 +188,7 @@ export default function MenuForm() {
               />
             </div>
 
-            <div className="col-md-6 d-flex align-items-end">
+            <div className="col-12 d-flex align-items-end gap-4">
               <div className="form-check">
                 <input
                   id="isAvailable"
@@ -196,6 +199,18 @@ export default function MenuForm() {
                 />
                 <label className="form-check-label" htmlFor="isAvailable">
                   Available
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  id="featured"
+                  className="form-check-input"
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="featured">
+                  Featured
                 </label>
               </div>
             </div>

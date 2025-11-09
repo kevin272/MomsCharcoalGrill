@@ -8,6 +8,7 @@ const KEYWORDS = {
   Salad: ["salad","coleslaw","slaw","greek","potato","pumpkin","asian","garden","caesar","vinaigrette"],
   Pasta: ["pasta","spaghetti","penne","fettuccine","alfredo","bolognese","lasagna","lasagne","mac","gnocchi"],
   Roll: ["roll","bread roll","wrap","shawarma","kebab","sub","tortilla","burrito"],
+  HotDish: ["curry","stew","chili","hot dish","casserole","tagine","gumbo", "Josh"],
 };
 
 const CATEGORY_HINTS = {
@@ -15,6 +16,7 @@ const CATEGORY_HINTS = {
   salad: "Salad", sides: "Salad",
   pasta: "Pasta", italian: "Pasta",
   roll: "Roll", rolls: "Roll", breads: "Roll", bakery: "Roll",
+  hotdish: "HotDish", "hot dish": "HotDish", mains: "HotDish",
 };
 
 function scoreItemForBucket(item, bucket) {
@@ -97,10 +99,29 @@ export default function MenuCarousel({
     const remaining = withImg.filter((it) => !used.has(it));
     const secondMatches = pickMatches(remaining, 1);
 
+    // Treat Mongo/ObjectID-like strings as invalid labels
+    const looksLikeId = (s) => {
+      if (typeof s !== "string") return false;
+      const t = s.trim();
+      if (/^ObjectId\(/i.test(t)) return true;
+      if (/^[a-f0-9]{24}$/i.test(t)) return true; // Mongo ObjectId
+      return false;
+    };
+
     const safeText = (v, fallback = "") => {
       if (v == null) return fallback;
       if (typeof v === "object") return typeof v.name === "string" ? v.name : fallback;
-      return String(v);
+      const s = String(v);
+      return looksLikeId(s) ? fallback : s;
+    };
+
+    // Guess a friendly bucket name for an item; fallback to "Featured"
+    const guessBucketForItem = (item) => {
+      const scored = BUCKETS
+        .map((b) => ({ b, s: scoreItemForBucket(item, b) }))
+        .sort((a, b) => b.s - a.s);
+      const top = scored[0];
+      return top && top.s > 0 ? top.b : "Featured";
     };
 
     const toCard = (bucket, item) => ({
@@ -120,8 +141,8 @@ export default function MenuCarousel({
     const fallback = remaining
       .filter((it) => !!(it?.image || it?.img))
       .map((it) => {
-        const catName = typeof it?.category === "object" ? it?.category?.name : it?.category;
-        const title = safeText(catName, "Featured");
+        // Prefer a human friendly bucket label; avoid raw IDs from category
+        const title = guessBucketForItem(it);
         const name = safeText(it?.name, "");
         return { title, subtitle: name, src: joinImageUrl(it?.image || it?.img || ""), alt: name || title };
       });
@@ -135,11 +156,12 @@ export default function MenuCarousel({
     (async () => {
       setLoading(true);
       try {
-        const url = fetchUrl || `${API_URL}/menu-items`;
+        // Prefer fetching featured items from the alias route
+        const url = fetchUrl || `/menu?featured=true&isAvailable=true&limit=20`;
         const res = await axiosInstance.get(url);
-        const raw = Array.isArray(res.data?.data)
+        const raw = Array.isArray(res?.data?.data)
           ? res.data.data
-          : (Array.isArray(res.data) ? res.data : []);
+          : (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
         const built = buildCards(raw);
 
         if (mounted) {

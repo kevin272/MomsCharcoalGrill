@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Breadcrumb from '../components/CateringHero';
 import { useCart } from '../context/CartContext.jsx';
+import { useToast } from '../components/common/ToastProvider.jsx';
 
 /**
  * Shopping cart / checkout page.  Displays the items currently in the cart
@@ -14,6 +15,7 @@ function CartPage() {
   const [paymentMode, setPaymentMode] = useState('COD');
   const [showSpecialRequirements, setShowSpecialRequirements] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
+  const toast = useToast()
   
   const [customerDetails, setCustomerDetails] = useState({
     fullName: '',
@@ -121,7 +123,7 @@ const handleCustomerDetailsSubmit = async () => {
     }
 
     clearCart();
-    alert(`Order placed successfully! Order ID: ${data?.data?._id || data?.data?.id || 'N/A'}`);
+    toast.success(`Order placed successfully! Order ID: ${data?.data?._id || data?.data?.id || 'N/A'}`);
   } catch (err) {
     console.error(err);
     alert('Failed to place order: ' + (err?.message || 'Unknown error'));
@@ -290,7 +292,7 @@ const handleCustomerDetailsSubmit = async () => {
               <div className="form-row">
                 <input
                   type="text"
-                  placeholder="Street"
+                  placeholder="Street Name and Number"
                   value={customerDetails.street}
                   onChange={(e) => handleInputChange('street', e.target.value)}
                 />

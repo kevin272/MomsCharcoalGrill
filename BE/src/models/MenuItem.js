@@ -17,6 +17,7 @@ const MenuItemSchema = new Schema(
     category: { type: Types.ObjectId, ref: 'MenuCategory', required: true },
     tags: [{ type: String, trim: true }],
     isAvailable: { type: Boolean, default: true },
+    featured: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
   },
   { timestamps: true },

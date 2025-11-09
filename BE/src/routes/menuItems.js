@@ -5,10 +5,13 @@ const router = express.Router();
 // List with optional filters: category, q
 router.get('/', async (req, res) => {
   try {
-    const { category, q } = req.query;
+    const { category, q, featured, isAvailable } = req.query;
+    const toBool = (v) => ['true','1','yes','on'].includes(String(v).toLowerCase());
     const where = {};
     if (category) where.category = category;
     if (q) where.$text = { $search: q };
+    if (typeof featured !== 'undefined') where.featured = toBool(featured);
+    if (typeof isAvailable !== 'undefined') where.isAvailable = toBool(isAvailable);
     const list = await MenuItem.find(where).populate('category').sort({ order: 1, name: 1 });
     res.json({ success: true, data: list });
   } catch (e) {

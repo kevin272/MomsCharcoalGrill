@@ -127,6 +127,9 @@ function Header() {
           <Link to="/" className={isActive('/')} onClick={closeMobileNav}>
             HOME
           </Link>
+          <Link to="/catering" className={isActive('/catering')} onClick={closeMobileNav}>
+            CATERING
+          </Link>
           <Link to="/menu" className={isActive('/menu')} onClick={closeMobileNav}>
             MENU
           </Link>
@@ -139,9 +142,7 @@ function Header() {
           <a href="/merchandise" className="nav-link" onClick={closeMobileNav}>
             MERCHANDISE
           </a>
-          <Link to="/catering" className={isActive('/catering')} onClick={closeMobileNav}>
-            CATERING
-          </Link>
+          
         </nav>
 
         <Link to="/cart" className="cart-icon" aria-label="Cart">

@@ -29,15 +29,21 @@ router.get('/', async (req, res, next) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
     const skip  = (page - 1) * limit;
     const q     = (req.query.q || '').trim();
+    const toBool = (v) => ['true','1','yes','on'].includes(String(v).toLowerCase());
 
-    const filter = q
-      ? {
-          $or: [
-            { name:        { $regex: q, $options: 'i' } },
-            { description: { $regex: q, $options: 'i' } },
-          ],
-        }
-      : {};
+    const filter = {};
+    if (q) {
+      filter.$or = [
+        { name:        { $regex: q, $options: 'i' } },
+        { description: { $regex: q, $options: 'i' } },
+      ];
+    }
+    if (typeof req.query.featured !== 'undefined') {
+      filter.featured = toBool(req.query.featured);
+    }
+    if (typeof req.query.isAvailable !== 'undefined') {
+      filter.isAvailable = toBool(req.query.isAvailable);
+    }
 
     const [items, total] = await Promise.all([
       MenuItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -71,6 +77,7 @@ router.post('/', anyParser, async (req, res, next) => {
       price: b.price ?? 0,
       description: b.description || '',
       isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
+      featured: String(b.featured) === 'true' || b.featured === true,
       image: req.file ? req.file.path : (b.image || b.photo || ''),
     };
 
@@ -97,6 +104,7 @@ router.put('/:id', anyParser, async (req, res, next) => {
       price: b.price ?? 0,
       description: b.description || '',
       isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
+      featured: (typeof b.featured !== 'undefined') ? (String(b.featured) === 'true' || b.featured === true) : undefined,
     };
 
     if (req.file) update.image = req.file.path;

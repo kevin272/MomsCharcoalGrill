@@ -55,6 +55,7 @@ export default function MenuDashboard() {
           category: m.category || m.type || "General",
           image: joinImageUrl(m.image || m.photo || m.thumb || ""),
           isAvailable: !!m.isAvailable,
+          featured: !!m.featured,
           createdAt: m.createdAt || m.created_at || "",
         }))
       );
@@ -115,6 +116,17 @@ export default function MenuDashboard() {
     }
   };
 
+  const toggleFeatured = async (row) => {
+    try {
+      await axiosInstance.patch(`/menu/${row.id}`, { featured: !row.featured });
+      setItems((prev) =>
+        prev.map((x) => (x.id === row.id ? { ...x, featured: !x.featured } : x))
+      );
+    } catch (e) {
+      alert(e?.response?.data?.message || e?.message || "Update failed.");
+    }
+  };
+
   return (
     <DashboardLayout
       title="Menu Dashboard"
@@ -152,6 +164,7 @@ export default function MenuDashboard() {
               { label: "Name" },
               { label: "Category" },
               { label: "Price" },
+              { label: "Featured" },
               { label: "Available" },
               { label: "Actions", style: { width: 220 } },
             ]}
@@ -179,6 +192,16 @@ export default function MenuDashboard() {
                 <td>{row.name}</td>
                 <td>{row.category}</td>
                 <td>{Number(row.price).toFixed(2)}</td>
+                <td>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={row.featured}
+                      onChange={() => toggleFeatured(row)}
+                    />
+                    {row.featured ? "Yes" : "No"}
+                  </label>
+                </td>
                 <td>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                     <input
