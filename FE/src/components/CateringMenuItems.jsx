@@ -68,6 +68,7 @@ export default function CateringMenu() {
               price: Number(it.price || 0),
               description: it.description || "",
               image: toPublicUrl(it.image) || PLACEHOLDER,
+              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
             }))
           );
           setLoading(false);
@@ -100,6 +101,7 @@ export default function CateringMenu() {
               price: Number(it.price || 0),
               description: it.description || "",
               image: toPublicUrl(it.image) || PLACEHOLDER,
+              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
             }))
           );
           setLoading(false);
@@ -124,6 +126,7 @@ export default function CateringMenu() {
       name: it.name,
       price: it.price,
       image: it.image,
+      glutenFree: !!it.glutenFree,
     });
   };
 
@@ -183,6 +186,9 @@ export default function CateringMenu() {
                   </div>
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
+                      {dish.glutenFree && (
+                        <span className="gf-badge" aria-label="Gluten free">GF</span>
+                      )}
                       <h3 className="hot-dish-name">{dish.name}</h3>
                       <span className="hot-dish-price">A$ {dish.price.toFixed(2)}</span>
                     </div>

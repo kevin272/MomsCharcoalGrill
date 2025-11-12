@@ -10,6 +10,8 @@ export default function CateringOptionPage() {
   const [pkg, setPkg] = useState(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
+  // Badge-only: detect GF from item label text
+  const isGfLabel = (name) => /\bgluten\s*-?\s*free\b/i.test(String(name)) || /\(\s*gf\s*\)/i.test(String(name));
 
   useEffect(() => {
     let alive = true;
@@ -36,10 +38,11 @@ export default function CateringOptionPage() {
   const addItemToCart = (name) => {
     // keep your simple addToCart shape
     addToCart({
-      id: `${optionId}:${name}`,           // stable composite id to avoid collisions
+      id: `${optionId}:${name}`,           // stable composite id
       name,
       price: Number(unitPrice) || 0,       // per person OR per tray baseline
       image: pkg?.image,
+      glutenFree: isGfLabel(name),
     });
   };
 
@@ -91,6 +94,9 @@ export default function CateringOptionPage() {
                   
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
+                      {isGfLabel(name) && (
+                        <span className="gf-badge" aria-label="Gluten free">GF</span>
+                      )}
                       <h3 className="hot-dish-name">{name}</h3>
                       {unitPrice ? (
                         <span className="hot-dish-price">

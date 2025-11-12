@@ -77,6 +77,7 @@ const handleCustomerDetailsSubmit = async () => {
       price: item.price,
       image: item.image,
       qty: item.quantity,
+      glutenFree: !!item.glutenFree,
     })),
     customer: {
       name: customerDetails.fullName,
@@ -152,6 +153,11 @@ const handleCustomerDetailsSubmit = async () => {
                   </div>
                   <div className="cart-item-details">
                     <div className="cart-item-info">
+                      <div>
+                        {item.glutenFree && (
+                          <span className="gf-badge" aria-label="Gluten free">GF</span>
+                        )}
+                      </div>
                       <h3 className="cart-item-name">{item.name}</h3>
                       {item.description && (
                         <p className="cart-item-description">{item.description}</p>

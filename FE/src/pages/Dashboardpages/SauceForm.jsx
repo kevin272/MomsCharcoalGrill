@@ -80,7 +80,7 @@ export default function SauceForm() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 720 }}>
+    <div className="container" style={{ maxWidth: 720 , marginTop: '20px' }}>
       <h2 className="mb-3">{isEdit ? 'Edit Sauce' : 'Add Sauce'}</h2>
       {err && <p style={{ color: 'tomato' }}>{err}</p>}
       <form onSubmit={onSubmit}>

@@ -69,17 +69,18 @@ router.get('/:id', async (req, res, next) => {
 /** POST /api/menu (JSON or multipart) */
 router.post('/', anyParser, async (req, res, next) => {
   try {
-    const b = req.body || {};
-    const payload = {
-      name: b.name,
-      slug: b.slug || slugify(b.name || ''),    // <-- ensure slug
-      category: b.category,                      // must be Category _id if schema uses ObjectId
-      price: b.price ?? 0,
-      description: b.description || '',
-      isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
-      featured: String(b.featured) === 'true' || b.featured === true,
-      image: req.file ? req.file.path : (b.image || b.photo || ''),
-    };
+  const b = req.body || {};
+  const payload = {
+    name: b.name,
+    slug: b.slug || slugify(b.name || ''),    // <-- ensure slug
+    category: b.category,                      // must be Category _id if schema uses ObjectId
+    price: b.price ?? 0,
+    description: b.description || '',
+    isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
+    featured: String(b.featured) === 'true' || b.featured === true,
+    image: req.file ? req.file.path : (b.image || b.photo || ''),
+    glutenFree: (String(b.glutenFree).toLowerCase() === 'true') || b.glutenFree === true || (String(b.isGlutenFree).toLowerCase() === 'true'),
+  };
 
     const doc = await MenuItem.create(payload);
     res.status(201).json({ data: doc });
@@ -95,17 +96,20 @@ router.post('/', anyParser, async (req, res, next) => {
 /** PUT /api/menu/:id (JSON or multipart) */
 router.put('/:id', anyParser, async (req, res, next) => {
   try {
-    const b = req.body || {};
-    const update = {
-      name: b.name,
-      // regenerate slug if missing while name is present
-      slug: b.slug || (b.name ? slugify(b.name) : undefined),
-      category: b.category,
-      price: b.price ?? 0,
-      description: b.description || '',
-      isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
-      featured: (typeof b.featured !== 'undefined') ? (String(b.featured) === 'true' || b.featured === true) : undefined,
-    };
+  const b = req.body || {};
+  const update = {
+    name: b.name,
+    // regenerate slug if missing while name is present
+    slug: b.slug || (b.name ? slugify(b.name) : undefined),
+    category: b.category,
+    price: b.price ?? 0,
+    description: b.description || '',
+    isAvailable: String(b.isAvailable) === 'true' || b.isAvailable === true,
+    featured: (typeof b.featured !== 'undefined') ? (String(b.featured) === 'true' || b.featured === true) : undefined,
+    glutenFree: (typeof b.glutenFree !== 'undefined' || typeof b.isGlutenFree !== 'undefined')
+      ? ((String(b.glutenFree).toLowerCase() === 'true') || b.glutenFree === true || (String(b.isGlutenFree).toLowerCase() === 'true'))
+      : undefined,
+  };
 
     if (req.file) update.image = req.file.path;
     else if (b.image || b.photo) update.image = b.image || b.photo;

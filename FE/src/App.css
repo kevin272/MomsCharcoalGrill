@@ -3860,7 +3860,7 @@ html {
 
 /* ===== Dashboard Layout (DashboardLayout.jsx) ===== */
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-3)}
-.card-body{padding:1.25rem}
+.card-body{padding:1.25rem;}
 .py-4{padding-block:1.25rem}
 
 /* ===== Dashboard Header (DashboardHeader.jsx) ===== */
@@ -3944,6 +3944,8 @@ a,button,[role="button"],input,select,textarea{
   border:1px solid rgba(255,255,255,.1);
   border-radius:16px;
   color:#fff;
+  margin:auto;
+  margin-top: 50px;
 }
 .card-body{padding:1.25rem}
 .table-auto th{color:#FFF200;background:#000}
@@ -5572,6 +5574,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
     --rail-len: min(260px, 32vw);
   }
   .footer-content{ grid-template-columns:1fr; gap:28px; }
+  .footer .container{ padding: 0; }
 }
 
 
@@ -5889,7 +5892,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   /* Prevent horizontal gaps on small screens */
   .hero-figure { transform: none; }
   .hero-section { overflow-x: hidden; }
-  .footer { overflow-x: hidden; }
+  .footer { overflow-x: hidden}
   .notice-inner {
     width: 94vw;
     max-height: 88vh;
@@ -6095,3 +6098,26 @@ html, body, #root, .app-layout, main, .homepage {
 }
 
 
+/* === Gluten-free badge and option === */
+.gf-badge {
+  display: inline-block;
+  color: #FAEB30;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-right: 8px;
+}
+
+.gf-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+.gf-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #FAEB30; /* modern browsers */
+}
