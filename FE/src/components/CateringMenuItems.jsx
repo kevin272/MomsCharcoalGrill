@@ -44,6 +44,20 @@ export default function CateringMenu() {
   React.useEffect(() => {
     let alive = true;
 
+    // simple local cache to avoid re-fetching every visit
+    const TTL = 5 * 60 * 1000; // 5 minutes
+    const key = `mcg:catering:option:${optionId}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || 'null');
+      if (cached && cached.exp > Date.now() && cached.option && Array.isArray(cached.items)) {
+        setOption(cached.option);
+        setItems(cached.items);
+        setLoading(false);
+        // Short-circuit: fresh cache, skip network
+        return () => { alive = false; };
+      }
+    } catch {}
+
     (async () => {
       setLoading(true);
       setErr("");
@@ -60,9 +74,7 @@ export default function CateringMenu() {
           }
           const data = body?.data || body;
           if (!alive) return;
-          setOption(data);
-          setItems(
-            (data.items || []).map((it) => ({
+          const mapped = (data.items || []).map((it) => ({
               id: it._id || it.id,
               name: it.name || it.title || "Item",
               price: Number(it.price || 0),
@@ -70,7 +82,9 @@ export default function CateringMenu() {
               image: toPublicUrl(it.image) || PLACEHOLDER,
               glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
             }))
-          );
+          setOption(data);
+          setItems(mapped);
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -93,9 +107,7 @@ export default function CateringMenu() {
           const data = arr[0];
           if (!data) throw Object.assign(new Error("Option not found"), { status: 404, body });
           if (!alive) return;
-          setOption(data);
-          setItems(
-            (data.items || []).map((it) => ({
+          const mapped = (data.items || []).map((it) => ({
               id: it._id || it.id,
               name: it.name || it.title || "Item",
               price: Number(it.price || 0),
@@ -103,7 +115,9 @@ export default function CateringMenu() {
               image: toPublicUrl(it.image) || PLACEHOLDER,
               glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
             }))
-          );
+          setOption(data);
+          setItems(mapped);
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -186,10 +200,10 @@ export default function CateringMenu() {
                   </div>
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
+                      <h3 className="hot-dish-name">{dish.name}</h3>
                       {dish.glutenFree && (
                         <span className="gf-badge" aria-label="Gluten free">GF</span>
                       )}
-                      <h3 className="hot-dish-name">{dish.name}</h3>
                       <span className="hot-dish-price">A$ {dish.price.toFixed(2)}</span>
                     </div>
                     <p className="hot-dish-description">{dish.description}</p>

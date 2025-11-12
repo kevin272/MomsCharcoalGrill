@@ -15,6 +15,17 @@ export default function CateringOptionPage() {
 
   useEffect(() => {
     let alive = true;
+    const TTL = 5 * 60 * 1000;
+    const key = `mcg:catering:pkg:${optionId}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || 'null');
+      if (cached && cached.exp > Date.now() && cached.pkg) {
+        setPkg(cached.pkg);
+        setLoading(false);
+        return () => { alive = false; };
+      }
+    } catch {}
+
     (async () => {
       setLoading(true);
       setErr("");
@@ -22,7 +33,10 @@ export default function CateringOptionPage() {
         const r = await fetch(`/api/catering-packages/${optionId}`);
         const j = await r.json();
         if (!j.success) throw new Error(j.message || "Package not found");
-        if (alive) setPkg(j.data);
+        if (alive) {
+          setPkg(j.data);
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: j.data })); } catch {}
+        }
       } catch (e) {
         if (alive) setErr(e.message);
       } finally {

@@ -2311,7 +2311,7 @@ html {
   position: absolute;
   inset: 0;
   background: url("/FaintBg.png") no-repeat center/cover;
-  opacity: .5;
+  opacity: .3;
   transition: opacity 0.35s ease;
   z-index: 0;                  /* <— behind image & text */
   pointer-events: none;
@@ -2320,7 +2320,7 @@ html {
   transform: translateX(-1%);
 }
 .hot-dish-card:hover .hot-dish-hover-bg {
-  opacity: 1; /* subtle faint overlay */
+  opacity: .8; /* subtle faint overlay */
 }
 
 
@@ -5092,6 +5092,7 @@ td[colspan]{ text-align:center; color:#c9c9c9 !important; background:#111 !impor
   height:34px; padding:0 14px; border:1px solid rgba(255,255,255,.18);
   border-radius:12px; background:#0f0f0f; color:#fff; font-size:13px;
   cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .02s ease-in-out,filter .15s;
+  text-align: center; align-items: center; display: inline-flex ;
 }
 .od-btn:hover{ border-color:#FFF200; filter:brightness(1.05); }
 .od-btn:active{ transform:translateY(1px); }
