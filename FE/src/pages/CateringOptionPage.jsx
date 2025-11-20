@@ -102,9 +102,7 @@ export default function CateringOptionPage() {
                       className="hot-dish-cart-btn"
                       aria-label="Add to cart"
                       onClick={() => addItemToCart(name)}
-                    >
-                      {/* your SVG kept as-is */}
-                      <svg
+                    >                      <svg
                         width="47"
                         height="47"
                         viewBox="0 0 47 47"

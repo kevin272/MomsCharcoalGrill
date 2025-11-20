@@ -1,830 +1,496 @@
-// src/pages/CateringMenu.jsx
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "./common/ToastProvider.jsx";
-import axiosInstance from "../config/axios.config.js";
 
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
-const SERVER_URL = API_URL.replace(/\/api$/, ""); // http://localhost:5000
+const DEFAULT_LIMITS = { chicken: 1, salad: 2, veggies: 2, breadroll: 1 };
+const CATEGORY_ORDER = [
+  { key: "chicken", label: "Chicken" },
+  { key: "salad", label: "Salads" },
+  { key: "veggies", label: "Veggies" },
+  { key: "breadroll", label: "Bread Roll" },
+];
 
-// Build a public URL from whatever BE stored (filename OR /uploads/... OR absolute)
-function toPublicUrl(p) {
+const KEYWORDS = {
+  chicken: ["chicken", "peri", "tandoori", "drum", "wing", "breast", "thigh"],
+  salad: ["salad", "slaw", "coleslaw", "garden", "greek", "caesar"],
+  veggies: ["veg", "veggie", "vegetable", "paneer", "broccoli", "spinach", "mushroom", "beans"],
+  breadroll: ["roll", "bread", "bun", "pita", "tortilla", "wrap", "naan","Bread","Roll"],
+};
+
+function toPublicUrl(p, serverUrl) {
   if (!p) return "";
-  if (/^https?:\/\//i.test(p)) return p; // already absolute
-  let rel = String(p).replace(/\\/g, "/");
-  if (!rel.startsWith("/uploads/")) rel = "/uploads/" + rel.replace(/^\/+/, "");
-  return `${SERVER_URL}${rel}`;
+  if (/^https?:\/\//i.test(p)) return p;
+  if (!serverUrl) return p.startsWith("/") ? p : `/${p}`;
+  let rel = p.replace(/\\/g, "/");
+  if (!rel.startsWith("/uploads/")) rel = `/uploads/${rel.replace(/^\/+/, "")}`;
+  return `${serverUrl}${rel}`;
 }
 
-const PLACEHOLDER = "https://via.placeholder.com/480x320?text=Item";
-const isHexId = (s = "") => /^[a-f0-9]{24}$/i.test(s);
-const categoryKey = (cat) => {
-  const raw = (cat?.slug || cat?.name || "").toLowerCase();
-  if (raw.includes("chicken"||"Chicken")) return "chicken";
-  if (raw.includes("salad")) return "salad";
-  if (raw.includes("veg")) return "veggies";
-  if (raw.includes("bread"||"Bread")) return "breadroll";
-  return raw || "other";
-};
-const CATEGORY_LABEL = {
-  chicken: "Chicken",
-  salad: "Salad",
-  veggies: "Veggies",
-  breadroll: "Bread Roll",
-  other: "Other",
-};
-
-function DishImage({ src, alt, className }) {
-  const [broken, setBroken] = React.useState(false);
-  return (
-    <img
-      src={broken ? PLACEHOLDER : src || PLACEHOLDER}
-      alt={alt}
-      className={className}
-      onError={() => setBroken(true)}
-      loading="lazy"
-    />
-  );
+function normalizeLimits(selectionRules) {
+  const base = { ...DEFAULT_LIMITS };
+  if (!selectionRules?.enabled) return base;
+  const raw = selectionRules.categoryLimits instanceof Map
+    ? Object.fromEntries(selectionRules.categoryLimits)
+    : selectionRules.categoryLimits || {};
+  Object.entries(raw).forEach(([key, val]) => {
+    const n = Number(val);
+    if (!Number.isNaN(n)) base[key] = n;
+  });
+  return base;
 }
 
-export default function CateringMenu() {
-  const { optionId } = useParams(); // /catering/package/:optionId
-  const { addToCart, items: cartItems } = useCart();
-  const toast = useToast();
+function scoreForCategory(item, key) {
+  const name = String(item.name || "").toLowerCase();
+  const cat = String(item.categoryName || item.categorySlug || "").toLowerCase();
+  const words = KEYWORDS[key] || [];
+  let score = 0;
+  words.forEach((w) => {
+    if (name.includes(w)) score += 5;
+    if (cat.includes(w)) score += 3;
+  });
+  return score;
+}
 
-  const [option, setOption] = React.useState(null);
-  const [items, setItems] = React.useState([]);
-  const [allMenuItems, setAllMenuItems] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [err, setErr] = React.useState("");
-  const [debug, setDebug] = React.useState(null);
-  const [extraChoice, setExtraChoice] = React.useState({});
-  const [selectedCategory, setSelectedCategory] = React.useState("");
-  const [modalItem, setModalItem] = React.useState(null); // for general catering item-level modal
-  const [modalExtra, setModalExtra] = React.useState("");
-  const [modalPeople, setModalPeople] = React.useState(0);
-  const [selectedCounts, setSelectedCounts] = React.useState({}); // non-general: item selections via +/- 
-  const [bulkModalOpen, setBulkModalOpen] = React.useState(false); // non-general: final "add to cart" modal
+function detectCategory(item) {
+  let best = { key: null, score: 0 };
+  CATEGORY_ORDER.forEach(({ key }) => {
+    const score = scoreForCategory(item, key);
+    if (score > best.score) best = { key, score };
+  });
+  return best.score > 0 ? best.key : null;
+}
 
-  const limits = React.useMemo(() => {
-    if (option?.selectionRules?.enabled) {
-      return option.selectionRules.categoryLimits || {};
-    }
-    return {};
-  }, [option]);
-  const limitSummary = React.useMemo(() => {
-    const entries = Object.entries(limits || {});
-    if (!entries.length) return "";
-    return entries.map(([k, v]) => `${k}: ${v}`).join(" | ");
-  }, [limits]);
-  const isGeneral = !!option?.selectionRules?.enabled;
-  const categories = React.useMemo(() => {
-    const baseKeys = ["chicken", "salad", "veggies", "breadroll"];
-    const bucket = baseKeys.reduce((acc, k) => ({ ...acc, [k]: [] }), {});
-    const extras = {};
-
-    items.forEach((it) => {
-      const key = it.categoryKey || "other";
-      if (bucket[key]) bucket[key].push(it);
-      else {
-        if (!extras[key]) extras[key] = [];
-        extras[key].push(it);
-      }
+function normalizeItems(option, serverUrl) {
+  const configs = Array.isArray(option?.itemConfigurations) ? option.itemConfigurations : [];
+  if (configs.length) {
+    return configs.map((cfg, idx) => {
+      const menu = cfg?.menuItem || cfg;
+      const id = String(menu?._id || menu?.id || cfg?._id || cfg?.id || idx);
+      const extraOptions = Array.isArray(cfg?.extraOptions) ? cfg.extraOptions.filter(Boolean) : [];
+      return {
+        id,
+        menuItemId: menu?._id || menu?.id || id,
+        name: menu?.name || cfg?.name || `Item ${idx + 1}`,
+        description: menu?.description || "",
+        image: toPublicUrl(menu?.image || option?.image || "", serverUrl),
+        categoryName: menu?.category?.name || menu?.category?.slug || "",
+        categorySlug: menu?.category?.slug || "",
+        price: typeof option?.price === "number"
+          ? option.price
+          : (typeof menu?.price === "number" ? menu.price : 0),
+        extraOptions,
+      };
     });
-
-    const baseList = baseKeys.map((key) => ({
-      key,
-      label: CATEGORY_LABEL[key] || key,
-      items: bucket[key] || [],
-    }));
-    if (option?.selectionRules?.enabled) {
-      return baseList;
-    }
-    const extraList = Object.entries(extras).map(([key, list]) => ({
-      key,
-      label: CATEGORY_LABEL[key] || key,
-      items: list,
-    }));
-    return [...baseList, ...extraList];
-  }, [items, option?.selectionRules?.enabled]);
-  const cartCategoryCounts = React.useMemo(() => {
-    const counts = {};
-    (cartItems || []).forEach((it) => {
-      const key = it.categoryKey || it.category || it.catKey;
-      if (!key) return;
-      counts[key] = (counts[key] || 0) + (it.quantity || 1);
-    });
-    return counts;
-  }, [cartItems]);
-
-  const buildItems = (data) => {
-    if (option?.selectionRules?.enabled && allMenuItems.length) {
-      return allMenuItems
-        .map((src) => {
-          const key = categoryKey(src.category);
-          if (!["chicken", "salad", "veggies", "breadroll"].includes(key)) return null;
-          return {
-            id: src._id || src.id,
-            name: src.name || src.title || "Item",
-            price: Number(src.price || 0),
-            description: src.description || "",
-            image: toPublicUrl(src.image) || PLACEHOLDER,
-            category: src.category,
-            categoryKey: key,
-            extraOptions: [], // extras are per config; general shows none
-          };
-        })
-        .filter(Boolean);
-    }
-
-    if (Array.isArray(data?.itemConfigurations) && data.itemConfigurations.length) {
-      return data.itemConfigurations
-        .map((cfg) => {
-          const src = cfg?.menuItem || {};
-          const id = src._id || src.id || cfg?.menuItem;
-          return {
-            id,
-            name: src.name || cfg.name || "Item",
-            price: Number(src.price || cfg.price || 0),
-            description: src.description || cfg.description || "",
-            image: toPublicUrl(src.image || cfg.image) || PLACEHOLDER,
-            category: src.category,
-            categoryKey: categoryKey(src.category),
-            extraOptions: Array.isArray(cfg.extraOptions) ? cfg.extraOptions.filter(Boolean) : [],
-          };
-        })
-        .filter((it) => it.id);
-    }
-
-    return (data?.items || [])
-      .map((it) => ({
-        id: it._id || it.id,
-        name: it.name || it.title || "Item",
-        price: Number(it.price || 0),
-        description: it.description || "",
-        image: toPublicUrl(it.image) || PLACEHOLDER,
-        category: it.category,
-        categoryKey: categoryKey(it.category),
+  }
+  if (Array.isArray(option?.items) && option.items.length) {
+    return option.items.map((raw, idx) => {
+      const name = typeof raw === "string" ? raw : (raw?.name || `Item ${idx + 1}`);
+      return {
+        id: String(raw?._id || raw?.id || idx),
+        menuItemId: raw?._id || raw?.id || null,
+        name,
+        description: raw?.description || "",
+        image: toPublicUrl(raw?.image || option?.image || "", serverUrl),
+        categoryName: raw?.category?.name || raw?.category?.slug || "",
+        categorySlug: raw?.category?.slug || "",
+        price: typeof option?.price === "number" ? option.price : (typeof raw?.price === "number" ? raw.price : 0),
         extraOptions: [],
-      }))
-      .filter((it) => it.id);
-  };
-
-  React.useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      setLoading(true);
-      setErr("");
-      setDebug(null);
-
-      // 1) Try by ObjectId
-      if (isHexId(optionId)) {
-        const url = `${API_URL}/catering-options/${optionId}?populate=1`;
-        try {
-          const res = await fetch(url, { headers: { Accept: "application/json" } });
-          const body = await res.json().catch(() => ({}));
-          if (!res.ok || body?.success === false) {
-            throw Object.assign(new Error(body?.message || res.statusText), { status: res.status, body });
-          }
-          const data = body?.data || body;
-          if (!alive) return;
-          setOption(data);
-          setItems(buildItems(data));
-          setLoading(false);
-          return;
-        } catch (e) {
-          if (!alive) return;
-          setDebug({ where: "byId", url, error: String(e), status: e?.status, body: e?.body });
-          // fallthrough
-        }
-      }
-
-      // 2) Try by slug (FIX: do NOT double /api)
-      {
-        const url = `${API_URL}/catering-options?slug=${encodeURIComponent(optionId)}&populate=1`;
-        try {
-          const res = await fetch(url, { headers: { Accept: "application/json" } });
-          const body = await res.json().catch(() => ({}));
-          if (!res.ok || body?.success === false) {
-            throw Object.assign(new Error(body?.message || res.statusText), { status: res.status, body });
-          }
-          const arr = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
-          const data = arr[0];
-          if (!data) throw Object.assign(new Error("Option not found"), { status: 404, body });
-          if (!alive) return;
-          setOption(data);
-          setItems(buildItems(data));
-          setLoading(false);
-          return;
-        } catch (e) {
-          if (!alive) return;
-          setErr(e?.body?.message || e.message || "Failed to load option");
-          setDebug({ where: "bySlug", url, error: String(e), status: e?.status, body: e?.body });
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [optionId]);
-
-  // Prefill extra selection with the first option for convenience
-  React.useEffect(() => {
-    setExtraChoice((prev) => {
-      const next = { ...prev };
-      items.forEach((it) => {
-        if (Array.isArray(it.extraOptions) && it.extraOptions.length && !next[it.id]) {
-          next[it.id] = it.extraOptions[0];
-        }
-      });
-      return next;
+      };
     });
-  }, [items]);
+  }
+  return [];
+}
 
-  // Default category selection when option has rules
-  React.useEffect(() => {
-    if (!isGeneral) return;
-    if (selectedCategory) return;
-    if (categories.length) setSelectedCategory(categories[0].key);
-  }, [isGeneral, categories, selectedCategory]);
+function formatPrice(option) {
+  if (!option) return "";
+  const val = typeof option.price === "number" ? option.price : null;
+  if (val == null) return "";
+  switch (option.priceType) {
+    case "per_person": return `$${val.toFixed(2)} per person`;
+    case "per_tray": return `$${val.toFixed(2)} / tray`;
+    case "fixed": return `$${val.toFixed(2)}`;
+    default: return `$${val.toFixed(2)}`;
+  }
+}
 
-  // Load all menu items when general catering wants full list
-  React.useEffect(() => {
-    if (!isGeneral) return;
+export default function CateringMenuItems() {
+  const { optionId } = useParams();
+  const toast = useToast();
+  const { addToCart } = useCart();
+
+  const API_URL = useMemo(
+    () => (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, ""),
+    []
+  );
+  const SERVER_URL = useMemo(() => API_URL.replace(/\/api$/, ""), [API_URL]);
+
+  const [pkg, setPkg] = useState(null);
+  const [items, setItems] = useState([]);
+  const [quantities, setQuantities] = useState({});
+  const [selectedExtras, setSelectedExtras] = useState({});
+  const [extrasModal, setExtrasModal] = useState({ open: false, item: null, delta: 1 });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmQty, setConfirmQty] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErr("");
     (async () => {
       try {
-        const res = await axiosInstance.get("/menu-items", { params: { isAvailable: true } });
-        const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res) ? res : res?.data || [];
-        setAllMenuItems(list);
-      } catch (e2) {
-        console.error("Failed to load menu items for general catering", e2);
+        const res = await fetch(`${API_URL}/catering-options/${optionId}`);
+        const body = await res.json();
+        if (!body?.success) throw new Error(body?.message || "Failed to load catering option");
+        if (!alive) return;
+        setPkg(body.data);
+        setItems(normalizeItems(body.data, SERVER_URL));
+        setQuantities({});
+        setSelectedExtras({});
+      } catch (e) {
+        if (alive) setErr(e.message || "Unable to load catering option");
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
-  }, [option?.selectionRules?.enabled]);
+    return () => { alive = false; };
+  }, [optionId, API_URL, SERVER_URL]);
 
-  // Recompute items once full menu arrives for general catering
-  React.useEffect(() => {
-    if (!isGeneral) return;
-    setItems(buildItems(option || {}));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allMenuItems]);
+  const isGeneral = Boolean(pkg?.selectionRules?.enabled);
+  const categoryLimits = useMemo(() => normalizeLimits(pkg?.selectionRules), [pkg]);
 
-  const openModalForItem = (it) => {
-    if (!isGeneral) return; // general-only; non-general uses bulk modal
-    const limitForCat = limits[it.categoryKey];
-    const used = cartCategoryCounts[it.categoryKey] || 0;
-    if (limitForCat && used >= limitForCat) {
-      const msg = `Limit reached for ${it.categoryKey || "this category"}.`;
-      if (toast?.error) toast.error(msg);
-      else alert(msg);
-      return;
-    }
-
-    setModalItem(it);
-    const defaultExtra =
-      Array.isArray(it.extraOptions) && it.extraOptions.length
-        ? (extraChoice[it.id] || it.extraOptions[0] || "")
-        : "";
-    setModalExtra(defaultExtra);
-    setModalPeople(Math.max(Number(option?.minPeople) || 0, 1));
-  };
-
-  const confirmModalAdd = () => {
-    if (!modalItem) return;
-    if (modalItem.extraOptions.length && !modalExtra) {
-      const msg = "Please choose an option before adding this item.";
-      if (toast?.error) toast.error(msg);
-      else alert(msg);
-      return;
-    }
-    const people = Math.max(Number(modalPeople) || 0, 0);
-    if (!people) {
-      const msg = "Please enter number of people.";
-      if (toast?.error) toast.error(msg);
-      else alert(msg);
-      return;
-    }
-
-    addToCart({
-      id: `menu-${modalItem.id}${modalExtra ? `-${modalExtra}` : ""}`,
-      name: `${modalItem.name}${modalExtra ? ` (${modalExtra})` : ""}`,
-      price: modalItem.price,
-      image: modalItem.image,
-      menuItem: modalItem.id,
-      extra: modalExtra || undefined,
-      categoryKey: modalItem.categoryKey,
-      quantity: people,
-      isCatering: true,
-      people,
+  const selectedCounts = useMemo(() => {
+    const totals = { chicken: 0, salad: 0, veggies: 0, breadroll: 0 };
+    items.forEach((it) => {
+      const qty = quantities[it.id] || 0;
+      if (!qty) return;
+      const key = detectCategory(it);
+      if (key) totals[key] = (totals[key] || 0) + qty;
     });
-    setExtraChoice((prev) => ({ ...prev, [modalItem.id]: modalExtra }));
-    setModalItem(null);
-    setModalExtra("");
-    setModalPeople(0);
+    return totals;
+  }, [items, quantities]);
+
+  const groupedItems = useMemo(() => {
+    const groups = {};
+    CATEGORY_ORDER.forEach(({ key }) => { groups[key] = []; });
+    const others = [];
+    items.forEach((it) => {
+      const key = detectCategory(it);
+      if (key && groups[key]) groups[key].push(it);
+      else others.push(it);
+    });
+    return { groups, others };
+  }, [items]);
+
+  const totalSelected = useMemo(
+    () => Object.values(quantities).reduce((sum, v) => sum + (v || 0), 0),
+    [quantities]
+  );
+
+  const packagePrice = useMemo(
+    () => (typeof pkg?.price === "number" ? pkg.price : 0),
+    [pkg]
+  );
+
+  const updateQty = (item, delta, opts = {}) => {
+    const skipExtrasPrompt = opts.skipExtrasPrompt || false;
+    if (!delta) return;
+    const current = quantities[item.id] || 0;
+    if (delta < 0 && current <= 0) return;
+
+    const key = detectCategory(item);
+    if (isGeneral && delta > 0 && key) {
+      const limit = categoryLimits[key] ?? 0;
+      const currentCat = items.reduce(
+        (sum, it) => sum + (detectCategory(it) === key ? (quantities[it.id] || 0) : 0),
+        0
+      );
+      if (limit && currentCat + 1 > limit) {
+        toast.info(`You can choose only ${limit} ${CATEGORY_ORDER.find((c) => c.key === key)?.label || key}.`);
+        return;
+      }
+    }
+
+    const needsExtras = Array.isArray(item.extraOptions) && item.extraOptions.length > 0;
+    if (!skipExtrasPrompt && delta > 0 && current === 0 && needsExtras && !selectedExtras[item.id]) {
+      setExtrasModal({ open: true, item, delta });
+      return;
+    }
+
+    setQuantities((prev) => {
+      const next = Math.max(0, (prev[item.id] || 0) + delta);
+      return { ...prev, [item.id]: next };
+    });
   };
 
-  if (loading) return <div className="container py-5 text-muted">Loading...</div>;
-  if (err)
+  const handleSaveExtras = (optionList, applyDelta = true) => {
+    if (!extrasModal.item) return;
+    setSelectedExtras((prev) => ({ ...prev, [extrasModal.item.id]: optionList }));
+    setExtrasModal({ open: false, item: null, delta: 1 });
+    if (applyDelta) updateQty(extrasModal.item, extrasModal.delta || 1, { skipExtrasPrompt: true });
+  };
+
+  const openConfirmModal = () => {
+    if (!totalSelected) {
+      toast.info("Pick at least one item before adding to cart.");
+      return;
+    }
+    if (isGeneral) {
+      const missing = CATEGORY_ORDER.filter(
+        ({ key }) => (categoryLimits[key] ?? 0) > 0 && (selectedCounts[key] || 0) < (categoryLimits[key] ?? 0)
+      );
+      if (missing.length) {
+        const msg = missing
+          .map(({ key, label }) => `${label}: ${selectedCounts[key] || 0}/${categoryLimits[key] ?? 0}`)
+          .join(" | ");
+        toast.error(`Select required items first (${msg}).`);
+        return;
+      }
+    }
+    setConfirmOpen(true);
+  };
+
+  const addSelectionToCart = () => {
+    const multiplier = Math.max(1, Number(confirmQty) || 1);
+    const chosen = items
+      .map((it) => ({
+        it,
+        qty: quantities[it.id] || 0,
+        extras: selectedExtras[it.id] || [],
+      }))
+      .filter(({ qty }) => qty > 0);
+
+    if (isGeneral) {
+      const summary = chosen
+        .map(({ it, qty, extras }) => {
+          const extraTxt = extras.length ? ` (${extras.join(", ")})` : "";
+          return `${it.name} x${qty}${extraTxt}`;
+        })
+        .join(" • ");
+
+      const selectionKey = chosen
+        .map(({ it, qty, extras }) => `${it.id}:${qty}:${extras.join("+")}`)
+        .join("|") || "default";
+
+      addToCart({
+        id: `catering-${pkg?._id || optionId}-general-${selectionKey}`,
+        name: `${pkg?.title || "General Catering"} (per person)`,
+        price: packagePrice,
+        image: pkg?.image || chosen[0]?.it?.image,
+        quantity: multiplier,
+        extra: summary,
+      });
+    } else {
+      chosen.forEach(({ it, qty, extras }) => {
+        const extraLabel = Array.isArray(extras) && extras.length ? extras.join(", ") : "";
+        addToCart({
+          id: `catering-${pkg?._id || optionId}-${it.id}-${extraLabel || "plain"}`,
+          name: `${pkg?.title || "Catering"} - ${it.name}`,
+          price: typeof it.price === "number" ? it.price : packagePrice,
+          image: it.image || pkg?.image,
+          quantity: qty * multiplier,
+          extra: extraLabel,
+          menuItem: it.menuItemId,
+        });
+      });
+    }
+
+    setConfirmOpen(false);
+    setConfirmQty(1);
+    setQuantities({});
+    setSelectedExtras({});
+  };
+
+  const renderItemCard = (item) => {
+    const qty = quantities[item.id] || 0;
+    const hasExtras = Array.isArray(item.extraOptions) && item.extraOptions.length > 0;
+    const displayPrice = isGeneral
+      ? (packagePrice ? `$${packagePrice.toFixed(2)} per person` : "Per person")
+      : `$${Number(item.price || pkg?.price || 0).toFixed(2)}`;
     return (
-      <div className="container py-4">
-        <div className="alert alert-danger mb-3">{err}</div>
-        {debug && (
-          <pre
-            style={{
-              background: "#0b1020",
-              color: "#b6ffea",
-              padding: "12px",
-              borderRadius: 8,
-              overflowX: "auto",
-            }}
-          >
-            {JSON.stringify({ optionId, ...debug }, null, 2)}
-          </pre>
-        )}
+      <div key={item.id} className="hot-dish-card">
+        <div className="hot-dish-hover-bg" aria-hidden />
+        <div className="hot-dish-image-container">
+          <img
+            src={item.image || "https://via.placeholder.com/480x320?text=Catering"}
+            alt={item.name}
+            className="hot-dish-image"
+          />
+        </div>
+        <div className="hot-dish-content">
+          <div className="hot-dish-header">
+            <h3 className="hot-dish-name">{item.name}</h3>
+            <span className="hot-dish-price">{displayPrice}</span>
+          </div>
+          {item.description && <p className="hot-dish-description">{item.description}</p>}
+          {hasExtras && (
+            <p className="text-xs opacity-80 mt-1">
+              Extras available
+              {selectedExtras[item.id]?.length ? `: ${selectedExtras[item.id].join(", ")}` : ""}
+            </p>
+          )}
+          <div className="quantity-controls mt-3">
+            <button className="quantity-btn" onClick={() => updateQty(item, -1)} aria-label={`Remove ${item.name}`}>
+              -
+            </button>
+            <div className="quantity-display">{qty}</div>
+            <button className="quantity-btn" onClick={() => updateQty(item, 1)} aria-label={`Add ${item.name}`}>
+              +
+            </button>
+          </div>
+        </div>
       </div>
     );
-  if (!option) return null;
+  };
 
-  const priceHeader =
-    option.priceType === "per_person"
-      ? `(${Number(option.price || 0).toFixed(2)} per person)`
-      : option.priceType === "per_tray"
-      ? `(${Number(option.price || 0).toFixed(2)} per tray)`
-      : `(${Number(option.price || 0).toFixed(2)})`;
+  if (loading) return <div className="container py-10 text-gray-700">Loading...</div>;
+  if (err) return <div className="container py-10 text-red-600">{err}</div>;
+  if (!pkg) return <div className="container py-10">Not found.</div>;
+
+  const priceLabel = formatPrice(pkg);
 
   return (
-    <div className="hot-dishes-page">
+    <div className="option-menu-page">
       <main className="hot-dishes-main">
         <div className="hot-dishes-hero">
           <div className="container">
-            <h1 className="hot-dishes-title">
-              {option.title?.toUpperCase() || "CATERING MENU"} {priceHeader}
-            </h1>
+            <h1 className="hot-dishes-title">{pkg.title || "CATERING MENU"}</h1>
             <p className="hot-dishes-subtitle">
-              {option.feeds || ""} {option.minPeople ? `• Minimum ${option.minPeople} People` : ""}
+              Minimum {pkg.minPeople || 0} people {priceLabel && <span className="opacity-80">- {priceLabel}</span>}
             </p>
+            {!!pkg.description && <p className="mt-2 opacity-80">{pkg.description}</p>}
+            {isGeneral && (
+              <p className="mt-3 text-sm opacity-80">
+                General catering lets you choose {categoryLimits.chicken} chicken, {categoryLimits.salad} salad,
+                {` ${categoryLimits.veggies} veggies and ${categoryLimits.breadroll} bread roll option(s).`}
+              </p>
+            )}
           </div>
         </div>
 
         <section className="hot-dishes-grid-section">
           <div className="container">
+            {!items.length && <p>No menu available for this option.</p>}
+
             {isGeneral ? (
-              <>
-                {limitSummary && (
-                  <div className="mb-4 p-3 rounded-md border border-yellow-400/40 bg-yellow-500/5 text-yellow-100 text-sm">
-                    General catering limits: {limitSummary}
-                  </div>
-                )}
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-                  {categories.map((cat) => {
-                    const limitForCat = limits[cat.key];
-                    const usedFromCart = cartCategoryCounts[cat.key] || 0;
-                    const remaining = limitForCat ? Math.max(limitForCat - usedFromCart, 0) : "�?�";
-                    const active = selectedCategory === cat.key;
-                    return (
-                      <button
-                        key={cat.key}
-                        className={`p-4 rounded-lg border text-left transition ${
-                          active ? "border-yellow-400 bg-yellow-500/10" : "border-gray-700 bg-[#0f0f0f]"
-                        }`}
-                        onClick={() => setSelectedCategory(cat.key)}
-                      >
-                        <div className="text-sm text-gray-400">{cat.label}</div>
-                        <div className="text-lg font-semibold text-gray-100">{cat.items.length} items</div>
-                        {limitForCat ? (
-                          <div className="text-xs text-yellow-100 mt-1">
-                            Remaining: {remaining} / {limitForCat}
-                          </div>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="hot-dishes-grid">
-                  {items
-                    .filter((d) => !selectedCategory || d.categoryKey === selectedCategory)
-                    .map((dish) => {
-                      const limitForCat = limits[dish.categoryKey];
-                      const usedFromCart = cartCategoryCounts[dish.categoryKey] || 0;
-                      const remaining = limitForCat ? Math.max(limitForCat - usedFromCart, 0) : null;
-                      const atLimit = limitForCat ? remaining <= 0 : false;
-                      return (
-                        <div key={dish.id} className="hot-dish-card">
-                          <div className="hot-dish-hover-bg" aria-hidden />
-                          <div className="hot-dish-image-container">
-                            <DishImage src={dish.image} alt={dish.name} className="hot-dish-image" />
-                          </div>
-                          <div className="hot-dish-content">
-                            <div className="hot-dish-header">
-                              <h3 className="hot-dish-name">{dish.name}</h3>
-                              <span className="hot-dish-price">A$ {dish.price.toFixed(2)}</span>
-                            </div>
-                            <p className="hot-dish-description">{dish.description}</p>
-                            {limitForCat ? (
-                              <p className="text-[11px] text-gray-400 mt-2">
-                                Remaining {dish.categoryKey || "items"}: {remaining} / {limitForCat}
-                              </p>
-                            ) : null}
-                            {limitForCat && usedFromCart >= limitForCat ? (
-                              <p className="text-[11px] text-red-400 mt-1">
-                                Remove a {dish.categoryKey} item from cart to add a different one.
-                              </p>
-                            ) : null}
-
-                            <button
-                              className={`hot-dish-cart-btn ${atLimit ? "opacity-40 cursor-not-allowed" : ""}`}
-                              onClick={() => openModalForItem(dish)}
-                              aria-label="Add to cart"
-                              disabled={atLimit}
-                              title={atLimit ? "Limit reached for this category" : "Add to cart"}
-                            >
-                              <svg width="47" height="47" viewBox="0 0 47 47" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z" fill="#FAEB30" />
-                                <path
-                                  d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
-                                  stroke="#FAEB30"
-                                  strokeWidth="1.28"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
-                                  stroke="#FAEB30"
-                                  strokeWidth="1.28"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
-                                  stroke="#FAEB30"
-                                  strokeWidth="1.28"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  {items.filter((d) => !selectedCategory || d.categoryKey === selectedCategory).length === 0 && (
-                    <div className="col-span-full text-sm text-gray-400">
-                      No items listed for this category yet.
+              <div className="space-y-8">
+                {CATEGORY_ORDER.map(({ key, label }) => (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold">{label}</h3>
+                      <span className="text-sm opacity-80">
+                        {selectedCounts[key] || 0} / {categoryLimits[key] ?? 0} selected
+                      </span>
                     </div>
-                  )}
-                </div>
-              </>
+                    <div className="hot-dishes-grid">
+                      {(groupedItems.groups[key] || []).length
+                        ? groupedItems.groups[key].map((it) => renderItemCard(it))
+                        : <p className="opacity-70 text-sm">No {label.toLowerCase()} available.</p>}
+                    </div>
+                  </div>
+                ))}
+
+                {/* {groupedItems.others.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold">Other items</h3>
+                      <span className="text-sm opacity-80">Optional extras</span>
+                    </div>
+                    <div className="hot-dishes-grid">
+                      {groupedItems.others.map((it) => renderItemCard(it))}
+                    </div>
+                  </div>
+                )} */}
+              </div>
             ) : (
               <div className="hot-dishes-grid">
-                {items.map((dish) => {
-                  const count = selectedCounts[dish.id] || 0;
-                  return (
-                  <div key={dish.id} className="hot-dish-card">
-                    <div className="hot-dish-hover-bg" aria-hidden />
-
-                    <div className="hot-dish-image-container">
-                      <DishImage src={dish.image} alt={dish.name} className="hot-dish-image" />
-                    </div>
-                    <div className="hot-dish-content">
-                      <div className="hot-dish-header">
-                        <h3 className="hot-dish-name">{dish.name}</h3>
-                        <span className="hot-dish-price">A$ {dish.price.toFixed(2)}</span>
-                      </div>
-                      <p className="hot-dish-description">{dish.description}</p>
-
-                      {dish.extraOptions.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {dish.extraOptions.map((opt) => {
-                            const active = extraChoice[dish.id] === opt;
-                            return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() =>
-                                  setExtraChoice((prev) => ({
-                                    ...prev,
-                                    [dish.id]: active ? "" : opt,
-                                  }))
-                                }
-                                className={`px-3 py-1 rounded-full text-xs border ${
-                                  active ? "border-yellow-400 bg-yellow-400/10 text-yellow-100" : "border-gray-700 text-gray-200"
-                                }`}
-                              >
-                                {opt} {active ? "(on)" : "(off)"}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3 mt-4">
-                        <button
-                          className="px-3 py-1 border border-gray-700 text-gray-200 rounded-md"
-                          onClick={() =>
-                            setSelectedCounts((prev) => {
-                              const curr = prev[dish.id] || 0;
-                              const next = Math.max(curr - 1, 0);
-                              return { ...prev, [dish.id]: next };
-                            })
-                          }
-                          type="button"
-                        >
-                          -
-                        </button>
-                        <div className="min-w-[32px] text-center text-gray-100">{count}</div>
-                        <button
-                          className="px-3 py-1 border border-gray-700 text-gray-200 rounded-md"
-                          onClick={() =>
-                            setSelectedCounts((prev) => ({
-                              ...prev,
-                              [dish.id]: (prev[dish.id] || 0) + 1,
-                            }))
-                          }
-                          type="button"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );})}
+                {items.map((it) => renderItemCard(it))}
               </div>
             )}
 
-            {modalItem && (
-              <div
-                className="modal-overlay"
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.65)",
-                  display: "grid",
-                  placeItems: "center",
-                  zIndex: 2000,
-                  padding: "16px",
-                }}
-              >
-                <div
-                  className="modal-card max-w-lg"
-                  style={{
-                    width: "100%",
-                    maxWidth: 520,
-                    background: "#0f0f0f",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    padding: 16,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-100">{modalItem.name}</h3>
-                      <p className="text-sm text-gray-400">A$ {modalItem.price.toFixed(2)}</p>
-                    </div>
-                    <button
-                      className="text-gray-400 hover:text-gray-100"
-                      onClick={() => setModalItem(null)}
-                      aria-label="Close"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="mb-3 rounded-lg overflow-hidden border border-gray-800">
-                    <DishImage src={modalItem.image} alt={modalItem.name} className="w-full h-48 object-cover" />
-                  </div>
-                  <p className="text-sm text-gray-300 mb-3">{modalItem.description}</p>
-
-                  {modalItem.extraOptions.length > 0 ? (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold text-gray-200 mb-2">Choose an option</p>
-                      <div className="space-y-2">
-                        {modalItem.extraOptions.map((opt) => (
-                          <label key={opt} className="flex items-center gap-2 text-gray-100 text-sm">
-                            <input
-                              type="radio"
-                              name="modal-extra"
-                              value={opt}
-                              checked={modalExtra === opt}
-                              onChange={(e) => setModalExtra(e.target.value)}
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-200 mb-1">Number of people</p>
-                    <input
-                      type="number"
-                      min={1}
-                      className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
-                      value={modalPeople}
-                      onChange={(e) => setModalPeople(e.target.value)}
-                      placeholder={option?.minPeople ? `Minimum ${option.minPeople}` : "Enter people count"}
-                    />
-                    {option?.minPeople ? (
-                      <p className="text-[11px] text-gray-500 mt-1">Minimum {option.minPeople} people</p>
-                    ) : null}
-                  </div>
-
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button
-                      className="px-4 py-2 rounded-md border border-gray-700 text-gray-200"
-                      onClick={() => setModalItem(null)}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-md bg-yellow-400 text-black font-semibold"
-                      onClick={confirmModalAdd}
-                      type="button"
-                    >
-                      Add to cart
-                    </button>
-                  </div>
-                </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm opacity-80">
+                Selected: {totalSelected} item{totalSelected === 1 ? "" : "s"}
               </div>
-            )}
-
-            {option.description && (
-              <p className="text-muted mt-4" style={{ maxWidth: 720 }}>
-                {option.description}
-              </p>
-            )}
-
-            {!isGeneral && (
-              <div className="sticky bottom-4 mt-8">
-                <div className="flex items-center justify-between bg-[#0f0f0f] border border-gray-800 rounded-lg px-4 py-3 shadow-lg">
-                  <div className="text-sm text-gray-300">
-                    Selected items:{" "}
-                    {Object.values(selectedCounts).reduce((a, b) => a + (b || 0), 0)}
-                  </div>
-                  <button
-                    className="px-4 py-2 rounded-md bg-yellow-400 text-black font-semibold disabled:opacity-50"
-                    disabled={
-                      Object.values(selectedCounts).reduce((a, b) => a + (b || 0), 0) === 0
-                    }
-                    onClick={() => {
-                      setModalPeople(Math.max(Number(option?.minPeople) || 0, 1));
-                      setBulkModalOpen(true);
-                    }}
-                    type="button"
-                  >
-                    Add to cart
-                  </button>
-                </div>
+              <div className="flex gap-3">
+                <Link to="/catering" className="underline">Back to Catering</Link>
+                <button className="hot-dish-cart-btn" onClick={openConfirmModal}>
+                  ADD TO CART
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </section>
       </main>
 
-      {!isGeneral && bulkModalOpen && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.65)",
-            display: "grid",
-            placeItems: "center",
-            zIndex: 2000,
-            padding: "16px",
-          }}
-        >
-          <div
-            className="modal-card max-w-lg"
-            style={{
-              width: "100%",
-              maxWidth: 520,
-              background: "#0f0f0f",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.08)",
-              padding: 16,
-            }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-100">Confirm catering</h3>
-              <button
-                className="text-gray-400 hover:text-gray-100"
-                onClick={() => setBulkModalOpen(false)}
-                aria-label="Close"
-              >
-                ×
+      {extrasModal.open && extrasModal.item && (
+        <div className="modal-overlay">
+          <div className="customer-details-modal extras-modal">
+            <div className="modal-header mb-1">
+              <p className="extras-kicker">Extras for</p>
+              <h3>{extrasModal.item.name}</h3>
+              <p className="extras-subtext">Tick the extras you want. Leave blank if none.</p>
+            </div>
+            <div className="extra-options-grid">
+              {extrasModal.item.extraOptions.map((opt) => {
+                const checked = (selectedExtras[extrasModal.item.id] || []).includes(opt);
+                return (
+                  <label key={opt} className={`extra-option ${checked ? "is-checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        setSelectedExtras((prev) => {
+                          const current = new Set(prev[extrasModal.item.id] || []);
+                          if (e.target.checked) current.add(opt);
+                          else current.delete(opt);
+                          return { ...prev, [extrasModal.item.id]: Array.from(current) };
+                        });
+                      }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                );
+              })}
+              {!extrasModal.item.extraOptions.length && (
+                <p className="text-sm opacity-75">No extra options available.</p>
+              )}
+            </div>
+            <div className="extras-actions">
+              <button className="modal-submit-btn secondary" onClick={() => handleSaveExtras([], true)}>
+                Skip
+              </button>
+              <button className="modal-submit-btn" onClick={() => handleSaveExtras(selectedExtras[extrasModal.item.id] || [])}>
+                Save & Add
               </button>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-gray-200 mb-1">Number of people</p>
+      {confirmOpen && (
+        <div className="modal-overlay">
+          <div className="customer-details-modal">
+            <div className="modal-header">
+              <h3>{isGeneral ? "How many people are you catering for?" : "How many sets to add?"}</h3>
+            </div>
+            <div className="customer-form">
               <input
                 type="number"
-                min={1}
-                className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
-                value={modalPeople}
-                onChange={(e) => setModalPeople(e.target.value)}
-                placeholder={option?.minPeople ? `Minimum ${option.minPeople}` : "Enter people count"}
+                min="1"
+                value={confirmQty}
+                onChange={(e) => setConfirmQty(e.target.value)}
+                placeholder={isGeneral ? "Number of people" : "Number of sets"}
               />
-              {option?.minPeople ? (
-                <p className="text-[11px] text-gray-500 mt-1">Minimum {option.minPeople} people</p>
+              {isGeneral && packagePrice ? (
+                <p className="text-sm opacity-80 mt-1">Price: ${packagePrice.toFixed(2)} per person</p>
               ) : null}
             </div>
-
-            <div className="max-h-64 overflow-y-auto space-y-3 mb-4">
-              {items
-                .filter((it) => (selectedCounts[it.id] || 0) > 0)
-                .map((it) => (
-                  <div
-                    key={it.id}
-                    className="p-3 rounded-md border border-gray-800 bg-[#111]"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="text-gray-100 font-semibold">{it.name}</div>
-                      <div className="text-sm text-gray-300">x {selectedCounts[it.id]}</div>
-                    </div>
-                    {it.extraOptions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {it.extraOptions.map((opt) => {
-                          const active = extraChoice[it.id] === opt;
-                          return (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() =>
-                                setExtraChoice((prev) => ({
-                                  ...prev,
-                                  [it.id]: active ? "" : opt,
-                                }))
-                              }
-                              className={`px-3 py-1 rounded-full text-xs border ${
-                                active ? "border-yellow-400 bg-yellow-400/10 text-yellow-100" : "border-gray-700 text-gray-200"
-                              }`}
-                            >
-                              {opt} {active ? "(on)" : "(off)"}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-4 py-2 rounded-md border border-gray-700 text-gray-200"
-                onClick={() => setBulkModalOpen(false)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-md bg-yellow-400 text-black font-semibold"
-                onClick={() => {
-                  const people = Math.max(Number(modalPeople) || 0, 0);
-                  if (!people) {
-                    const msg = "Please enter number of people.";
-                    if (toast?.error) toast.error(msg);
-                    else alert(msg);
-                    return;
-                  }
-                  const totalSelected = Object.entries(selectedCounts).filter(([, v]) => v > 0);
-                  if (!totalSelected.length) {
-                    setBulkModalOpen(false);
-                    return;
-                  }
-                  totalSelected.forEach(([id, count]) => {
-                    const it = items.find((x) => x.id === id);
-                    if (!it) return;
-                    const extra = extraChoice[id] || "";
-                    const qty = Math.max(count, 1) * people;
-                    addToCart({
-                      id: `menu-${it.id}${extra ? `-${extra}` : ""}`,
-                      name: `${it.name}${extra ? ` (${extra})` : ""}`,
-                      price: it.price,
-                      image: it.image,
-                      menuItem: it.id,
-                      extra: extra || undefined,
-                      categoryKey: it.categoryKey,
-                      quantity: qty,
-                      isCatering: true,
-                      people,
-                    });
-                  });
-                  setBulkModalOpen(false);
-                }}
-                type="button"
-              >
-                Add to cart
-              </button>
-            </div>
+            <button className="modal-submit-btn mt-2" onClick={addSelectionToCart}>
+              CONFIRM
+            </button>
           </div>
         </div>
       )}
