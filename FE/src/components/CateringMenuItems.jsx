@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "./common/ToastProvider.jsx";
@@ -17,6 +17,10 @@ const KEYWORDS = {
   veggies: ["veg", "veggie", "vegetable", "paneer", "broccoli", "spinach", "mushroom", "beans"],
   breadroll: ["roll", "bread", "bun", "pita", "tortilla", "wrap", "naan","Bread","Roll"],
 };
+
+const PLACEHOLDER = "https://via.placeholder.com/640x480?text=Catering";
+const HEX_ID_RE = /^[0-9a-f]{24}$/i;
+const isHexId = (value) => HEX_ID_RE.test(String(value || ""));
 
 function toPublicUrl(p, serverUrl) {
   if (!p) return "";
@@ -134,6 +138,108 @@ export default function CateringMenuItems() {
   const [confirmQty, setConfirmQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [, setDebug] = useState(null);
+
+  const buildItems = useCallback((option, fallbackItems = []) => {
+    if (!option) return [];
+    const normalized = normalizeItems(option, SERVER_URL);
+    const base = normalized.length
+      ? normalized
+      : (Array.isArray(fallbackItems) ? fallbackItems : []);
+    return base.map((item, idx) => {
+      const imageSource = item.image || option?.image || "";
+      const normalizedImage = imageSource ? toPublicUrl(imageSource, SERVER_URL) : PLACEHOLDER;
+      const categoryKey = item.categoryKey || detectCategory(item);
+      return {
+        ...item,
+        id: item.id || item._id || String(idx),
+        image: normalizedImage || PLACEHOLDER,
+        categoryKey,
+        extraOptions: Array.isArray(item.extraOptions) ? item.extraOptions.filter(Boolean) : [],
+      };
+    });
+  }, [SERVER_URL]);
+
+  const packagePrice = useMemo(() => {
+    if (!pkg) return 0;
+    const direct = Number(pkg.price);
+    if (!Number.isNaN(direct) && direct > 0) return direct;
+    const perPerson = pkg.perPersonPrice ?? pkg.trayPrice;
+    return Number(perPerson) || 0;
+  }, [pkg]);
+
+  const isGeneral = Boolean(pkg?.selectionRules?.enabled);
+  const categoryLimits = useMemo(
+    () => normalizeLimits(pkg?.selectionRules),
+    [pkg?.selectionRules]
+  );
+
+  const groupedItems = useMemo(() => {
+    if (!isGeneral) return { groups: {}, others: [] };
+    const groups = CATEGORY_ORDER.reduce((acc, { key }) => {
+      acc[key] = [];
+      return acc;
+    }, {});
+    const others = [];
+    items.forEach((item) => {
+      const key = item.categoryKey || detectCategory(item);
+      if (key && groups[key]) groups[key].push(item);
+      else others.push(item);
+    });
+    return { groups, others };
+  }, [isGeneral, items]);
+
+  const selectedCounts = useMemo(() => {
+    if (!isGeneral) return {};
+    return CATEGORY_ORDER.reduce((acc, { key }) => {
+      const list = groupedItems.groups[key] || [];
+      acc[key] = list.reduce((sum, item) => sum + (quantities[item.id] || 0), 0);
+      return acc;
+    }, {});
+  }, [isGeneral, groupedItems, quantities]);
+
+  const totalSelected = useMemo(
+    () => Object.values(quantities).reduce((sum, qty) => sum + qty, 0),
+    [quantities]
+  );
+
+  const updateQty = useCallback((item, delta = 1, opts = {}) => {
+    if (!item || !delta) return;
+    const extras = Array.isArray(item.extraOptions) ? item.extraOptions.filter(Boolean) : [];
+    if (delta > 0 && extras.length && !opts.skipExtrasPrompt) {
+      setExtrasModal({ open: true, item, delta });
+      return;
+    }
+
+    if (isGeneral && delta > 0) {
+      const key = item.categoryKey || detectCategory(item);
+      const limit = categoryLimits[key] ?? 0;
+      if (limit > 0 && (selectedCounts[key] || 0) >= limit) {
+        const label = CATEGORY_ORDER.find((c) => c.key === key)?.label || "this category";
+        toast.error(`Limit reached for ${label}.`);
+        return;
+      }
+    }
+
+    setQuantities((prev) => {
+      const current = prev[item.id] || 0;
+      let next = current + delta;
+      if (next < 0) next = 0;
+      const updated = { ...prev };
+      if (next === 0) delete updated[item.id];
+      else updated[item.id] = next;
+
+      if (next === 0) {
+        setSelectedExtras((prevExtras) => {
+          if (!prevExtras[item.id]) return prevExtras;
+          const clone = { ...prevExtras };
+          delete clone[item.id];
+          return clone;
+        });
+      }
+      return updated;
+    });
+  }, [categoryLimits, isGeneral, selectedCounts, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -141,14 +247,15 @@ export default function CateringMenuItems() {
     setErr("");
     // simple local cache to avoid re-fetching every visit
     const TTL = 5 * 60 * 1000; // 5 minutes
-    const key = `mcg:catering:option:${optionId}`;
+    const key = `mcg:catering:option:${API_URL}:${optionId}`;
     try {
       const cached = JSON.parse(localStorage.getItem(key) || 'null');
-      if (cached && cached.exp > Date.now() && cached.option && Array.isArray(cached.items)) {
-        setOption(cached.option);
-        setItems(cached.items);
+      const cachedPkg = cached?.pkg || cached?.option;
+      if (cached && cached.exp > Date.now() && cachedPkg && Array.isArray(cached.items)) {
+        const readyItems = buildItems(cachedPkg, cached.items);
+        setPkg(cachedPkg);
+        setItems(readyItems);
         setLoading(false);
-        // Short-circuit: fresh cache, skip network
         return () => { alive = false; };
       }
     } catch {}
@@ -169,17 +276,10 @@ export default function CateringMenuItems() {
           }
           const data = body?.data || body;
           if (!alive) return;
-          const mapped = (data.items || []).map((it) => ({
-              id: it._id || it.id,
-              name: it.name || it.title || "Item",
-              price: Number(it.price || 0),
-              description: it.description || "",
-              image: toPublicUrl(it.image) || PLACEHOLDER,
-              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
-            }))
-          setOption(data);
+          const mapped = buildItems(data);
+          setPkg(data);
           setItems(mapped);
-          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -202,17 +302,10 @@ export default function CateringMenuItems() {
           const data = arr[0];
           if (!data) throw Object.assign(new Error("Option not found"), { status: 404, body });
           if (!alive) return;
-          const mapped = (data.items || []).map((it) => ({
-              id: it._id || it.id,
-              name: it.name || it.title || "Item",
-              price: Number(it.price || 0),
-              description: it.description || "",
-              image: toPublicUrl(it.image) || PLACEHOLDER,
-              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
-            }))
-          setOption(data);
+          const mapped = buildItems(data);
+          setPkg(data);
           setItems(mapped);
-          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -227,6 +320,12 @@ export default function CateringMenuItems() {
     return () => {
       alive = false;
     };
+  }, [API_URL, buildItems, optionId]);
+
+  useEffect(() => {
+    setQuantities({});
+    setSelectedExtras({});
+    setExtrasModal({ open: false, item: null, delta: 1 });
   }, [optionId]);
 
   const handleAddToCart = (it) => {

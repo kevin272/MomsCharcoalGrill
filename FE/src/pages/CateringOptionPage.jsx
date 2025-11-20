@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 
 export default function CateringOptionPage() {
   // NOTE: we keep your same param name so routes don't change
@@ -17,7 +19,7 @@ export default function CateringOptionPage() {
     let alive = true;
     const controller = new AbortController();
     const TTL = 5 * 60 * 1000;
-    const key = `mcg:catering:pkg:${optionId}`;
+    const key = `mcg:catering:pkg:${API_URL}:${optionId}`;
     try {
       const cached = JSON.parse(localStorage.getItem(key) || 'null');
       if (cached && cached.exp > Date.now() && cached.pkg) {
@@ -28,15 +30,16 @@ export default function CateringOptionPage() {
     } catch {}
 
     (async () => {
+      const url = `${API_URL}/catering-packages/${optionId}`;
       setLoading(true);
       setErr("");
       try {
-        const r = await fetch(`/api/catering-packages/${optionId}`, {
-          cacheTtl: TTL,
+        const r = await fetch(url, {
           signal: controller.signal,
+          headers: { Accept: "application/json" },
         });
         const j = await r.json();
-        if (!j.success) throw new Error(j.message || "Package not found");
+        if (!r.ok || !j.success) throw new Error(j.message || `Failed to load package`);
         if (alive) {
           setPkg(j.data);
           try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: j.data })); } catch {}
