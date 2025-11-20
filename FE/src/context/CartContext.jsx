@@ -50,8 +50,12 @@ export function CartProvider({ children }) {
       
     });
     const niceName = item?.name || item?.title || "Item";
-    toast.success(`${niceName} added to cart`);
-  };
+    const itemValue = item?.value ?? item?.price;
+    const formattedValue = typeof itemValue === 'number'
+      ? new Intl.NumberFormat(undefined, { style: 'currency', currency: 'AUD' }).format(itemValue)
+      : itemValue ? String(itemValue) : null;
+    toast.success(`${niceName}${formattedValue ? ` ( ${formattedValue})` : ''} added to cart`);
+    };
 
   const removeFromCart = (id) => setItems((prev) => prev.filter((i) => i.id !== id));
 

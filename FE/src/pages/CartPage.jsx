@@ -74,6 +74,7 @@ const handleCustomerDetailsSubmit = async () => {
     items: cartItems.map((item) => ({
       menuItem: item.menuItem || null,
       name: item.name,
+      extra: item.extra || '',
       price: item.price,
       image: item.image,
       qty: item.quantity,
@@ -161,6 +162,11 @@ const handleCustomerDetailsSubmit = async () => {
                       <h3 className="cart-item-name">{item.name}</h3>
                       {item.description && (
                         <p className="cart-item-description">{item.description}</p>
+                      )}
+                      {item.extra && (
+                        <p className="cart-item-description text-xs opacity-80">
+                          Selection: {item.extra}
+                        </p>
                       )}
                     </div>
                     <div className="cart-item-controls">

@@ -11,6 +11,7 @@ const OrderItemSchema = new Schema(
   {
     menuItem: { type: Types.ObjectId, ref: 'MenuItem', required: true },
     name: { type: String, required: true },
+    extra: { type: String, default: '', trim: true },
     price: { type: Number, required: true, min: 0 },
     qty: { type: Number, required: true, min: 1 },
     image: { type: String, default: '' },

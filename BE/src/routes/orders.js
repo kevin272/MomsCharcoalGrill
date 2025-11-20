@@ -110,6 +110,7 @@ router.post('/checkout', async (req, res) => {
     for (const item of items) {
       const qty = Math.max(parseInt(item.qty) || 1, 1);
       let menuItemId, name, price, image = '';
+      const extra = item.extra || item.selection || '';
 
       if (item.menuItem) {
         const doc = await MenuItem.findById(item.menuItem);
@@ -125,7 +126,7 @@ router.post('/checkout', async (req, res) => {
       }
 
       subtotal += price * qty;
-      orderItems.push({ menuItem: menuItemId, name, price, qty, image });
+      orderItems.push({ menuItem: menuItemId, name, price, qty, image, extra });
     }
 
     const gst = Math.round(subtotal * 0.1);
