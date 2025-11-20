@@ -7,8 +7,9 @@ import axiosInstance from "../../config/axios.config.js";
  * - value: string[]              // preferred
  * - selectedIds: string[]        // legacy
  * - onChange: (ids: string[]) => void
+ * - onItemsLoaded?: (items: any[]) => void
  */
-export default function MenuItemPicker({ value, selectedIds, onChange }) {
+export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLoaded }) {
   // Normalize selected ids from either prop; always an array.
   const selected = useMemo(() => {
     if (Array.isArray(value)) return value;
@@ -38,9 +39,11 @@ export default function MenuItemPicker({ value, selectedIds, onChange }) {
         ? data
         : [];
       setItems(list);
+      onItemsLoaded?.(list);
     } catch (err) {
       console.error(err);
       setError("Failed to load menu items");
+      onItemsLoaded?.([]);
     } finally {
       setLoading(false);
     }

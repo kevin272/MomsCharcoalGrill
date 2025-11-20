@@ -5,16 +5,41 @@ const MenuItem = require('../models/MenuItem');
 const toSlug = (str='') =>
   String(str).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
 
-// LIST with search & populate
+const parseArrayField = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; }
+    catch { return raw.split(',').map((s) => s.trim()).filter(Boolean); }
+  }
+  return [];
+};
+
+const normalizeCategoryLimits = (input) => {
+  const out = {};
+  if (!input || typeof input !== 'object') return out;
+  Object.entries(input).forEach(([k, v]) => {
+    const num = Number(v);
+    if (!Number.isNaN(num)) out[String(k)] = num;
+  });
+  return out;
+};
+
+// list with search & populate
 exports.list = async (req, res) => {
   try {
-    const { q, isActive, populate } = req.query;
+    const { q, isActive, populate, slug } = req.query;
     const filter = {};
     if (q) filter.title = { $regex: q, $options: 'i' };
     if (typeof isActive !== 'undefined') filter.isActive = isActive === 'true';
+    if (slug) filter.slug = slug;
 
     const query = CateringOption.find(filter).sort({ order: 1, createdAt: -1 });
-    if (populate === '1') query.populate('items');
+    if (populate === '1') {
+      query
+        .populate({ path: 'items', populate: { path: 'category', select: 'name slug' } })
+        .populate({ path: 'itemConfigurations.menuItem', populate: { path: 'category', select: 'name slug' } });
+    }
 
     const data = await query.exec();
     res.json({ success: true, data });
@@ -26,7 +51,9 @@ exports.list = async (req, res) => {
 // GET one
 exports.getOne = async (req, res) => {
   try {
-    const doc = await CateringOption.findById(req.params.id).populate('items');
+    const doc = await CateringOption.findById(req.params.id)
+      .populate({ path: 'items', populate: { path: 'category', select: 'name slug' } })
+      .populate({ path: 'itemConfigurations.menuItem', populate: { path: 'category', select: 'name slug' } });
     if (!doc) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: doc });
   } catch (e) {
@@ -41,10 +68,22 @@ exports.create = async (req, res) => {
       title, description, priceType, price, minPeople, feeds, isActive = true, order = 0
     } = req.body;
 
-    // items can come as JSON string or array of ids
-    let items = req.body.items || [];
-    if (typeof items === 'string') {
-      try { items = JSON.parse(items); } catch (_) { items = []; }
+    // Legacy items (array of ids) and new itemConfigurations with extra selections
+    let items = parseArrayField(req.body.items);
+    let itemConfigurations = parseArrayField(req.body.itemConfigurations || req.body.itemConfigs)
+      .map((cfg) => {
+        const menuItem = cfg?.menuItem || cfg?.item || cfg?._id || cfg?.id || cfg;
+        const extraOptions = parseArrayField(cfg?.extraOptions);
+        return menuItem ? { menuItem, extraOptions } : null;
+      })
+      .filter(Boolean);
+
+    // If configs are provided, derive items from them so both shapes stay in sync
+    if (itemConfigurations.length) {
+      items = itemConfigurations.map((c) => c.menuItem);
+    } else if (items.length) {
+      // seed configurations with empty options to keep FE consistent
+      itemConfigurations = items.map((id) => ({ menuItem: id, extraOptions: [] }));
     }
 
     // validate menu item ids exist
@@ -53,6 +92,18 @@ exports.create = async (req, res) => {
       if (count !== items.length) {
         return res.status(400).json({ success: false, message: 'Some MenuItem ids are invalid' });
       }
+    }
+
+    // selection rules for special catering (e.g., general catering limits)
+    let selectionRules = req.body.selectionRules;
+    if (typeof selectionRules === 'string') {
+      try { selectionRules = JSON.parse(selectionRules); } catch (_) { selectionRules = null; }
+    }
+    if (!selectionRules || typeof selectionRules !== 'object') {
+      selectionRules = { enabled: false, categoryLimits: {} };
+    } else {
+      selectionRules.enabled = !!selectionRules.enabled;
+      selectionRules.categoryLimits = normalizeCategoryLimits(selectionRules.categoryLimits);
     }
 
     const slugBase = toSlug(title);
@@ -70,7 +121,7 @@ exports.create = async (req, res) => {
 
     const doc = await CateringOption.create({
       title, slug, description, priceType, price, minPeople, feeds,
-      items, image, isActive, order
+      items, itemConfigurations, selectionRules, image, isActive, order
     });
 
     res.status(201).json({ success: true, data: doc });
@@ -94,12 +145,42 @@ exports.update = async (req, res) => {
 
     // items come possibly as JSON
     if (typeof payload.items === 'string') {
-      try { payload.items = JSON.parse(payload.items); } catch(_) { payload.items = []; }
+      payload.items = parseArrayField(payload.items);
+    }
+
+    // new itemConfigurations shape
+    if (typeof payload.itemConfigurations === 'string' || Array.isArray(payload.itemConfigurations)) {
+      payload.itemConfigurations = parseArrayField(payload.itemConfigurations)
+        .map((cfg) => {
+          const menuItem = cfg?.menuItem || cfg?.item || cfg?._id || cfg?.id || cfg;
+          const extraOptions = parseArrayField(cfg?.extraOptions);
+          return menuItem ? { menuItem, extraOptions } : null;
+        })
+        .filter(Boolean);
+      // keep items array synced for older clients
+      payload.items = payload.itemConfigurations.map((c) => c.menuItem);
+    } else if (Array.isArray(payload.items) && payload.items.length) {
+      payload.itemConfigurations = payload.items.map((id) => ({ menuItem: id, extraOptions: [] }));
     }
 
     if (req.file) payload.image = req.file.path;
 
-    const doc = await CateringOption.findByIdAndUpdate(id, payload, { new: true }).populate('items');
+    // selection rules optional
+    if (payload.selectionRules) {
+      if (typeof payload.selectionRules === 'string') {
+        try { payload.selectionRules = JSON.parse(payload.selectionRules); } catch (_) { payload.selectionRules = null; }
+      }
+      if (!payload.selectionRules || typeof payload.selectionRules !== 'object') {
+        payload.selectionRules = { enabled: false, categoryLimits: {} };
+      } else {
+        payload.selectionRules.enabled = !!payload.selectionRules.enabled;
+        payload.selectionRules.categoryLimits = normalizeCategoryLimits(payload.selectionRules.categoryLimits);
+      }
+    }
+
+    const doc = await CateringOption.findByIdAndUpdate(id, payload, { new: true })
+      .populate({ path: 'items', populate: { path: 'category', select: 'name slug' } })
+      .populate({ path: 'itemConfigurations.menuItem', populate: { path: 'category', select: 'name slug' } });
     if (!doc) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: doc });
   } catch (e) {
