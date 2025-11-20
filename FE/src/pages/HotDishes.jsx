@@ -12,6 +12,7 @@ import { useCart } from '../context/CartContext.jsx';
  */
 const HotDishes = () => {
   const { addToCart } = useCart();
+  const [glutenFree, setGlutenFree] = React.useState({});
   // Define an array of hot dishes.  Note that price is a number; convert
   // strings from the original design ("$80") into numeric values so that
   // totals can be computed accurately.
@@ -70,11 +71,13 @@ const HotDishes = () => {
   // uniqueness across different pages (e.g. hot dishes vs. sauces).  Include
   // name, price and image so the cart has everything it needs.
   const handleAddToCart = (dish) => {
+    const gf = !!glutenFree[dish.id];
     addToCart({
-      id: `hot-${dish.id}`,
-      name: dish.name,
+      id: `hot-${dish.id}${gf ? '-gf' : ''}`,
+      name: gf ? `${dish.name} (GF)` : dish.name,
       price: dish.price,
       image: dish.image,
+      glutenFree: gf,
     });
   };
 
@@ -97,10 +100,21 @@ const HotDishes = () => {
                   </div>
                     <div className="hot-dish-content">
                       <div className="hot-dish-header">
+                        {!!glutenFree[dish.id] && (
+                          <span className="gf-badge" aria-label="Gluten free">GF</span>
+                        )}
                         <h3 className="hot-dish-name">{dish.name}</h3>
                         <span className="hot-dish-price">${dish.price}</span>
                       </div>
                       <p className="hot-dish-description">{dish.description}</p>
+                      <label className="gf-option">
+                        <input
+                          type="checkbox"
+                          checked={!!glutenFree[dish.id]}
+                          onChange={(e) => setGlutenFree((m) => ({ ...m, [dish.id]: e.target.checked }))}
+                        />
+                        <span>Gluten-free (GF)</span>
+                      </label>
                       <button
                         className="hot-dish-cart-btn"
                         aria-label="Add to cart"

@@ -25,6 +25,7 @@ export default function MenuForm() {
   const [description, setDescription] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
   const [featured, setFeatured] = useState(false);
+  const [glutenFree, setGlutenFree] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
@@ -42,6 +43,7 @@ export default function MenuForm() {
         setDescription(d.description || "");
         setIsAvailable(!!d.isAvailable);
         setFeatured(!!d.featured);
+        setGlutenFree(!!(d.glutenFree || d.isGlutenFree));
         // set preview from existing image path
         if (d.image) setPreview(absUrl(d.image));
         else if (d.photo) setPreview(absUrl(d.photo));
@@ -95,6 +97,7 @@ export default function MenuForm() {
       description,
       isAvailable,
       featured,
+      glutenFree,
     };
 
     let payload, headers;
@@ -132,7 +135,7 @@ export default function MenuForm() {
 };
   return (
     <div className="container py-5">
-      <div className="card shadow-lg border-0 rounded-4 mx-auto" style={{ maxWidth: 900 }}>
+      <div className="card shadow-lg border-0 rounded-4 mx-auto" style={{ maxWidth: 1000 }}>
         <div className="card-body p-5">
           <h2 className="mb-4 fw-bold text-center">{id ? "Edit Menu Item" : "Add Menu Item"}</h2>
           {error && <div className="alert alert-danger">{error}</div>}
@@ -211,6 +214,18 @@ export default function MenuForm() {
                 />
                 <label className="form-check-label" htmlFor="featured">
                   Featured
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  id="glutenFree"
+                  className="form-check-input"
+                  type="checkbox"
+                  checked={glutenFree}
+                  onChange={(e) => setGlutenFree(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="glutenFree">
+                  Gluten-free (GF)
                 </label>
               </div>
             </div>

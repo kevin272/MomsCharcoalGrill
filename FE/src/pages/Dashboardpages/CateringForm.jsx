@@ -222,7 +222,7 @@ export default function CateringForm({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md px-2 py-1 border border-gray-600 text-gray-200 hover:bg-gray-800"
+            className="od-btn od-btn--ghost"
           >
             ✕
           </button>
@@ -238,20 +238,22 @@ export default function CateringForm({
           <div>
             <label className="block mb-1 text-sm font-semibold text-gray-200">Title</label>
             <input
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., BBQ Feast"
+              required
             />
           </div>
 
           <div>
             <label className="block mb-1 text-sm font-semibold text-gray-200">Slug</label>
             <input
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder="bbq-feast"
+              required
             />
           </div>
 
@@ -259,9 +261,10 @@ export default function CateringForm({
             <label className="block mb-1 text-sm font-semibold text-gray-200">Order</label>
             <input
               type="number"
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               value={order}
               onChange={(e) => setOrder(e.target.value)}
+              min="0"
             />
           </div>
 
@@ -269,17 +272,19 @@ export default function CateringForm({
             <label className="block mb-1 text-sm font-semibold text-gray-200">Price</label>
             <input
               type="number"
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="160"
+              min="0"
+              step="0.01"
             />
           </div>
 
           <div>
             <label className="block mb-1 text-sm font-semibold text-gray-200">Price Type</label>
             <select
-              className="od-select height-10 !important"
+              className="od-select"
               value={priceType}
               onChange={(e) => setPriceType(e.target.value)}
             >
@@ -292,10 +297,11 @@ export default function CateringForm({
             <label className="block mb-1 text-sm font-semibold text-gray-200">Min People</label>
             <input
               type="number"
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               value={minPeople}
               onChange={(e) => setMinPeople(e.target.value)}
               placeholder="20"
+              min="0"
             />
           </div>
 
@@ -314,7 +320,7 @@ export default function CateringForm({
             <input
               type="file"
               accept="image/*"
-              className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+              className="od-input"
               onChange={(e) => {
                 const f = e.target.files?.[0] || null;
                 setImageFile(f);
@@ -333,7 +339,7 @@ export default function CateringForm({
             ) : null}
           </div>
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 menu-picker">
             <label className="block mb-1 text-sm font-semibold text-gray-200">Items</label>
             <MenuItemPicker value={selectedItemIds} onChange={setSelectedItemIds} onItemsLoaded={handleItemsLoaded} />
           </div>
@@ -416,14 +422,14 @@ export default function CateringForm({
           <button
             type="button"
             onClick={onClose}
-            className="od-btn od-btn--danger"
+            className="od-btn"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="od-btn od-btn--danger color-white"
+            className="od-btn od-btn--danger"
           >
             {saving ? "Saving..." : (initial ? "Update" : "Create")}
           </button>

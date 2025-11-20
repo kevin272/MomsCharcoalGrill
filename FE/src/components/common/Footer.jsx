@@ -16,7 +16,7 @@ const Footer = () => {
         </div>
 
         {/* Center logo */}
-        <img src="/apples-2.png" alt="Mom's Charcoal and Grill" />
+        <img src="/Group 16.png" alt="Mom's Charcoal and Grill" />
       </div>
 
       <div className="footer-content">

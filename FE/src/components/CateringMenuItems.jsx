@@ -139,89 +139,103 @@ export default function CateringMenuItems() {
     let alive = true;
     setLoading(true);
     setErr("");
+    // simple local cache to avoid re-fetching every visit
+    const TTL = 5 * 60 * 1000; // 5 minutes
+    const key = `mcg:catering:option:${optionId}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || 'null');
+      if (cached && cached.exp > Date.now() && cached.option && Array.isArray(cached.items)) {
+        setOption(cached.option);
+        setItems(cached.items);
+        setLoading(false);
+        // Short-circuit: fresh cache, skip network
+        return () => { alive = false; };
+      }
+    } catch {}
+
     (async () => {
-      try {
-        const res = await fetch(`${API_URL}/catering-options/${optionId}`);
-        const body = await res.json();
-        if (!body?.success) throw new Error(body?.message || "Failed to load catering option");
-        if (!alive) return;
-        setPkg(body.data);
-        setItems(normalizeItems(body.data, SERVER_URL));
-        setQuantities({});
-        setSelectedExtras({});
-      } catch (e) {
-        if (alive) setErr(e.message || "Unable to load catering option");
-      } finally {
-        if (alive) setLoading(false);
+      setLoading(true);
+      setErr("");
+      setDebug(null);
+
+      // 1) Try by ObjectId
+      if (isHexId(optionId)) {
+        const url = `${API_URL}/catering-options/${optionId}?populate=1`;
+        try {
+          const res = await fetch(url, { headers: { Accept: "application/json" } });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.success === false) {
+            throw Object.assign(new Error(body?.message || res.statusText), { status: res.status, body });
+          }
+          const data = body?.data || body;
+          if (!alive) return;
+          const mapped = (data.items || []).map((it) => ({
+              id: it._id || it.id,
+              name: it.name || it.title || "Item",
+              price: Number(it.price || 0),
+              description: it.description || "",
+              image: toPublicUrl(it.image) || PLACEHOLDER,
+              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
+            }))
+          setOption(data);
+          setItems(mapped);
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
+          setLoading(false);
+          return;
+        } catch (e) {
+          if (!alive) return;
+          setDebug({ where: "byId", url, error: String(e), status: e?.status, body: e?.body });
+          // fallthrough
+        }
+      }
+
+      // 2) Try by slug (FIX: do NOT double /api)
+      {
+        const url = `${API_URL}/catering-options?slug=${encodeURIComponent(optionId)}&populate=1`;
+        try {
+          const res = await fetch(url, { headers: { Accept: "application/json" } });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.success === false) {
+            throw Object.assign(new Error(body?.message || res.statusText), { status: res.status, body });
+          }
+          const arr = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+          const data = arr[0];
+          if (!data) throw Object.assign(new Error("Option not found"), { status: 404, body });
+          if (!alive) return;
+          const mapped = (data.items || []).map((it) => ({
+              id: it._id || it.id,
+              name: it.name || it.title || "Item",
+              price: Number(it.price || 0),
+              description: it.description || "",
+              image: toPublicUrl(it.image) || PLACEHOLDER,
+              glutenFree: !!(it.glutenFree || it.isGlutenFree || /\bgluten\s*-?\s*free\b/i.test(String(it.name||"") + " " + String(it.description||"")) || /\(\s*gf\s*\)/i.test(String(it.name||""))),
+            }))
+          setOption(data);
+          setItems(mapped);
+          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, option: data, items: mapped })); } catch {}
+          setLoading(false);
+          return;
+        } catch (e) {
+          if (!alive) return;
+          setErr(e?.body?.message || e.message || "Failed to load option");
+          setDebug({ where: "bySlug", url, error: String(e), status: e?.status, body: e?.body });
+          setLoading(false);
+        }
       }
     })();
-    return () => { alive = false; };
-  }, [optionId, API_URL, SERVER_URL]);
 
-  const isGeneral = Boolean(pkg?.selectionRules?.enabled);
-  const categoryLimits = useMemo(() => normalizeLimits(pkg?.selectionRules), [pkg]);
+    return () => {
+      alive = false;
+    };
+  }, [optionId]);
 
-  const selectedCounts = useMemo(() => {
-    const totals = { chicken: 0, salad: 0, veggies: 0, breadroll: 0 };
-    items.forEach((it) => {
-      const qty = quantities[it.id] || 0;
-      if (!qty) return;
-      const key = detectCategory(it);
-      if (key) totals[key] = (totals[key] || 0) + qty;
-    });
-    return totals;
-  }, [items, quantities]);
-
-  const groupedItems = useMemo(() => {
-    const groups = {};
-    CATEGORY_ORDER.forEach(({ key }) => { groups[key] = []; });
-    const others = [];
-    items.forEach((it) => {
-      const key = detectCategory(it);
-      if (key && groups[key]) groups[key].push(it);
-      else others.push(it);
-    });
-    return { groups, others };
-  }, [items]);
-
-  const totalSelected = useMemo(
-    () => Object.values(quantities).reduce((sum, v) => sum + (v || 0), 0),
-    [quantities]
-  );
-
-  const packagePrice = useMemo(
-    () => (typeof pkg?.price === "number" ? pkg.price : 0),
-    [pkg]
-  );
-
-  const updateQty = (item, delta, opts = {}) => {
-    const skipExtrasPrompt = opts.skipExtrasPrompt || false;
-    if (!delta) return;
-    const current = quantities[item.id] || 0;
-    if (delta < 0 && current <= 0) return;
-
-    const key = detectCategory(item);
-    if (isGeneral && delta > 0 && key) {
-      const limit = categoryLimits[key] ?? 0;
-      const currentCat = items.reduce(
-        (sum, it) => sum + (detectCategory(it) === key ? (quantities[it.id] || 0) : 0),
-        0
-      );
-      if (limit && currentCat + 1 > limit) {
-        toast.info(`You can choose only ${limit} ${CATEGORY_ORDER.find((c) => c.key === key)?.label || key}.`);
-        return;
-      }
-    }
-
-    const needsExtras = Array.isArray(item.extraOptions) && item.extraOptions.length > 0;
-    if (!skipExtrasPrompt && delta > 0 && current === 0 && needsExtras && !selectedExtras[item.id]) {
-      setExtrasModal({ open: true, item, delta });
-      return;
-    }
-
-    setQuantities((prev) => {
-      const next = Math.max(0, (prev[item.id] || 0) + delta);
-      return { ...prev, [item.id]: next };
+  const handleAddToCart = (it) => {
+    addToCart({
+      id: `menu-${it.id}`,
+      name: it.name,
+      price: it.price,
+      image: it.image,
+      glutenFree: !!it.glutenFree,
     });
   };
 
@@ -397,6 +411,9 @@ export default function CateringMenuItems() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold">Other items</h3>
                       <span className="text-sm opacity-80">Optional extras</span>
+                      {dish.glutenFree && (
+                        <span className="gf-badge" aria-label="Gluten free">GF</span>
+                      )}
                     </div>
                     <div className="hot-dishes-grid">
                       {groupedItems.others.map((it) => renderItemCard(it))}

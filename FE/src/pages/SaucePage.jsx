@@ -75,7 +75,7 @@ const SaucePage = () => {
             {loading && <p>Loading…</p>}
             {error && <p style={{ color: "crimson" }}>{error}</p>}
 
-            <div className="hot-dishes-grid">
+              <div className="hot-dishes-grid">
               {sauces.map((sauce) => (
                 <div key={sauce.id} className="hot-dish-card">
                   <div className="hot-dish-hover-bg" aria-hidden />

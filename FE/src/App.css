@@ -2311,7 +2311,7 @@ html {
   position: absolute;
   inset: 0;
   background: url("/FaintBg.png") no-repeat center/cover;
-  opacity: .5;
+  opacity: .3;
   transition: opacity 0.35s ease;
   z-index: 0;                  /* <— behind image & text */
   pointer-events: none;
@@ -2320,7 +2320,7 @@ html {
   transform: translateX(-1%);
 }
 .hot-dish-card:hover .hot-dish-hover-bg {
-  opacity: 1; /* subtle faint overlay */
+  opacity: .8; /* subtle faint overlay */
 }
 
 
@@ -3932,7 +3932,7 @@ html {
 
 /* ===== Dashboard Layout (DashboardLayout.jsx) ===== */
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-3)}
-.card-body{padding:1.25rem}
+.card-body{padding:1.25rem;}
 .py-4{padding-block:1.25rem}
 
 /* ===== Dashboard Header (DashboardHeader.jsx) ===== */
@@ -4016,6 +4016,8 @@ a,button,[role="button"],input,select,textarea{
   border:1px solid rgba(255,255,255,.1);
   border-radius:16px;
   color:#fff;
+  margin:auto;
+  margin-top: 50px;
 }
 .card-body{padding:1.25rem}
 .table-auto th{color:#FFF200;background:#000}
@@ -5162,6 +5164,7 @@ td[colspan]{ text-align:center; color:#c9c9c9 !important; background:#111 !impor
   height:34px; padding:0 14px; border:1px solid rgba(255,255,255,.18);
   border-radius:12px; background:#0f0f0f; color:#fff; font-size:13px;
   cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .02s ease-in-out,filter .15s;
+  text-align: center; align-items: center; display: inline-flex ;
 }
 .od-btn:hover{ border-color:#FFF200; filter:brightness(1.05); }
 .od-btn:active{ transform:translateY(1px); }
@@ -5644,6 +5647,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
     --rail-len: min(260px, 32vw);
   }
   .footer-content{ grid-template-columns:1fr; gap:28px; }
+  .footer .container{ padding: 0; }
 }
 
 
@@ -5961,7 +5965,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   /* Prevent horizontal gaps on small screens */
   .hero-figure { transform: none; }
   .hero-section { overflow-x: hidden; }
-  .footer { overflow-x: hidden; }
+  .footer { overflow-x: hidden}
   .notice-inner {
     width: 94vw;
     max-height: 88vh;
@@ -6169,3 +6173,26 @@ html, body, #root, .app-layout, main, .homepage {
 }
 
 
+/* === Gluten-free badge and option === */
+.gf-badge {
+  display: inline-block;
+  color: #FAEB30;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-right: 8px;
+}
+
+.gf-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+.gf-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #FAEB30; /* modern browsers */
+}

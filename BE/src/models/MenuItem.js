@@ -19,6 +19,7 @@ const MenuItemSchema = new Schema(
     isAvailable: { type: Boolean, default: true },
     featured: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
+    glutenFree: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

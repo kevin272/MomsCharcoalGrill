@@ -22,9 +22,10 @@ const toArray = (body) =>
   [];
 
 const toObj = (body) =>
-  (body?.data?.data && typeof body.data.data === "object") ? body.data.data :
-  (body?.data && typeof body.data === "object") ? body.data :
-  (typeof body === "object" ? body : {});
+  // Prefer nested data object when present and not an array. Avoid treating arrays as objects.
+  (body?.data?.data && !Array.isArray(body.data.data) && typeof body.data.data === "object") ? body.data.data :
+  (body?.data && !Array.isArray(body.data) && typeof body.data === "object") ? body.data :
+  (typeof body === "object" && !Array.isArray(body) ? body : {});
 
 export default function MenuDashboard() {
   const navigate = useNavigate();
@@ -36,40 +37,69 @@ export default function MenuDashboard() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  // simple cache: pagesCache[page] = { items: [...], total }
+  const [pagesCache, setPagesCache] = useState({});
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
-  const fetchList = async () => {
-    setLoading(true);
-    setErr("");
+  // Load a page, using cache when possible. If prefetch is true we won't set loading/UI state.
+  const loadPage = async (p = page, { force = false, prefetch = false } = {}) => {
+    // if cached and not forced, use cache
+    if (!force && pagesCache[p]) {
+      if (!prefetch) {
+        setItems(pagesCache[p].items);
+        setTotal(pagesCache[p].total);
+      }
+      return;
+    }
+
+    if (!prefetch) {
+      setLoading(true);
+      setErr("");
+    }
+
     try {
-      const body = await axiosInstance.get("/menu", { params: { q: query || undefined, page, limit } });
+      const body = await axiosInstance.get("/menu", { params: { q: query || undefined, page: p, limit } });
       const data = toObj(body);
       const list = toArray(body);
 
-      setItems(
-        list.map((m, i) => ({
-          id: m._id || m.id || String(i),
-          name: m.name || m.title || "Untitled",
-          price: m.price ?? 0,
-          category: m.category || m.type || "General",
-          image: joinImageUrl(m.image || m.photo || m.thumb || ""),
-          isAvailable: !!m.isAvailable,
-          featured: !!m.featured,
-          createdAt: m.createdAt || m.created_at || "",
-        }))
-      );
+      const mapped = list.map((m, i) => ({
+        id: m._id || m.id || String(i),
+        name: m.name || m.title || "Untitled",
+        price: m.price ?? 0,
+        category: m.category || m.type || "General",
+        image: joinImageUrl(m.image || m.photo || m.thumb || ""),
+        isAvailable: !!m.isAvailable,
+        featured: !!m.featured,
+        createdAt: m.createdAt || m.created_at || "",
+      }));
 
-      setTotal(Number(data?.total) || list.length);
+      // save to cache
+      setPagesCache((prev) => ({ ...prev, [p]: { items: mapped, total: Number(data?.total) || list.length } }));
+
+      if (!prefetch) {
+        setItems(mapped);
+        setTotal(Number(data?.total) || list.length);
+      }
+
+      // prefetch next page (fire-and-forget) if there are more pages
+      const totalCount = Number(data?.total) || list.length;
+      const totalPagesLocal = Math.max(1, Math.ceil(totalCount / limit));
+      if (p < totalPagesLocal && !pagesCache[p + 1]) {
+        // don't await
+        loadPage(p + 1, { force: false, prefetch: true }).catch(() => {});
+      }
     } catch (e) {
       console.error(e);
-      setErr(e?.response?.data?.message || e?.message || "Failed to load menu.");
-      // if unauthorized, bounce to login
-      if (String(e?.response?.status) === "401") {
-        navigate("/login", { replace: true });
+      if (!prefetch) {
+        setErr(e?.response?.data?.message || e?.message || "Failed to load menu.");
+        // if unauthorized, bounce to login
+        if (String(e?.response?.status) === "401") {
+          navigate("/login", { replace: true });
+        }
       }
     } finally {
-      setLoading(false);
+      if (!prefetch) setLoading(false);
     }
   };
 
@@ -79,13 +109,16 @@ export default function MenuDashboard() {
       navigate("/login", { replace: true });
       return;
     }
-    fetchList();
+    loadPage(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const onSearch = () => {
+    // clear cache for the new query and load page 1
+    setPagesCache({});
     setPage(1);
-    fetchList();
+    // explicitly load page 1 for the new query
+    loadPage(1, { force: true }).catch(() => {});
   };
 
   const onSearchKey = (e) => {
