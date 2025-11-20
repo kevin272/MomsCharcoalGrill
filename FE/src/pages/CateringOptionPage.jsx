@@ -15,6 +15,7 @@ export default function CateringOptionPage() {
 
   useEffect(() => {
     let alive = true;
+    const controller = new AbortController();
     const TTL = 5 * 60 * 1000;
     const key = `mcg:catering:pkg:${optionId}`;
     try {
@@ -30,7 +31,10 @@ export default function CateringOptionPage() {
       setLoading(true);
       setErr("");
       try {
-        const r = await fetch(`/api/catering-packages/${optionId}`);
+        const r = await fetch(`/api/catering-packages/${optionId}`, {
+          cacheTtl: TTL,
+          signal: controller.signal,
+        });
         const j = await r.json();
         if (!j.success) throw new Error(j.message || "Package not found");
         if (alive) {
@@ -38,12 +42,15 @@ export default function CateringOptionPage() {
           try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: j.data })); } catch {}
         }
       } catch (e) {
-        if (alive) setErr(e.message);
+        if (alive && e?.name !== "AbortError") setErr(e.message);
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      controller.abort();
+    };
   }, [optionId]);
 
   const unitPrice =
@@ -142,8 +149,9 @@ export default function CateringOptionPage() {
               ))}
             </div>
 
-            <div className="mt-8">
-              <Link to="/catering" className="underline">← Back to Catering</Link>
+            <div className="option-nav">
+              <Link to="/" className="option-nav-link">Back to Home</Link>
+              <Link to="/catering" className="option-nav-link option-nav-link--primary">Back to Catering</Link>
             </div>
           </div>
         </section>

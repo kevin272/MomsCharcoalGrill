@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
 import { CartProvider } from './context/CartContext.jsx';
 import { ToastProvider } from './components/common/ToastProvider.jsx';
+import './utils/installFetchCache.js';
 
 
 createRoot(document.getElementById('root')).render(

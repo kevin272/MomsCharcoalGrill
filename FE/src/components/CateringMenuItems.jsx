@@ -1,6 +1,6 @@
 // src/pages/CateringMenu.jsx
 import React from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
@@ -248,6 +248,12 @@ export default function CateringMenu() {
                 {option.description}
               </p>
             )}
+
+            <div className="option-nav">
+              <Link to="/catering" className="option-nav-link option-nav-link--primary">
+                Back to Options
+              </Link>
+            </div>
           </div>
         </section>
       </main>

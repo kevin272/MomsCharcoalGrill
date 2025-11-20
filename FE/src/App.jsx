@@ -31,6 +31,7 @@ import {ToastProvider}  from './components/common/ToastProvider';
 import NoticeDashboard from './pages/Dashboardpages/NoticeDashboard';
 import NoticeAe from './pages/Dashboardpages/NoticeAE';
 import ScrollToTop from './components/ScrollToTop';
+import Merchandise from './pages/Merchandise';
 
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
           <Route path="/catering/:optionId" element={<CateringOptionPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/sauces" element={<SaucePage />} />
+          <Route path="/merchandise" element={<Merchandise />} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />
         </Route>

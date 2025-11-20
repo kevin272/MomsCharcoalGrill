@@ -3,6 +3,38 @@ import { Link } from "react-router-dom";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api$/, "");
+const CACHE_TTL = {
+  options: 1000 * 60 * 5,
+  items: 1000 * 60 * 10,
+};
+const OPTIONS_CACHE_KEY = "mcg:catering:options-cache";
+
+let cachedSnapshot = null;
+
+const readOptionsCache = () => {
+  if (cachedSnapshot !== null) return cachedSnapshot;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(OPTIONS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.exp && parsed.exp > Date.now()) {
+      cachedSnapshot = parsed;
+      return parsed;
+    }
+    sessionStorage.removeItem(OPTIONS_CACHE_KEY);
+  } catch {}
+  return null;
+};
+
+const persistOptionsCache = (payload) => {
+  if (typeof window === "undefined") return;
+  try {
+    const data = { ...payload, exp: Date.now() + CACHE_TTL.options };
+    sessionStorage.setItem(OPTIONS_CACHE_KEY, JSON.stringify(data));
+    cachedSnapshot = data;
+  } catch {}
+};
 
 function toPublicUrl(p) {
   if (!p) return "";
@@ -25,7 +57,7 @@ function priceLabelFrom(option) {
 const PLACEHOLDER = "https://via.placeholder.com/600x400?text=Catering";
 
 /* ---------------- Card ---------------- */
-function Card({ pkg, itemsById }) {
+function Card({ pkg, itemsById, itemsReady }) {
   const [broken, setBroken] = useState(false);
   const src = broken ? PLACEHOLDER : toPublicUrl(pkg.image);
   const priceLabel = priceLabelFrom(pkg);
@@ -40,6 +72,8 @@ function Card({ pkg, itemsById }) {
 
   const preview = itemNames.slice(0, 4);
   const more = itemNames.length > 4 ? itemNames.length - 4 : 0;
+
+  const hasItemRefs = Array.isArray(pkg.items) && pkg.items.length > 0;
 
   return (
     <div className="catering-option-card">
@@ -66,15 +100,21 @@ function Card({ pkg, itemsById }) {
         )}
 
         <div className="catering-option-meta">
-          {preview.length ? (
-            <p className="catering-items-list">
-              {preview.join(", ")}
-              {more > 0 && (
-                <span className="catering-item-more"> +{more} more</span>
-              )}
-            </p>
-          ) : (
-            <span className="opacity-70">No items listed</span>
+          {!hasItemRefs && <span className="opacity-70">No items listed</span>}
+          {hasItemRefs && !itemsReady && (
+            <span className="opacity-70">Loading menu…</span>
+          )}
+          {hasItemRefs && itemsReady && (
+            preview.length ? (
+              <p className="catering-items-list">
+                {preview.join(", ")}
+                {more > 0 && (
+                  <span className="catering-item-more"> +{more} more</span>
+                )}
+              </p>
+            ) : (
+              <span className="opacity-70">No items listed</span>
+            )
           )}
         </div>
 
@@ -88,22 +128,38 @@ function Card({ pkg, itemsById }) {
 
 /* ---------------- Main Component ---------------- */
 export default function CateringOptions() {
-  const [pkgs, setPkgs] = useState([]);
-  const [itemsById, setItemsById] = useState({});
+  const [pkgs, setPkgs] = useState(() => readOptionsCache()?.pkgs || []);
+  const [itemsById, setItemsById] = useState(() => readOptionsCache()?.itemsById || {});
+  const [itemsReady, setItemsReady] = useState(() => {
+    const cached = readOptionsCache();
+    return !!(cached?.itemsById && Object.keys(cached.itemsById).length);
+  });
   const [err, setErr] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(readOptionsCache()?.pkgs?.length));
 
   // Fetch catering options
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+    let latestPkgs = null;
+
     (async () => {
       try {
         const r = await fetch(`${API_URL}/catering-options?isActive=true`, {
           headers: { Accept: "application/json" },
+          signal: controller.signal,
+          cacheTtl: CACHE_TTL.options,
         });
         const j = await r.json();
         if (!j?.success) throw new Error(j?.message || "Failed to load options");
         const data = Array.isArray(j.data) ? j.data : [];
-        setPkgs(data);
+        latestPkgs = data;
+        if (!cancelled) {
+          setPkgs(data);
+          if (!data.length) {
+            persistOptionsCache({ pkgs: [], itemsById: {} });
+          }
+        }
 
         // collect all item IDs from all packages
         const allIds = data.flatMap((p) => p.items || []);
@@ -111,24 +167,56 @@ export default function CateringOptions() {
 
         // fetch all items once (you can optimize with your /menu-items/bulk endpoint if you have one)
         if (uniqueIds.length) {
-          const fetchedItems = {};
-          for (const id of uniqueIds) {
-            try {
-              const res = await fetch(`${API_URL}/menu-items/${id}`);
-              if (!res.ok) continue;
-              const item = await res.json();
-              const name = item?.data?.name || item?.data?.title;
-              if (name) fetchedItems[id] = { name };
-            } catch {}
+          const fetchedEntries = await Promise.all(
+            uniqueIds.map(async (id) => {
+              try {
+                const res = await fetch(`${API_URL}/menu-items/${id}`, {
+                  signal: controller.signal,
+                  cacheTtl: CACHE_TTL.items,
+                });
+                if (!res.ok) return null;
+                const item = await res.json();
+                const name = item?.data?.name || item?.data?.title;
+                return name ? [id, { name }] : null;
+              } catch {
+                return null;
+              }
+            })
+          );
+          const fetchedItems = fetchedEntries.reduce((acc, entry) => {
+            if (!entry) return acc;
+            acc[entry[0]] = entry[1];
+            return acc;
+          }, {});
+          if (!cancelled) {
+            setItemsById(fetchedItems);
+            setItemsReady(true);
+            persistOptionsCache({
+              pkgs: latestPkgs || data,
+              itemsById: fetchedItems,
+            });
           }
-          setItemsById(fetchedItems);
+        } else if (!cancelled) {
+          setItemsById({});
+          setItemsReady(true);
+          persistOptionsCache({
+            pkgs: latestPkgs || data,
+            itemsById: {},
+          });
         }
       } catch (e) {
-        setErr(e.message || "Something went wrong");
+        if (e?.name !== "AbortError" && !cancelled) {
+          setErr(e.message || "Something went wrong");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, []);
 
   if (loading) return <div className="text-gray-600">Loading…</div>;
@@ -138,7 +226,7 @@ export default function CateringOptions() {
   return (
     <div className="catering-options-grid container">
       {pkgs.map((p) => (
-        <Card key={p._id} pkg={p} itemsById={itemsById} />
+        <Card key={p._id} pkg={p} itemsById={itemsById} itemsReady={itemsReady} />
       ))}
     </div>
   );
