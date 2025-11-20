@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "./common/ToastProvider.jsx";
 
