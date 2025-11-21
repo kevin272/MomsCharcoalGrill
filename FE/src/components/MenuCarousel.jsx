@@ -56,6 +56,13 @@ function pickMatches(items = [], minScore = 1) {
   return chosen;
 }
 
+const computeItemsPerPage = () => {
+  if (typeof window === "undefined") return 4;
+  if (window.matchMedia && window.matchMedia("(max-width: 768px)").matches) return 2;
+  if (window.matchMedia && window.matchMedia("(max-width: 1024px)").matches) return 3;
+  return 4;
+};
+
 export default function MenuCarousel({
   fetchUrl,
   autoplay = true,
@@ -64,10 +71,7 @@ export default function MenuCarousel({
   const [index, setIndex] = useState(0);
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [itemsPerPage, setItemsPerPage] = useState(() => {
-    if (typeof window === "undefined") return 4;
-    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches ? 2 : 4;
-  });
+  const [itemsPerPage, setItemsPerPage] = useState(() => computeItemsPerPage());
 
   const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
   const SERVER_URL = API_URL.replace(/\/api$/, "");
@@ -124,12 +128,16 @@ export default function MenuCarousel({
       return top && top.s > 0 ? top.b : "Featured";
     };
 
-    const toCard = (bucket, item) => ({
-      title: safeText(bucket, ""),
-      subtitle: safeText(item?.name, ""),
-      src: joinImageUrl(item?.image || item?.img || ""),
-      alt: safeText(item?.name, safeText(bucket, "")),
-    });
+    const toCard = (bucket, item) => {
+      const name = safeText(item?.name, "");
+      const label = name || safeText(bucket, "");
+      return {
+        title: label,
+        subtitle: safeText(bucket, ""),
+        src: joinImageUrl(item?.image || item?.img || ""),
+        alt: label || safeText(bucket, ""),
+      };
+    };
 
     // Start with one per bucket (max 4)
     const firstWave = topMatches.map(({ bucket, item }) => toCard(bucket, item));
@@ -141,14 +149,14 @@ export default function MenuCarousel({
     const fallback = remaining
       .filter((it) => !!(it?.image || it?.img))
       .map((it) => {
-        // Prefer a human friendly bucket label; avoid raw IDs from category
-        const title = guessBucketForItem(it);
+        const bucketTitle = guessBucketForItem(it);
         const name = safeText(it?.name, "");
-        return { title, subtitle: name, src: joinImageUrl(it?.image || it?.img || ""), alt: name || title };
+        const title = name || bucketTitle;
+        return { title, subtitle: bucketTitle, src: joinImageUrl(it?.image || it?.img || ""), alt: title };
       });
 
     const combined = [...firstWave, ...secondWave, ...fallback].filter((c) => !!c.src);
-    return combined;
+    return combined.slice(0, 8); // hard cap to 8 total items
   };
 
   useEffect(() => {
@@ -199,15 +207,25 @@ export default function MenuCarousel({
     return () => clearInterval(id);
   }, [autoplay, interval, pageCount]);
 
-  // Update itemsPerPage on viewport changes (2 on mobile, 4 otherwise)
+  // Update itemsPerPage on viewport changes (2 mobile, 3 tablet, 4 desktop)
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
-    const mql = window.matchMedia("(max-width: 768px)");
-    const apply = () => setItemsPerPage(mql.matches ? 2 : 4);
-    apply();
-    mql.addEventListener ? mql.addEventListener("change", apply) : mql.addListener(apply);
+    const mqls = [
+      window.matchMedia("(max-width: 768px)"),
+      window.matchMedia("(max-width: 1024px)"),
+    ];
+    const apply = () => setItemsPerPage(computeItemsPerPage());
+    apply(); // run once on mount
+
+    mqls.forEach((mql) => {
+      mql.addEventListener ? mql.addEventListener("change", apply) : mql.addListener(apply);
+    });
+    window.addEventListener("resize", apply);
     return () => {
-      mql.removeEventListener ? mql.removeEventListener("change", apply) : mql.removeListener(apply);
+      mqls.forEach((mql) => {
+        mql.removeEventListener ? mql.removeEventListener("change", apply) : mql.removeListener(apply);
+      });
+      window.removeEventListener("resize", apply);
     };
   }, []);
 

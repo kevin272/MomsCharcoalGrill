@@ -656,6 +656,14 @@ html {
     gap: clamp(12px, 2.5vw, 20px);
     width: 100%;
   }
+  
+}
+/*ipad air and pro*/
+@media (max-width: 1180px) {
+  .about-section::after{
+    width: 95% !important;
+    border-radius: 2%;
+  }
 }
 
 /* ≤ 768px: your “mobile” view—hide arrows, 2 columns */
@@ -832,7 +840,7 @@ html {
     padding-left:0px;
   }
   .about-section::after{
-    width: 90%;
+    width: 100%;
     border-radius: 2%;
   }
 }
@@ -851,6 +859,7 @@ html {
   margin-right: 300px;
   margin-left: 300px;
 }
+
 
 .contact-section h2{
   font-family:'Afacad',sans-serif;
@@ -6407,10 +6416,9 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 .menu-carousel > .menu-items { display:block !important; width:100%; overflow:hidden; }
 .menu-carousel > .menu-items > .menu-track { display:flex !important; flex-wrap: nowrap; align-items: stretch; transition: transform 400ms ease; }
 .menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100% !important; }
-.menu-carousel .menu-page-inner { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px; justify-items:center; }
-@media (max-width: 1024px){ .menu-carousel .menu-page-inner { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-@media (max-width: 900px){ .menu-carousel .menu-page-inner { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (max-width: 600px){ .menu-carousel .menu-page-inner { grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; } }
+.menu-carousel .menu-page-inner { display:flex; justify-content:center; align-items: stretch; gap:16px; flex-wrap: nowrap; }
+@media (max-width: 1024px){ .menu-carousel .menu-page-inner { gap:14px; } }
+@media (max-width: 600px){ .menu-carousel .menu-page-inner { gap:12px; } }
 
 /* Mobile-first hardening to ensure proper slides on small screens */
 @media (max-width: 768px) {
@@ -6418,7 +6426,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   .menu-carousel > .menu-items { display:block !important; overflow:hidden !important; width:100% !important; }
   .menu-carousel > .menu-items > .menu-track { display:flex !important; flex-wrap: nowrap !important; }
   .menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100% !important; }
-  .menu-carousel .menu-page-inner { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 12px !important; }
+  .menu-carousel .menu-page-inner { gap: 12px !important; }
   .menu-carousel .carousel-nav { display:none !important; }
   .menu-carousel .menu-item img { width: 140px; height: 140px; }
   .menu-carousel .menu-item h3 { font-size: 16px; margin-top: 6px; }
