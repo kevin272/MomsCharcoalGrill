@@ -70,7 +70,25 @@
                 <tbody>
                   {{#each items}}
                   <tr>
-                    <td style="padding:14px; font:14px/1.5 Arial,Helvetica,sans-serif; color:#f3f3f3; background:#111; border-bottom:1px solid rgba(255,255,255,.08);">{{this.name}}</td>
+                    <td style="padding:14px; font:14px/1.5 Arial,Helvetica,sans-serif; color:#f3f3f3; background:#111; border-bottom:1px solid rgba(255,255,255,.08);">
+                      <div>{{this.name}}</div>
+                      {{#if this.selections}}
+                        <div style="margin-top:6px; font:12px/1.5 Arial,Helvetica,sans-serif; color:#c9c9c9;">
+                          {{#each this.selections}}
+                            <div style="margin-top:2px;">
+                              {{this.name}} x{{this.qty}}
+                              {{#if this.extras}}
+                                ({{#each this.extras}}{{this}}{{#unless @last}}, {{/unless}}{{/each}})
+                              {{/if}}
+                            </div>
+                          {{/each}}
+                        </div>
+                      {{else}}
+                        {{#if this.selectionSummary}}
+                          <div style="margin-top:6px; font:12px/1.5 Arial,Helvetica,sans-serif; color:#c9c9c9;">{{this.selectionSummary}}</div>
+                        {{/if}}
+                      {{/if}}
+                    </td>
                     <td align="right" style="padding:14px; font:14px/1.5 Arial,Helvetica,sans-serif; color:#f3f3f3; background:#111; border-bottom:1px solid rgba(255,255,255,.08); white-space:nowrap;">{{this.qty}}</td>
                     <td align="right" style="padding:14px; font:14px/1.5 Arial,Helvetica,sans-serif; color:#f3f3f3; background:#111; border-bottom:1px solid rgba(255,255,255,.08); white-space:nowrap;">{{currency this.price ../currency}}</td>
                   </tr>

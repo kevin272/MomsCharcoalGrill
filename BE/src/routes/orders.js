@@ -111,6 +111,24 @@ router.post('/checkout', async (req, res) => {
       const qty = Math.max(parseInt(item.qty) || 1, 1);
       let menuItemId, name, price, image = '';
       const extra = item.extra || item.selection || '';
+      const rawSelections = Array.isArray(item.items) ? item.items : (Array.isArray(item.selectedItems) ? item.selectedItems : []);
+
+      const selections = rawSelections.map((sel, idx) => {
+        const sQty = Math.max(parseInt(sel.qty || sel.quantity || 0) || 0, 0);
+        const extras = Array.isArray(sel.extras) ? sel.extras.filter(Boolean).map(String) : [];
+        return {
+          menuItem: sel.menuItem || sel.id || undefined,
+          name: sel.name || `Item ${idx + 1}`,
+          qty: sQty,
+          extras,
+        };
+      });
+      const selectionSummary = selections.length
+        ? selections.map((s) => {
+            const e = s.extras?.length ? ` (${s.extras.join(', ')})` : '';
+            return `${s.name} x${s.qty}${e}`;
+          }).join(' | ')
+        : extra;
 
       if (item.menuItem) {
         const doc = await MenuItem.findById(item.menuItem);
@@ -126,7 +144,7 @@ router.post('/checkout', async (req, res) => {
       }
 
       subtotal += price * qty;
-      orderItems.push({ menuItem: menuItemId, name, price, qty, image, extra });
+      orderItems.push({ menuItem: menuItemId, name, price, qty, image, extra, selections, selectionSummary });
     }
 
     const gst = Math.round(subtotal * 0.1);

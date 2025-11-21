@@ -340,9 +340,26 @@ function OrderDetailsBody({ order, money }) {
                 const price = Number(it?.price ?? it?.unitPrice ?? it?.amount ?? 0) || 0
                 const qty = Number(it?.qty ?? it?.quantity ?? it?.count ?? 1) || 1
                 const name = it?.name || it?.title || it?.itemName || `Item ${i + 1}`
+                const nested = Array.isArray(it?.items)
+                  ? it.items
+                  : (Array.isArray(it?.selectedItems) ? it.selectedItems : [])
+                const nestedLines = Array.isArray(nested)
+                  ? nested.map((sel, idx) => {
+                      const extras = Array.isArray(sel?.extras) && sel.extras.length
+                        ? ` (${sel.extras.join(", ")})`
+                        : ""
+                      return `${sel?.name || `Item ${idx + 1}`} x${sel?.qty ?? sel?.quantity ?? 0}${extras}`
+                    })
+                  : []
+                const detail = nestedLines.length
+                  ? nestedLines.join(" | ")
+                  : (it.selectionSummary || it.extra || it.notes || "")
                 return (
                   <tr key={i}>
-                    <td className="od-td od-td--left">{name}</td>
+                    <td className="od-td od-td--left">
+                      <div>{name}</div>
+                      {detail && <div className="od-td__meta">{detail}</div>}
+                    </td>
                     <td className="od-td od-td--right">{qty}</td>
                     <td className="od-td od-td--right">{money.format(price)}</td>
                     <td className="od-td od-td--right">{money.format(price * qty)}</td>

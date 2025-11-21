@@ -55,7 +55,8 @@ function normalizeItems(items = []) {
   return items.map(it => {
     const qty = it.qty ?? it.quantity ?? it.count ?? 1;
     const price = typeof it.price === 'string' ? Number(it.price) || 0 : (it.price ?? 0);
-    return { ...it, qty, price };
+    const selections = Array.isArray(it.selections) ? it.selections : (Array.isArray(it.selectedItems) ? it.selectedItems : []);
+    return { ...it, qty, price, selections };
   });
 }
 

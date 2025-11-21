@@ -71,15 +71,40 @@ const handleCustomerDetailsSubmit = async () => {
   setShowCustomerDetails(false);
 
   const orderData = {
-    items: cartItems.map((item) => ({
-      menuItem: item.menuItem || null,
-      name: item.name,
-      extra: item.extra || '',
-      price: item.price,
-      image: item.image,
-      qty: item.quantity,
-      glutenFree: !!item.glutenFree,
-    })),
+    items: cartItems.map((item) => {
+      const selections = Array.isArray(item.items)
+        ? item.items.map((sel) => ({
+            menuItem: sel.menuItem || sel.id || null,
+            name: sel.name,
+            qty: sel.qty,
+            extras: sel.extras || [],
+          }))
+        : [];
+
+      const selectionSummary = selections.length
+        ? selections
+            .map((sel) => {
+              const extras = Array.isArray(sel.extras) && sel.extras.length
+                ? ` (${sel.extras.join(', ')})`
+                : '';
+              return `${sel.name || ''} x${sel.qty || 0}${extras}`;
+            })
+            .join(' | ')
+        : (item.extra || '');
+
+      return {
+        menuItem: item.menuItem || null,
+        name: item.name,
+        extra: item.extra || '',
+        price: item.price,
+        image: item.image,
+        qty: item.quantity,
+        glutenFree: !!item.glutenFree,
+        items: selections,
+        selectedItems: selections, // keep legacy + explicit fields
+        selectionSummary,
+      };
+    }),
     customer: {
       name: customerDetails.fullName,
       phone: customerDetails.phoneNumber,
@@ -163,10 +188,21 @@ const handleCustomerDetailsSubmit = async () => {
                       {item.description && (
                         <p className="cart-item-description">{item.description}</p>
                       )}
-                      {item.extra && (
+                      {(item.items && item.items.length) ? (
                         <p className="cart-item-description text-xs opacity-80">
-                          Selection: {item.extra}
+                          Selection: {item.items.map((sel) => {
+                            const extras = Array.isArray(sel.extras) && sel.extras.length
+                              ? ` (${sel.extras.join(", ")})`
+                              : "";
+                            return `${sel.name || ""} x${sel.qty || 0}${extras}`;
+                          }).join(" | ")}
                         </p>
+                      ) : (
+                        item.extra && (
+                          <p className="cart-item-description text-xs opacity-80">
+                            Selection: {item.extra}
+                          </p>
+                        )
                       )}
                     </div>
                     <div className="cart-item-controls">

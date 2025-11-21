@@ -376,15 +376,23 @@ export default function CateringMenuItems() {
       .filter(({ qty }) => qty > 0);
 
     if (isGeneral) {
-      const summary = chosen
-        .map(({ it, qty, extras }) => {
-          const extraTxt = extras.length ? ` (${extras.join(", ")})` : "";
-          return `${it.name} x${qty}${extraTxt}`;
-        })
-        .join(" • ");
+      const selectionList = chosen.map(({ it, qty, extras }) => ({
+        id: it.id,
+        name: it.name,
+        menuItem: it.menuItemId,
+        qty,
+        extras,
+      }));
 
-      const selectionKey = chosen
-        .map(({ it, qty, extras }) => `${it.id}:${qty}:${extras.join("+")}`)
+      const summary = selectionList
+        .map(({ name, qty, extras }) => {
+          const extraTxt = extras.length ? ` (${extras.join(", ")})` : "";
+          return `${name} x${qty}${extraTxt}`;
+        })
+        .join(" | ");
+
+      const selectionKey = selectionList
+        .map(({ id, qty, extras }) => `${id}:${qty}:${extras.join("+")}`)
         .join("|") || "default";
 
       addToCart({
@@ -394,6 +402,7 @@ export default function CateringMenuItems() {
         image: pkg?.image || chosen[0]?.it?.image,
         quantity: multiplier,
         extra: summary,
+        items: selectionList,
       });
     } else {
       chosen.forEach(({ it, qty, extras }) => {
@@ -435,7 +444,7 @@ export default function CateringMenuItems() {
         <div className="hot-dish-content">
           <div className="hot-dish-header">
             <h3 className="hot-dish-name">{item.name}</h3>
-            <span className="hot-dish-price">{displayPrice}</span>
+            {/* <span className="hot-dish-price">{displayPrice}</span> */}
           </div>
           {item.description && <p className="hot-dish-description">{item.description}</p>}
           {hasExtras && (
@@ -491,9 +500,12 @@ export default function CateringMenuItems() {
               <div className="space-y-8">
                 {CATEGORY_ORDER.map(({ key, label }) => (
                   <div key={key}>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold">{label}</h3>
-                      <span className="text-sm opacity-80">
+                    <div className="category-header">
+                      <div className="category-title-wrap">
+                        <span className="category-dot" aria-hidden />
+                        <h3 className="category-title">{label}</h3>
+                      </div>
+                      <span className="category-count">
                         {selectedCounts[key] || 0} / {categoryLimits[key] ?? 0} selected
                       </span>
                     </div>
@@ -526,14 +538,52 @@ export default function CateringMenuItems() {
               </div>
             )}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="text-sm opacity-80">
                 Selected: {totalSelected} item{totalSelected === 1 ? "" : "s"}
               </div>
-              <div className="flex gap-3">
-                <Link to="/catering" className="underline">Back to Catering</Link>
-                <button className="hot-dish-cart-btn" onClick={openConfirmModal}>
-                  ADD TO CART
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-between">
+                <Link to="/catering" className="od-btn flex items-center">
+                  Back to Catering
+                </Link>
+                <button
+                  className="!bg-transparent flex items-center gap-2"
+                  onClick={openConfirmModal}
+                  aria-label="Add to cart"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    viewBox="0 0 47 47"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z"
+                      fill="#FAEB30"
+                    />
+                    <path
+                      d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
+                      stroke="#FAEB30"
+                      strokeWidth="1.28"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
+                      stroke="#FAEB30"
+                      strokeWidth="1.28"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
+                      stroke="#FAEB30"
+                      strokeWidth="1.28"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="text-sm font-semibold sm:text-base">Add to cart</span>
                 </button>
               </div>
             </div>
