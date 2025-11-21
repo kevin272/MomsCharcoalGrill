@@ -22,6 +22,26 @@ const PLACEHOLDER = "https://via.placeholder.com/640x480?text=Catering";
 const HEX_ID_RE = /^[0-9a-f]{24}$/i;
 const isHexId = (value) => HEX_ID_RE.test(String(value || ""));
 
+const CartIcon = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    role="img"
+    aria-hidden="true"
+    className={className}
+  >
+    <path
+      d="M3.5 4.5h2l1.2 10.6a1 1 0 0 0 1 .9h8.6a1 1 0 0 0 .98-.8l1.22-6.2H7.1"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="10" cy="19" r="1.4" fill="currentColor" />
+    <circle cx="17" cy="19" r="1.4" fill="currentColor" />
+  </svg>
+);
+
 function toPublicUrl(p, serverUrl) {
   if (!p) return "";
   if (/^https?:\/\//i.test(p)) return p;
@@ -121,7 +141,7 @@ function formatPrice(option) {
 export default function CateringMenuItems() {
   const { optionId } = useParams();
   const toast = useToast();
-  const { addToCart } = useCart();
+  const { addToCart, items: cartItems } = useCart();
 
   const API_URL = useMemo(
     () => (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, ""),
@@ -139,6 +159,42 @@ export default function CateringMenuItems() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [, setDebug] = useState(null);
+
+  const pkgKey = pkg?._id || optionId;
+
+  const cartMenuIds = useMemo(() => {
+    const ids = new Set();
+    cartItems.forEach((cartItem) => {
+      if (cartItem?.menuItem) ids.add(String(cartItem.menuItem));
+      if (Array.isArray(cartItem?.items)) {
+        cartItem.items.forEach((sub) => {
+          if (sub?.menuItem) ids.add(String(sub.menuItem));
+        });
+      }
+    });
+    return ids;
+  }, [cartItems]);
+
+  const hasCartForPkg = useMemo(() => {
+    if (!pkgKey) return false;
+    return cartItems.some((cartItem) => {
+      const idStr = String(cartItem?.id || "");
+      if (idStr.includes(pkgKey)) return true;
+      if (cartItem?.menuItem && cartMenuIds.has(String(cartItem.menuItem))) return true;
+      if (Array.isArray(cartItem?.items)) {
+        return cartItem.items.some((sub) => {
+          const menuId = String(sub?.menuItem || "");
+          return menuId === String(pkgKey) || cartMenuIds.has(menuId);
+        });
+      }
+      return false;
+    });
+  }, [cartItems, cartMenuIds, pkgKey]);
+
+  const isItemInCart = useCallback((item) => {
+    const key = String(item?.menuItemId || item?.id || "");
+    return cartMenuIds.has(key);
+  }, [cartMenuIds]);
 
   const buildItems = useCallback((option, fallbackItems = []) => {
     if (!option) return [];
@@ -431,6 +487,8 @@ export default function CateringMenuItems() {
     const displayPrice = isGeneral
       ? (packagePrice ? `$${packagePrice.toFixed(2)} per person` : "Per person")
       : `$${Number(item.price || pkg?.price || 0).toFixed(2)}`;
+    const inCart = qty > 0 || isItemInCart(item);
+
     return (
       <div key={item.id} className="hot-dish-card">
         <div className="hot-dish-hover-bg" aria-hidden />
@@ -453,14 +511,17 @@ export default function CateringMenuItems() {
               {selectedExtras[item.id]?.length ? `: ${selectedExtras[item.id].join(", ")}` : ""}
             </p>
           )}
-          <div className="quantity-controls mt-3">
-            <button className="quantity-btn" onClick={() => updateQty(item, -1)} aria-label={`Remove ${item.name}`}>
-              -
-            </button>
-            <div className="quantity-display">{qty}</div>
-            <button className="quantity-btn" onClick={() => updateQty(item, 1)} aria-label={`Add ${item.name}`}>
-              +
-            </button>
+          <div className="item-actions">
+            <div className="quantity-controls">
+              <button className="quantity-btn" onClick={() => updateQty(item, -1)} aria-label={`Remove ${item.name}`}>
+                -
+              </button>
+              <div className="quantity-display">{qty}</div>
+              <button className="quantity-btn" onClick={() => updateQty(item, 1)} aria-label={`Add ${item.name}`}>
+                +
+              </button>
+            </div>
+            
           </div>
         </div>
       </div>
@@ -499,7 +560,7 @@ export default function CateringMenuItems() {
             {isGeneral ? (
               <div className="space-y-8">
                 {CATEGORY_ORDER.map(({ key, label }) => (
-                  <div key={key}>
+                  <div key={key} className="category-section">
                     <div className="category-header">
                       <div className="category-title-wrap">
                         <span className="category-dot" aria-hidden />
@@ -538,51 +599,21 @@ export default function CateringMenuItems() {
               </div>
             )}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <div className="text-sm opacity-80">
+            <div className="menu-action-bar">
+              <div className="selection-pill">
                 Selected: {totalSelected} item{totalSelected === 1 ? "" : "s"}
               </div>
-              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-between">
-                <Link to="/catering" className="od-btn flex items-center">
+              <div className="menu-action-buttons">
+                <Link to="/catering" className="od-btn menu-action-btn secondary">
                   Back to Catering
                 </Link>
                 <button
-                  className="!bg-transparent flex items-center gap-2"
+                  className={`od-btn menu-action-btn primary ${hasCartForPkg ? "cart-active" : ""}`}
                   onClick={openConfirmModal}
                   aria-label="Add to cart"
+                  type="button"
                 >
-                  <svg
-                    className="w-6 h-6"
-                    viewBox="0 0 47 47"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z"
-                      fill="#FAEB30"
-                    />
-                    <path
-                      d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
-                      stroke="#FAEB30"
-                      strokeWidth="1.28"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
-                      stroke="#FAEB30"
-                      strokeWidth="1.28"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
-                      stroke="#FAEB30"
-                      strokeWidth="1.28"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <CartIcon className="cart-icon" />
                   <span className="text-sm font-semibold sm:text-base">Add to cart</span>
                 </button>
               </div>
@@ -640,7 +671,7 @@ export default function CateringMenuItems() {
         <div className="modal-overlay">
           <div className="customer-details-modal">
             <div className="modal-header">
-              <h3>{isGeneral ? "How many people are you catering for?" : "How many sets to add?"}</h3>
+              <h3>{isGeneral ? "How many people are you ordering for?" : "How many sets to add?"}</h3>
             </div>
             <div className="customer-form">
               <input
@@ -651,7 +682,7 @@ export default function CateringMenuItems() {
                 placeholder={isGeneral ? "Number of people" : "Number of sets"}
               />
               {isGeneral && packagePrice ? (
-                <p className="text-sm opacity-80 mt-1">Price: ${packagePrice.toFixed(2)} per person</p>
+                <p className="text-sm mt-1">Price: ${packagePrice.toFixed(2)} per person</p>
               ) : null}
             </div>
             <button className="modal-submit-btn mt-2" onClick={addSelectionToCart}>

@@ -2368,9 +2368,8 @@ html {
   position: relative;
   display: flex;
   align-items: center;
-  height:110%;
   gap: 22px;
-  padding-right: 56px;           /* space for right-side cart */
+  padding: 14px 16px;
 }
 
 /* Rounded/halo gradient on the LEFT like the mock */
@@ -2486,28 +2485,33 @@ html {
   padding:6px 10px;
   border-radius:10px;
 }
+.category-section{
+  padding:10px 4px;
+}
+.category-section + .category-section{
+  margin-top:32px;
+}
 
 /* ——— Cart icon like the mock: NO bg, right side, vertically centered ——— */
 .hot-dish-cart-btn {
-  position: absolute;
-  right: 0px;                   /* place at right edge of the row */
-  top: 100%;
-  transform: translateY(-50%);
+  position: relative;
+  inset: auto;
+  transform: none;
   z-index: 2;
 
-  background: transparent !important;       /* ⬅ no background */
-  border: none;
-  padding: 6px;
+  background: transparent !important;
+  padding: 10px 12px;
   cursor: pointer;
 
-  display: grid;
-  place-items: center;
-  transition: transform .15s ease;
-  scale: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:  .15s ease, border-color .15s ease, transform .15s ease, filter .15s ease;
 }
 
 .hot-dish-cart-btn:hover {
-  transform: translateY(-50%) scale(1.06);
+  transform: translateY(-1px);
+  border-color: #FAEB30;
 }
 
 /* Make the SVG adopt the yellow brand and scale neatly */
@@ -2515,6 +2519,29 @@ html {
   width: 22px;
   height: 22px;
   display: block;
+}
+.hot-dish-cart-btn .cart-icon{
+  color:#FAEB30;
+  transition: color .2s ease, transform .15s ease;
+}
+.hot-dish-cart-btn.is-in-cart{
+  background:#ffffff !important;
+}
+.hot-dish-cart-btn:focus{
+  border: none !important;
+  outline: none !important;
+  transform: scale(1.2);
+  color: white;
+}
+.hot-dish-cart-btn.is-in-cart .cart-icon{
+  fill:#fff;
+}
+.item-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:12px;
 }
 
 .main-cart-btn {
@@ -2547,7 +2574,7 @@ html {
     gap: 28px;                   /* keep row gap on mobile stack */
     max-width: 760px;
   }
-  .hot-dish-card { padding-right: 48px; }
+  .hot-dish-card { padding: 14px; }
   .hot-dish-image { width: 120px; height: 120px; }
 }
 
@@ -2572,12 +2599,13 @@ html {
   .hot-dish-description { font-size: 13.5px; text-align: center; }
 
   /* move cart beneath content on mobile */
-  .hot-dish-cart-btn {
-    position: static;
-    transform: none;
-    margin: 6px auto 0;
+  .item-actions{
+    flex-direction: column;
+    align-items: stretch;
   }
-  .hot-dish-cart-btn:hover { transform: scale(1.06); }
+  .hot-dish-cart-btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2586,6 +2614,27 @@ html {
   .hot-dish-name, .hot-dish-price { font-size: 15px; }
   .hot-dish-description { font-size: 13px; }
   .hot-dish-cart-btn svg { width: 20px; height: 20px; }
+}
+.category-section{
+  padding:10px 4px;
+}
+@media (max-width: 768px){
+  .category-section{
+    padding:14px 0 4px;
+  }
+  .category-section + .category-section{
+    margin-top:24px;
+  }
+  .category-header{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
+  }
+}
+@media (max-width: 480px){
+  .category-section{
+    padding:12px 0 2px;
+  }
 }
 
 
@@ -3137,6 +3186,78 @@ html {
     justify-content: center;
   }
 }
+.menu-action-bar{
+  margin-top:32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.selection-pill{
+  font-size:14px;
+  color:#d6d6d6;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  padding:10px 14px;
+}
+.menu-action-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  justify-content:flex-end;
+}
+.od-btn.menu-action-btn{
+  height:auto;
+  min-height:44px;
+  padding:12px 16px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  gap:10px;
+  align-items:center;
+}
+.od-btn.menu-action-btn.primary{
+  background:#FAEB30;
+  color:#000;
+  border-color:#FAEB30;
+}
+.od-btn.menu-action-btn.secondary{
+  background:#0f0f0f;
+  color:#fff;
+}
+.menu-action-btn .cart-icon{
+  width:18px;
+  height:18px;
+  color:currentColor;
+}
+.menu-action-btn.cart-active{
+  background:#0b0b0b;
+  color:#fff;
+  border-color:#FAEB30;
+}
+.menu-action-btn.cart-active .cart-icon{
+  color:#fff;
+}
+@media (max-width: 768px){
+  .menu-action-bar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .selection-pill{
+    width:100%;
+    text-align:center;
+  }
+  .menu-action-buttons{
+    width:100%;
+    justify-content:stretch;
+  }
+  .od-btn.menu-action-btn{
+    width:100%;
+    justify-content:center;
+  }
+}
 
 .cart-item-price {
   display: flex;
@@ -3562,6 +3683,9 @@ html {
 .customer-form input::placeholder,
 .customer-form select::placeholder {
   color: #A0A0A0;
+}
+.customer-form p {
+  color: rgba(0, 0, 0, 0.618);
 }
 
 .form-row {

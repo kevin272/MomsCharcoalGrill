@@ -3,7 +3,7 @@ import Breadcrumb from "../components/CateringHero";
 import { useCart } from "../context/CartContext.jsx";
 
 const SaucePage = () => {
-  const { addToCart } = useCart();
+  const { addToCart, items:cartItems } = useCart();
 
   const [sauces, setSauces] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -54,6 +54,11 @@ const SaucePage = () => {
     };
   }, []);
 
+  const isInCart = React.useCallback(
+    (sauce) => cartItems.some((item) => item.id === `sauce-${sauce.id}`),
+    [cartItems]
+  );
+
   const handleAddToCart = (sauce) => {
     addToCart({
       id: `sauce-${sauce.id}`,
@@ -76,7 +81,9 @@ const SaucePage = () => {
             {error && <p style={{ color: "crimson" }}>{error}</p>}
 
               <div className="hot-dishes-grid">
-              {sauces.map((sauce) => (
+              {sauces.map((sauce) => {
+                const inCart = isInCart(sauce);
+              return(
                 <div key={sauce.id} className="hot-dish-card">
                   <div className="hot-dish-hover-bg" aria-hidden />
 
@@ -95,7 +102,7 @@ const SaucePage = () => {
                     </div>
                     <p className="hot-dish-description">{sauce.description}</p>
                     <button
-                      className="hot-dish-cart-btn"
+                      className= {`hot-dish-cart-btn ${inCart ? "in-cart" : ""}`}
                       onClick={() => handleAddToCart(sauce)}
                       aria-label="Add to cart"
                     >
@@ -135,7 +142,7 @@ const SaucePage = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </section>
