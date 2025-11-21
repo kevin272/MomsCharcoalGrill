@@ -16,7 +16,6 @@ function normalizeOrder(raw = {}) {
   const derivedFullName = [c.firstName, c.lastName].filter(Boolean).join(' ').trim()
   const name =
     (c.name ?? (derivedFullName || undefined) ?? c.fullName ?? raw.customerName ?? '')
-
   // build address safely
   const addrLines = [c.address?.line1, c.address?.line2, c.address?.city, c.address?.state, c.address?.zip]
     .filter(Boolean)
@@ -58,12 +57,24 @@ function normalizeOrder(raw = {}) {
     slot: d.slot ?? d.time ?? slotFromDateWindow ?? d.date ?? d.method ?? null,
   }
 
+  const payment = {
+    method:
+      raw.paymentMethod ||
+      raw.payment_mode ||
+      raw.paymentMode ||
+      raw.paymentType ||
+      raw.payment_type ||
+      raw.payment?.method ||
+      raw.payment?.mode ||
+      null,
+  }
+
   // ---- misc ----
   const notes = raw.notes ?? raw.note ?? raw.specialRequirements ?? raw.instructions ?? raw.remarks ?? ''
   const status = raw.status ?? raw.state ?? raw.orderStatus ?? 'new'
   const createdAt = raw.createdAt ?? raw.created_at ?? raw.date ?? raw.placedAt ?? null
 
-  return { _id: id, customer, items, totals, delivery, notes, status, createdAt, __raw: raw }
+  return { _id: id, customer, items, totals, delivery, payment, notes, status, createdAt, __raw: raw }
 }
 
 
@@ -117,6 +128,16 @@ export default function OrderDashboard() {
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleString() : '—')
 
+  const paymentLabel = (raw) =>
+    raw?.paymentMethod ||
+    raw?.payment_mode ||
+    raw?.paymentMode ||
+    raw?.paymentType ||
+    raw?.payment_type ||
+    raw?.payment?.method ||
+    raw?.payment?.mode ||
+    'N/A'
+
   /* -------- fetch list -------- */
   const loadOrders = async () => {
     setLoading(true); setError(null)
@@ -133,6 +154,7 @@ export default function OrderDashboard() {
           customerPhone: o.customer?.phone ?? '',
           grandTotal: o.totals?.grandTotal ?? null,
           status: o.status ?? 'new',
+          paymentMethod: paymentLabel(o),
         }))
       )
     } catch (e) {
@@ -214,6 +236,7 @@ export default function OrderDashboard() {
     { label: 'ID', maxWidth: 260, className: 'text-left' },
     { label: 'Created', maxWidth: 180, className: 'text-left' },
     { label: 'Customer', className: 'text-left' },
+    { label: 'Payment', maxWidth: 160, className: 'text-left' },
     { label: 'Total', maxWidth: 120, className: 'text-right' },
     { label: 'Status', maxWidth: 180, className: 'text-left' },
     { label: 'Actions', maxWidth: 220, className: 'text-center' },
@@ -226,6 +249,7 @@ export default function OrderDashboard() {
       <td className="od-cell">
         {r.customerName ? `${r.customerName}${r.customerPhone ? ` (${r.customerPhone})` : ''}` : '—'}
       </td>
+      <td className="od-cell">{r.paymentMethod || 'N/A'}</td>
       <td className="od-cell od-cell--right">{r.grandTotal != null ? money.format(r.grandTotal) : '—'}</td>
       <td className="od-cell">
         <div className="od-status">
@@ -316,6 +340,7 @@ function OrderDetailsBody({ order, money }) {
           <div className="od-meta"><span>ID</span><strong>{order?._id || '—'}</strong></div>
           <div className="od-meta"><span>Status</span><strong>{status || '—'}</strong></div>
           <div className="od-meta"><span>Created</span><strong>{createdAt ? new Date(createdAt).toLocaleString() : '—'}</strong></div>
+          <div className="od-meta"><span>Payment</span><strong>{order?.payment?.method || order?.paymentMethod || order?.payment_mode || order?.paymentType || order?.payment_type || order?.__raw?.payment?.method || order?.__raw?.paymentMode || order?.__raw?.payment_mode || "N/A"}</strong></div>
           {delivery?.slot && <div className="od-meta"><span>Delivery</span><strong>{delivery.slot}</strong></div>}
         </div>
       </div>
@@ -380,16 +405,16 @@ function OrderDetailsBody({ order, money }) {
         <div className="od-card od-card--totals">
           <div className="od-card__title">Totals</div>
           <div className="od-totals">
-            <div><span>Subtotal</span><strong>{totals?.subtotal != null ? money.format(totals.subtotal) : '—'}</strong></div>
-            <div><span>GST</span><strong>{totals?.gst != null ? money.format(totals.gst) : '—'}</strong></div>
-            <div><span>Delivery</span><strong>{totals?.delivery != null ? money.format(totals.delivery) : '—'}</strong></div>
+            <div><span>Subtotal </span><strong>{totals?.subtotal != null ? money.format(totals.subtotal) : '—'}</strong></div>
+            <div><span>GST  </span><strong>{totals?.gst != null ? money.format(totals.gst) : '—'}</strong></div>
+            <div><span>Delivery </span><strong>{totals?.delivery != null ? money.format(totals.delivery) : '—'}</strong></div>
             <hr />
-            <div className="od-grand"><span>Grand Total</span><strong>{totals?.grandTotal != null ? money.format(totals.grandTotal) : '—'}</strong></div>
+            <div className="od-grand"><span>Grand Total </span><strong>{totals?.grandTotal != null ? money.format(totals.grandTotal) : '—'}</strong></div>
           </div>
         </div>
       </div>
 
-      <div className="od-card">
+      {/* <div className="od-card">
         <div className="od-card__title" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
           <span>Debug</span>
           <button className="od-btn od-btn--ghost" onClick={() => setShowRaw((s) => !s)}>
@@ -401,7 +426,7 @@ function OrderDetailsBody({ order, money }) {
             {JSON.stringify(__raw ?? order, null, 2)}
           </pre>
         )}
-      </div>
+      </div> */}
     </div>
   )
 }

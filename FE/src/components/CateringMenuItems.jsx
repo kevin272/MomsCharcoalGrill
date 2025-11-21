@@ -502,7 +502,7 @@ export default function CateringMenuItems() {
         <div className="hot-dish-content">
           <div className="hot-dish-header">
             <h3 className="hot-dish-name">{item.name}</h3>
-            {/* <span className="hot-dish-price">{displayPrice}</span> */}
+            <span className="hot-dish-price">{displayPrice}</span>
           </div>
           {item.description && <p className="hot-dish-description">{item.description}</p>}
           {hasExtras && (
