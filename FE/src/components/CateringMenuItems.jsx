@@ -37,6 +37,20 @@ const KEYWORDS = {
 const PLACEHOLDER = "https://via.placeholder.com/640x480?text=Catering";
 const HEX_ID_RE = /^[0-9a-f]{24}$/i;
 const isHexId = (value) => HEX_ID_RE.test(String(value || ""));
+const GF_LABEL_RE = /\bgluten\s*-?\s*free\b/i;
+const GF_TAG_RE = /\(\s*gf\s*\)/i;
+const isGfLabel = (name) => GF_LABEL_RE.test(String(name || "")) || GF_TAG_RE.test(String(name || ""));
+const resolveGlutenFree = (...sources) => {
+  for (const src of sources) {
+    if (!src || typeof src === "string") continue;
+    if (typeof src.glutenFree !== "undefined") return !!src.glutenFree;
+    if (typeof src.isGlutenFree !== "undefined") return !!src.isGlutenFree;
+  }
+  return sources.some((src) => {
+    const label = typeof src === "string" ? src : (src?.name || src?.title || "");
+    return isGfLabel(label);
+  });
+};
 
 const CartIcon = ({ className }) => (
   <svg
@@ -122,6 +136,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
       const menu = cfg?.menuItem || cfg;
       const id = String(menu?._id || menu?.id || cfg?._id || cfg?.id || idx);
       const extraOptions = Array.isArray(cfg?.extraOptions) ? cfg.extraOptions.filter(Boolean) : [];
+      const glutenFree = resolveGlutenFree(menu, cfg, option);
       return {
         id,
         menuItemId: menu?._id || menu?.id || id,
@@ -134,12 +149,14 @@ function normalizeItems(option, serverUrl, categoryKeys) {
           ? option.price
           : (typeof menu?.price === "number" ? menu.price : 0),
         extraOptions,
+        glutenFree,
       };
     });
   }
   if (Array.isArray(option?.items) && option.items.length) {
     return option.items.map((raw, idx) => {
       const name = typeof raw === "string" ? raw : (raw?.name || `Item ${idx + 1}`);
+      const glutenFree = resolveGlutenFree(raw, option);
       return {
         id: String(raw?._id || raw?.id || idx),
         menuItemId: raw?._id || raw?.id || null,
@@ -150,6 +167,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
         categorySlug: raw?.category?.slug || "",
         price: typeof option?.price === "number" ? option.price : (typeof raw?.price === "number" ? raw.price : 0),
         extraOptions: [],
+        glutenFree,
       };
     });
   }
@@ -252,12 +270,16 @@ export default function CateringMenuItems() {
       const imageSource = item.image || option?.image || "";
       const normalizedImage = imageSource ? toPublicUrl(imageSource, SERVER_URL) : PLACEHOLDER;
       const categoryKey = item.categoryKey || detectCategory(item, categoryKeys);
+      const glutenFree = typeof item.glutenFree !== "undefined"
+        ? !!item.glutenFree
+        : resolveGlutenFree(item, option);
       return {
         ...item,
         id: item.id || item._id || String(idx),
         image: normalizedImage || PLACEHOLDER,
         categoryKey,
         extraOptions: Array.isArray(item.extraOptions) ? item.extraOptions.filter(Boolean) : [],
+        glutenFree,
       };
     });
   }, [SERVER_URL, categoryKeys]);
@@ -541,6 +563,7 @@ export default function CateringMenuItems() {
           quantity: qty * multiplier,
           extra: extraLabel,
           menuItem: it.menuItemId,
+          glutenFree: !!it.glutenFree,
         });
       });
     }
@@ -572,7 +595,11 @@ export default function CateringMenuItems() {
         </div>
         <div className="hot-dish-content">
           <div className="hot-dish-header">
+            
             <h3 className="hot-dish-name">{item.name}</h3>
+            {item.glutenFree && (
+              <span className="gf-badge" aria-label="Gluten free">GF</span>
+            )}
             {showPrice && <span className="hot-dish-price">{displayPrice}</span>}
           </div>
           {item.description && <p className="hot-dish-description">{item.description}</p>}
