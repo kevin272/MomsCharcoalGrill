@@ -63,37 +63,73 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
     }
   };
 
+  const toPublicUrl = (p) => {
+    if (!p) return "";
+    if (/^https?:\/\//i.test(p)) return p;
+    return p.startsWith("/") ? p : `/${p}`;
+  };
+
+  const initials = (label = "") => {
+    const parts = String(label).trim().split(/\s+/).slice(0, 2);
+    return parts.map((p) => p[0]?.toUpperCase() || "").join("");
+  };
+
+  const selectedCount = Array.isArray(selected) ? selected.length : 0;
+
   return (
-    <div className="card menuitem-picker" style={{ background: "#0f0f0f", border: "1px solid rgba(255,255,255,.1)" }}>
-      <div className="card-header d-flex align-items-center justify-content-between"
-           style={{ background: "#0b0b0b", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-        <div style={{ color: "#FFF200", fontWeight: 700 }}>Select Menu Items</div>
-        <div className="d-flex gap-2 align-items-center">
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="Search..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            style={{ background: "#141414", color: "#fff", border: "1px solid rgba(255,255,255,.14)", minWidth: 180 }}
-          />
-          <span className="badge rounded-pill"
-                style={{ background: "#111", color: "#FFF200", border: "1px dashed rgba(255,255,255,.2)", fontSize: 13 }}>
-            {(selected && selected.length) || 0} selected
-          </span>
+    <div className="menuitem-picker revamped">
+      <div className="menuitem-picker__top">
+        <div>
+          <p className="catering-kicker">Menu items</p>
+          <div className="menuitem-picker__title-row">
+            <h3 className="menuitem-picker__title">Select from your menu</h3>
+            <span className="catering-pill pill--outline">
+              {selectedCount} selected
+            </span>
+          </div>
+        </div>
+        <div className="menuitem-picker__search">
+          <div className="menuitem-picker__input">
+            <span className="material-symbols-outlined" aria-hidden>search</span>
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="card-body" style={{ maxHeight: 320, overflowY: "auto" }}>
-        {loading && <div className="text-muted">Loading...</div>}
-        {error && <div className="text-danger">{error}</div>}
+      {selectedCount > 0 && (
+        <div className="menuitem-picker__chips">
+          {selected.map((id) => {
+            const item = items.find((it) => (it?._id || it?.id) === id) || null;
+            const label = item?.name || item?.title || `Item ${id}`;
+            return (
+              <button
+                key={id}
+                type="button"
+                className="chip"
+                onClick={() => toggle(id)}
+              >
+                {label}
+                <span aria-hidden>x</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
+      <div className="menuitem-picker__body">
+        {loading && <div className="menuitem-picker__state">Loading...</div>}
+        {error && <div className="menuitem-picker__state error">{error}</div>}
         {!loading && !error && (!Array.isArray(items) || items.length === 0) && (
-          <div className="text-muted">No menu items found</div>
+          <div className="menuitem-picker__state">No menu items found</div>
         )}
 
         {!loading && !error && Array.isArray(items) && items.length > 0 && (
-          <div className="row g-2">
+          <div className="menuitem-picker__grid">
             {items.map((it) => {
               const id = it?._id || it?.id;
               const name = it?.name || it?.title || "Untitled";
@@ -101,29 +137,30 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
               const checked = Array.isArray(selected) && selected.includes(id);
 
               return (
-                <div key={id} className="col-12 col-md-6 col-lg-4">
-                  <label
-                    className="d-flex align-items-center gap-2 p-2 rounded"
-                    style={{
-                      border: checked ? "1px solid #FFF200" : "1px solid rgba(255,255,255,.12)",
-                      background: checked ? "#1a1a00" : "#111",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={!!checked}
-                      onChange={() => toggle(id)}
-                    />
-                    <div className="flex-grow-1">
-                      <div style={{ color: "#fff", fontWeight: 600, lineHeight: 1.2 }}>{name}</div>
-                      <div className="small text-muted">
-                        {price != null ? `A$ ${Number(price).toFixed(2)}` : "—"}
-                      </div>
+                <label
+                  key={id}
+                  className={`menuitem-card ${checked ? "menuitem-card--active" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!checked}
+                    onChange={() => toggle(id)}
+                  />
+                  <div className="menuitem-card__avatar">
+                    {it?.image ? (
+                      <img src={toPublicUrl(it.image)} alt={name} />
+                    ) : (
+                      <span>{initials(name) || "M"}</span>
+                    )}
+                  </div>
+                  <div className="menuitem-card__meta">
+                    <div className="menuitem-card__name">{name}</div>
+                    <div className="menuitem-card__sub">
+                      {price != null ? `A$ ${Number(price).toFixed(2)}` : "No price"}
                     </div>
-                  </label>
-                </div>
+                  </div>
+                  <span className="menuitem-card__check" aria-hidden>&#10003;</span>
+                </label>
               );
             })}
           </div>

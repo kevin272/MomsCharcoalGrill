@@ -256,214 +256,243 @@ export default function CateringForm({
     })
     .join(", ");
 
+  const activeBadge = isActive ? "Active" : "Hidden";
+  const priceHint = price ? `$${Number(price).toFixed(2)}` : "No price yet";
+  const minLabel = minPeople ? `${minPeople}+ ppl` : "No minimum set";
+
   return (
     <Modal open={open} onClose={onClose}>
-      <form className="catering-form p-4 md:p-5" onSubmit={handleSubmit}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-100">
-            {initial ? "Edit Catering Option" : "New Catering Option"}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="od-btn od-btn--ghost"
-          >
-            ✕
-          </button>
+      <form className="catering-form p-4 md:p-5 catering-form--revamp" onSubmit={handleSubmit}>
+        <div className="catering-form__head">
+          <div>
+            <p className="catering-kicker">Catering option</p>
+            <div className="catering-form__title-row">
+              <h2 className="catering-form__title">
+                {initial ? "Edit Catering Option" : "New Catering Option"}
+              </h2>
+              <span className={`catering-pill ${isActive ? "pill--green" : "pill--gray"}`}>
+                {activeBadge}
+              </span>
+            </div>
+            <div className="catering-pill-row">
+              <span className="catering-pill pill--outline">{priceHint}</span>
+              <span className="catering-pill pill--outline">{priceType === "per_person" ? "Per person" : "Per tray"}</span>
+              <span className="catering-pill pill--outline">{minLabel}</span>
+            </div>
+          </div>
+          <div className="catering-form__head-actions">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="catering-ghost-btn"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         {err && (
-          <div className="bg-red-900/50 text-red-200 px-3 py-2 rounded-md border border-red-500/40 mb-3">
+          <div className="catering-alert catering-alert--error">
             {err}
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Title</label>
-            <input
-              className="od-input"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., BBQ Feast"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Slug</label>
-            <input
-              className="od-input"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="bbq-feast"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Order</label>
-            <input
-              type="number"
-              className="od-input"
-              value={order}
-              onChange={(e) => setOrder(e.target.value)}
-              min="0"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Price</label>
-            <input
-              type="number"
-              className="od-input"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="160"
-              min="0"
-              step="0.01"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Price Type</label>
-            <select
-              className="od-select"
-              value={priceType}
-              onChange={(e) => setPriceType(e.target.value)}
-            >
-              <option value="per_tray">Per Tray</option>
-              <option value="per_person">Per Person</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Min People</label>
-            <input
-              type="number"
-              className="od-input"
-              value={minPeople}
-              onChange={(e) => setMinPeople(e.target.value)}
-              placeholder="20"
-              min="0"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-            />
-            <label htmlFor="isActive" className="text-gray-200">Active</label>
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="od-input"
-              onChange={(e) => {
-                const f = e.target.files?.[0] || null;
-                setImageFile(f);
-                if (f) setPreview(URL.createObjectURL(f));
-              }}
-            />
-            {preview ? (
-              <div className="mt-2">
-                <img
-                  src={preview}
-                  alt="preview"
-                  style={{ maxWidth: 240, borderRadius: 8 }}
-                  onError={(e) => (e.currentTarget.style.opacity = 0.4)}
+        <div className="catering-form__section-grid">
+          <section className="catering-form__section">
+            <div className="catering-section__title">Basics</div>
+            <div className="catering-field-grid">
+              <div className="catering-field">
+                <label>Title</label>
+                <input
+                  className="od-input"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., BBQ Feast"
+                  required
                 />
               </div>
-            ) : null}
-          </div>
+              <div className="catering-field">
+                <label>Slug</label>
+                <input
+                  className="od-input"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="bbq-feast"
+                  required
+                />
+              </div>
+              <div className="catering-field">
+                <label>Display Order</label>
+                <input
+                  type="number"
+                  className="od-input"
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="catering-field catering-toggle">
+                <label htmlFor="isActive">Status</label>
+                <div className="toggle-row">
+                  <input
+                    id="isActive"
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                  />
+                  <span>{isActive ? "Visible on site" : "Hidden"}</span>
+                </div>
+              </div>
+              <div className="catering-field catering-upload">
+                <label>Cover Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="od-input"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setImageFile(f);
+                    if (f) setPreview(URL.createObjectURL(f));
+                  }}
+                />
+                {preview ? (
+                  <div className="catering-upload__preview">
+                    <img
+                      src={preview}
+                      alt="preview"
+                      onError={(e) => (e.currentTarget.style.opacity = 0.4)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </section>
 
-          <div className="md:col-span-2 menu-picker">
-            <label className="block mb-1 text-sm font-semibold text-gray-200">Items</label>
-            <MenuItemPicker value={selectedItemIds} onChange={setSelectedItemIds} onItemsLoaded={handleItemsLoaded} />
-          </div>
+          <section className="catering-form__section">
+            <div className="catering-section__title">Pricing & People</div>
+            <div className="catering-field-grid">
+              <div className="catering-field">
+                <label>Price</label>
+                <input
+                  type="number"
+                  className="od-input"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="160"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="catering-field">
+                <label>Price Type</label>
+                <select
+                  className="od-select"
+                  value={priceType}
+                  onChange={(e) => setPriceType(e.target.value)}
+                >
+                  <option value="per_tray">Per Tray</option>
+                  <option value="per_person">Per Person</option>
+                </select>
+              </div>
+              <div className="catering-field">
+                <label>Minimum People</label>
+                <input
+                  type="number"
+                  className="od-input"
+                  value={minPeople}
+                  onChange={(e) => setMinPeople(e.target.value)}
+                  placeholder="20"
+                  min="0"
+                />
+              </div>
+              <div className="catering-note">
+                <p>Customers will see this pricing and minimum on the package page.</p>
+              </div>
+            </div>
+          </section>
+        </div>
 
-          <div className="md:col-span-2">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-semibold text-gray-200">
-                Extra selection options for each item (comma separated)
-              </label>
-              <span className="text-xs text-gray-400">Shown to customers when ordering</span>
+        <section className="catering-form__section">
+          <div className="catering-section__title">Menu items & extras</div>
+          <MenuItemPicker value={selectedItemIds} onChange={setSelectedItemIds} onItemsLoaded={handleItemsLoaded} />
+
+          <div className="catering-extras">
+            <div className="catering-extras__header">
+              <div>
+                <p className="catering-kicker">Extras</p>
+                <h4>Offer add-ons per item (comma separated)</h4>
+                <p className="catering-helper">Shown to customers when ordering this catering option.</p>
+              </div>
+              <span className="catering-pill pill--outline">
+                {selectedItemIds.length} item{selectedItemIds.length === 1 ? "" : "s"}
+              </span>
             </div>
             {selectedItemIds.length === 0 && (
-              <p className="text-gray-400 text-sm">Select menu items first.</p>
+              <p className="catering-empty">Select menu items first.</p>
             )}
-            <div className="space-y-3">
+            <div className="catering-extras__grid">
               {selectedItemIds.map((id) => {
                 const item = itemsLookup[id];
                 const label = item?.name || item?.title || `Item ${id}`;
                 return (
-                  <div key={id} className="p-3 rounded-md border border-gray-700 bg-[#101010]">
-                    <div className="text-sm text-gray-200 mb-1 font-semibold">{label}</div>
+                  <div key={id} className="catering-extras__card">
+                    <div className="catering-extras__title">{label}</div>
                     <input
                       type="text"
-                      className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+                      className="catering-extras__input"
                       placeholder="Example: with gravy, extra spicy"
                       value={itemExtras[id] || ""}
                       onChange={(e) =>
                         setItemExtras((prev) => ({ ...prev, [id]: e.target.value }))
                       }
                     />
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      Separate multiple options with a comma. Leave blank if no extra selection is needed.
-                    </p>
+                    <p className="catering-helper">Separate with a comma. Leave blank if none.</p>
                   </div>
                 );
               })}
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 p-4 rounded-md border border-gray-700 bg-[#0f0f0f]">
-          <div className="flex items-center gap-3">
-            <input
-              id="selectionRules"
-              type="checkbox"
-              checked={selectionRules.enabled}
-              onChange={(e) =>
-                setSelectionRules((prev) => {
-                  const nextLimits = e.target.checked
-                    ? { ...getPresetDefaults(prev.type || "classic"), ...(prev.categoryLimits || {}) }
-                    : {};
-                  return { ...prev, enabled: e.target.checked, categoryLimits: nextLimits };
-                })
-              }
-            />
-            <label htmlFor="selectionRules" className="text-gray-200 font-semibold">
-              Apply general catering limits
-            </label>
-          </div>
-          {selectionRules.enabled && (
-            <>
-              <div className="mt-3 space-y-2">
-                <p className="text-sm font-semibold text-gray-200">General catering type</p>
-                <div className="flex flex-wrap gap-3">
+        <section className="catering-form__section">
+          <div className="catering-section__title">General selection rules</div>
+          <div className="catering-rules">
+            <div className="catering-rules__toggle">
+              <div className="toggle-row">
+                <input
+                  id="selectionRules"
+                  type="checkbox"
+                  checked={selectionRules.enabled}
+                  onChange={(e) =>
+                    setSelectionRules((prev) => {
+                      const nextLimits = e.target.checked
+                        ? { ...getPresetDefaults(prev.type || "classic"), ...(prev.categoryLimits || {}) }
+                        : {};
+                      return { ...prev, enabled: e.target.checked, categoryLimits: nextLimits };
+                    })
+                  }
+                />
+                <label htmlFor="selectionRules">Apply general catering limits</label>
+              </div>
+              <p className="catering-helper">Gate how many items customers can choose per category.</p>
+            </div>
+
+            {selectionRules.enabled && (
+              <>
+                <div className="catering-rules__presets">
                   {Object.values(GENERAL_PROFILES).map((preset) => {
-                    const isActive = (selectionRules.type || "classic") === preset.key;
+                    const isPresetActive = (selectionRules.type || "classic") === preset.key;
                     return (
                       <label
                         key={preset.key}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer ${
-                          isActive ? "border-red-500/70 bg-red-500/10" : "border-gray-700 bg-[#111111]"
-                        }`}
+                        className={`catering-pill pill--outline preset-pill ${isPresetActive ? "preset-pill--active" : ""}`}
                       >
                         <input
                           type="radio"
                           name="generalType"
                           value={preset.key}
-                          checked={isActive}
+                          checked={isPresetActive}
                           onChange={(e) => {
                             const nextType = e.target.value;
                             setSelectionRules((prev) => {
@@ -476,47 +505,51 @@ export default function CateringForm({
                             });
                           }}
                         />
-                        <span className="text-sm text-gray-100">{preset.label}</span>
+                        <span>{preset.label}</span>
+                        {isPresetActive && <span className="preset-pill__tag">Selected</span>}
                       </label>
                     );
                   })}
                 </div>
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-                {limitKeys.map((key) => {
-                  const defaultVal = activePreset.defaults?.[key] ?? 0;
-                  return (
-                    <div key={key}>
-                      <label className="block mb-1 text-sm font-semibold text-gray-200 capitalize">
-                        {key}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
-                        value={selectionRules.categoryLimits?.[key] ?? defaultVal}
-                        onChange={(e) => updateLimit(key, e.target.value)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
 
-        <div className="flex items-center justify-end gap-3 mt-6">
+                <div className="catering-rules__grid">
+                  {limitKeys.map((key) => {
+                    const defaultVal = activePreset.defaults?.[key] ?? 0;
+                    return (
+                      <div key={key} className="catering-field">
+                        <label className="capitalize">{key}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="od-input"
+                          value={selectionRules.categoryLimits?.[key] ?? defaultVal}
+                          onChange={(e) => updateLimit(key, e.target.value)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="catering-helper">
+                  Preset summary: {presetSummary}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        <div className="catering-form__footer">
           <button
             type="button"
             onClick={onClose}
-            className="od-btn"
+            className="catering-ghost-btn"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="od-btn od-btn--danger"
+            className="catering-primary-btn"
           >
             {saving ? "Saving..." : (initial ? "Update" : "Create")}
           </button>
