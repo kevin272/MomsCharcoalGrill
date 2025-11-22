@@ -571,6 +571,11 @@ html {
   width: 33px;
   height: 45px;
 }
+.carousel-nav:focus{
+  border: none !important;
+  outline: none !important;
+  transform: scale(1.2);
+}
 
 .menu-items {
   display: flex;
@@ -656,7 +661,9 @@ html {
     gap: clamp(12px, 2.5vw, 20px);
     width: 100%;
   }
-  
+  .menu-item:hover::before {
+  display:none;
+}
 }
 /*ipad air and pro*/
 @media (max-width: 1180px) {
@@ -700,6 +707,7 @@ html {
 @media (max-width: 768px) {
   .menu-carousel {
     flex-direction: column;
+    align-items: stretch;
     padding: 40px 15px 50px;
   }
 
@@ -711,22 +719,32 @@ html {
     display: block !important;
     overflow: hidden;
     width: 100%;
+    margin: 0 auto;
   }
 
   /* Slide track */
   .menu-track {
     display: flex !important;
+    width: 100%;
+    min-width: 100%;
+    justify-content: flex-start;
   }
   .menu-page {
     flex: 0 0 100% !important;
+    width: 100%;
+    min-width: 100%;
+    display: block;
   }
 
   /* Two items per page */
   .menu-page-inner {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px !important;
     justify-items: center;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
   }
 
   /* Make images proportionate */
@@ -2629,6 +2647,20 @@ html {
   .hot-dish-name, .hot-dish-price { font-size: 15px; }
   .hot-dish-description { font-size: 13px; }
   .hot-dish-cart-btn svg { width: 20px; height: 20px; }
+}
+
+/* Extra mobile hardening for catering cards */
+@media (max-width: 640px) {
+  .hot-dishes-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 100%;
+    width: 100%;
+    justify-items: center;
+  }
+  .hot-dish-card {
+    width: 100%;
+  }
 }
 .category-section{
   padding:10px 4px;
@@ -6415,7 +6447,7 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
 /* ===== MenuCarousel pagination layout (override legacy styles) ===== */
 .menu-carousel > .menu-items { display:block !important; width:100%; overflow:hidden; }
 .menu-carousel > .menu-items > .menu-track { display:flex !important; flex-wrap: nowrap; align-items: stretch; transition: transform 400ms ease; }
-.menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100% !important; }
+.menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100%; width: 100%; }
 .menu-carousel .menu-page-inner { display:flex; justify-content:center; align-items: stretch; gap:16px; flex-wrap: nowrap; }
 @media (max-width: 1024px){ .menu-carousel .menu-page-inner { gap:14px; } }
 @media (max-width: 600px){ .menu-carousel .menu-page-inner { gap:12px; } }
@@ -6425,13 +6457,28 @@ a,button,[role="button"],input,select,textarea{ outline:none; }
   .menu-carousel { flex-direction: column; padding: clamp(24px, 5vw, 40px) clamp(12px, 4vw, 16px); }
   .menu-carousel > .menu-items { display:block !important; overflow:hidden !important; width:100% !important; }
   .menu-carousel > .menu-items > .menu-track { display:flex !important; flex-wrap: nowrap !important; }
-  .menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100% !important; }
-  .menu-carousel .menu-page-inner { gap: 12px !important; }
+  .menu-carousel > .menu-items > .menu-track > .menu-page { flex: 0 0 100%; width: 100%; }
+  .menu-carousel .menu-page-inner {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px !important;
+    justify-items: center;
+    align-items: start;
+  }
+  .menu-carousel .menu-item {
+    width: 100%;
+    text-align: center;
+  }
   .menu-carousel .carousel-nav { display:none !important; }
-  .menu-carousel .menu-item img { width: 140px; height: 140px; }
+  .menu-carousel .menu-item img { width: 140px; height: 140px; margin: 0 auto; }
   .menu-carousel .menu-item h3 { font-size: 16px; margin-top: 6px; }
 }
 @media (max-width: 480px) {
+  .menu-carousel .menu-page-inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px !important;
+  }
+  .menu-carousel .menu-item { width: 100%; }
   .menu-carousel .menu-item img { width: 120px; height: 120px; }
 }
 

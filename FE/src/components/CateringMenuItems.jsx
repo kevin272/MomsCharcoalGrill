@@ -3,15 +3,31 @@ import { Link, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "./common/ToastProvider.jsx";
 
-const DEFAULT_LIMITS = { chicken: 1, salad: 2, veggies: 2, breadroll: 1 };
-const CATEGORY_ORDER = [
-  { key: "chicken", label: "Chicken" },
-  { key: "salad", label: "Salads" },
-  { key: "veggies", label: "Veggies" },
-  { key: "breadroll", label: "Bread Roll" },
-];
+const CATEGORY_META = {
+  roast: "Roast",
+  chicken: "Chicken",
+  salad: "Salads",
+  veggies: "Veggies",
+  breadroll: "Bread Roll",
+};
+
+const GENERAL_PROFILES = {
+  classic: {
+    key: "classic",
+    categories: ["chicken", "salad", "veggies", "breadroll"],
+    defaults: { chicken: 1, salad: 2, veggies: 2, breadroll: 1 },
+  },
+  roast_and_chicken: {
+    key: "roast_and_chicken",
+    categories: ["roast", "chicken", "salad", "veggies", "breadroll"],
+    defaults: { roast: 1, chicken: 1, salad: 2, veggies: 2, breadroll: 1 },
+  },
+};
+
+const FALLBACK_DEFAULTS = GENERAL_PROFILES.classic.defaults;
 
 const KEYWORDS = {
+  roast: ["roast", "roasted", "beef", "lamb", "pork", "sirloin", "roast beef"],
   chicken: ["chicken", "peri", "tandoori", "drum", "wing", "breast", "thigh"],
   salad: ["salad", "slaw", "coleslaw", "garden", "greek", "caesar"],
   veggies: ["veg", "veggie", "vegetable", "paneer", "broccoli", "spinach", "mushroom", "beans"],
@@ -51,8 +67,14 @@ function toPublicUrl(p, serverUrl) {
   return `${serverUrl}${rel}`;
 }
 
-function normalizeLimits(selectionRules) {
-  const base = { ...DEFAULT_LIMITS };
+function normalizeLimits(selectionRules, profile) {
+  const base = {
+    ...(
+      profile?.defaults
+      || (selectionRules?.type && GENERAL_PROFILES[selectionRules.type]?.defaults)
+      || FALLBACK_DEFAULTS
+    ),
+  };
   if (!selectionRules?.enabled) return base;
   const raw = selectionRules.categoryLimits instanceof Map
     ? Object.fromEntries(selectionRules.categoryLimits)
@@ -76,16 +98,24 @@ function scoreForCategory(item, key) {
   return score;
 }
 
-function detectCategory(item) {
+function detectCategory(item, categoryKeys = []) {
+  const ordered = categoryKeys.length ? categoryKeys : Object.keys(CATEGORY_META);
   let best = { key: null, score: 0 };
-  CATEGORY_ORDER.forEach(({ key }) => {
+  ordered.forEach((key) => {
     const score = scoreForCategory(item, key);
     if (score > best.score) best = { key, score };
   });
   return best.score > 0 ? best.key : null;
 }
 
-function normalizeItems(option, serverUrl) {
+function inferGeneralType(selectionRules) {
+  const type = selectionRules?.type;
+  if (type && GENERAL_PROFILES[type]) return type;
+  const hasRoast = Boolean(selectionRules?.categoryLimits?.roast);
+  return hasRoast ? "roast_and_chicken" : "classic";
+}
+
+function normalizeItems(option, serverUrl, categoryKeys) {
   const configs = Array.isArray(option?.itemConfigurations) ? option.itemConfigurations : [];
   if (configs.length) {
     return configs.map((cfg, idx) => {
@@ -161,6 +191,22 @@ export default function CateringMenuItems() {
   const [, setDebug] = useState(null);
 
   const pkgKey = pkg?._id || optionId;
+  const generalType = useMemo(
+    () => inferGeneralType(pkg?.selectionRules || {}),
+    [pkg?.selectionRules]
+  );
+  const activeProfile = useMemo(
+    () => GENERAL_PROFILES[generalType] || GENERAL_PROFILES.classic,
+    [generalType]
+  );
+  const categoryOrder = useMemo(
+    () => (activeProfile?.categories || Object.keys(FALLBACK_DEFAULTS)).map((key) => ({
+      key,
+      label: CATEGORY_META[key] || key,
+    })),
+    [activeProfile]
+  );
+  const categoryKeys = useMemo(() => categoryOrder.map((c) => c.key), [categoryOrder]);
 
   const cartMenuIds = useMemo(() => {
     const ids = new Set();
@@ -198,14 +244,14 @@ export default function CateringMenuItems() {
 
   const buildItems = useCallback((option, fallbackItems = []) => {
     if (!option) return [];
-    const normalized = normalizeItems(option, SERVER_URL);
+    const normalized = normalizeItems(option, SERVER_URL, categoryKeys);
     const base = normalized.length
       ? normalized
       : (Array.isArray(fallbackItems) ? fallbackItems : []);
     return base.map((item, idx) => {
       const imageSource = item.image || option?.image || "";
       const normalizedImage = imageSource ? toPublicUrl(imageSource, SERVER_URL) : PLACEHOLDER;
-      const categoryKey = item.categoryKey || detectCategory(item);
+      const categoryKey = item.categoryKey || detectCategory(item, categoryKeys);
       return {
         ...item,
         id: item.id || item._id || String(idx),
@@ -214,7 +260,7 @@ export default function CateringMenuItems() {
         extraOptions: Array.isArray(item.extraOptions) ? item.extraOptions.filter(Boolean) : [],
       };
     });
-  }, [SERVER_URL]);
+  }, [SERVER_URL, categoryKeys]);
 
   const packagePrice = useMemo(() => {
     if (!pkg) return 0;
@@ -224,39 +270,48 @@ export default function CateringMenuItems() {
     return Number(perPerson) || 0;
   }, [pkg]);
 
+  const minPeopleRequired = useMemo(() => {
+    const n = Number(pkg?.minPeople);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }, [pkg?.minPeople]);
+
   const isGeneral = Boolean(pkg?.selectionRules?.enabled);
   const categoryLimits = useMemo(
-    () => normalizeLimits(pkg?.selectionRules),
-    [pkg?.selectionRules]
+    () => normalizeLimits(pkg?.selectionRules, activeProfile),
+    [activeProfile, pkg?.selectionRules]
   );
 
   const groupedItems = useMemo(() => {
     if (!isGeneral) return { groups: {}, others: [] };
-    const groups = CATEGORY_ORDER.reduce((acc, { key }) => {
+    const groups = categoryOrder.reduce((acc, { key }) => {
       acc[key] = [];
       return acc;
     }, {});
     const others = [];
     items.forEach((item) => {
-      const key = item.categoryKey || detectCategory(item);
+      const key = item.categoryKey || detectCategory(item, categoryKeys);
       if (key && groups[key]) groups[key].push(item);
       else others.push(item);
     });
     return { groups, others };
-  }, [isGeneral, items]);
+  }, [categoryKeys, categoryOrder, isGeneral, items]);
 
   const selectedCounts = useMemo(() => {
     if (!isGeneral) return {};
-    return CATEGORY_ORDER.reduce((acc, { key }) => {
+    return categoryOrder.reduce((acc, { key }) => {
       const list = groupedItems.groups[key] || [];
       acc[key] = list.reduce((sum, item) => sum + (quantities[item.id] || 0), 0);
       return acc;
     }, {});
-  }, [isGeneral, groupedItems, quantities]);
+  }, [categoryOrder, groupedItems, isGeneral, quantities]);
 
   const totalSelected = useMemo(
     () => Object.values(quantities).reduce((sum, qty) => sum + qty, 0),
     [quantities]
+  );
+
+  const selectionSummaryParts = categoryOrder.map(
+    ({ key, label }) => `${categoryLimits[key] ?? 0} ${label.toLowerCase()}`
   );
 
   const updateQty = useCallback((item, delta = 1, opts = {}) => {
@@ -268,10 +323,10 @@ export default function CateringMenuItems() {
     }
 
     if (isGeneral && delta > 0) {
-      const key = item.categoryKey || detectCategory(item);
+      const key = item.categoryKey || detectCategory(item, categoryKeys);
       const limit = categoryLimits[key] ?? 0;
       if (limit > 0 && (selectedCounts[key] || 0) >= limit) {
-        const label = CATEGORY_ORDER.find((c) => c.key === key)?.label || "this category";
+        const label = categoryOrder.find((c) => c.key === key)?.label || "this category";
         toast.error(`Limit reached for ${label}.`);
         return;
       }
@@ -295,7 +350,7 @@ export default function CateringMenuItems() {
       }
       return updated;
     });
-  }, [categoryLimits, isGeneral, selectedCounts, toast]);
+  }, [categoryKeys, categoryLimits, categoryOrder, isGeneral, selectedCounts, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -382,7 +437,15 @@ export default function CateringMenuItems() {
     setQuantities({});
     setSelectedExtras({});
     setExtrasModal({ open: false, item: null, delta: 1 });
-  }, [optionId]);
+    setConfirmQty(Math.max(1, minPeopleRequired || 1));
+  }, [minPeopleRequired, optionId]);
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    if (minPeopleRequired > 0 && (Number(confirmQty) || 0) < minPeopleRequired) {
+      setConfirmQty(minPeopleRequired);
+    }
+  }, [confirmOpen, confirmQty, minPeopleRequired]);
 
   const handleAddToCart = (it) => {
     addToCart({
@@ -407,7 +470,7 @@ export default function CateringMenuItems() {
       return;
     }
     if (isGeneral) {
-      const missing = CATEGORY_ORDER.filter(
+      const missing = categoryOrder.filter(
         ({ key }) => (categoryLimits[key] ?? 0) > 0 && (selectedCounts[key] || 0) < (categoryLimits[key] ?? 0)
       );
       if (missing.length) {
@@ -418,11 +481,18 @@ export default function CateringMenuItems() {
         return;
       }
     }
+    if (minPeopleRequired > 0 && (Number(confirmQty) || 0) < minPeopleRequired) {
+      setConfirmQty(minPeopleRequired);
+    }
     setConfirmOpen(true);
   };
 
   const addSelectionToCart = () => {
     const multiplier = Math.max(1, Number(confirmQty) || 1);
+    if (minPeopleRequired > 0 && multiplier < minPeopleRequired) {
+      toast.error(`Minimum ${minPeopleRequired} people required for this catering option.`);
+      return;
+    }
     const chosen = items
       .map((it) => ({
         it,
@@ -484,8 +554,9 @@ export default function CateringMenuItems() {
   const renderItemCard = (item) => {
     const qty = quantities[item.id] || 0;
     const hasExtras = Array.isArray(item.extraOptions) && item.extraOptions.length > 0;
+    const showPrice = !isGeneral;
     const displayPrice = isGeneral
-      ? (packagePrice ? `$${packagePrice.toFixed(2)} per person` : "Per person")
+      ? ""
       : `$${Number(item.price || pkg?.price || 0).toFixed(2)}`;
     const inCart = qty > 0 || isItemInCart(item);
 
@@ -502,7 +573,7 @@ export default function CateringMenuItems() {
         <div className="hot-dish-content">
           <div className="hot-dish-header">
             <h3 className="hot-dish-name">{item.name}</h3>
-            <span className="hot-dish-price">{displayPrice}</span>
+            {showPrice && <span className="hot-dish-price">{displayPrice}</span>}
           </div>
           {item.description && <p className="hot-dish-description">{item.description}</p>}
           {hasExtras && (
@@ -546,8 +617,7 @@ export default function CateringMenuItems() {
             {!!pkg.description && <p className="mt-2 opacity-80">{pkg.description}</p>}
             {isGeneral && (
               <p className="mt-3 text-sm opacity-80">
-                General catering lets you choose {categoryLimits.chicken} chicken, {categoryLimits.salad} salad,
-                {` ${categoryLimits.veggies} veggies and ${categoryLimits.breadroll} bread roll option(s).`}
+                General catering lets you choose {selectionSummaryParts.join(", ").replace(/, ([^,]*)$/, " and $1")}.
               </p>
             )}
           </div>
@@ -559,7 +629,7 @@ export default function CateringMenuItems() {
 
             {isGeneral ? (
               <div className="space-y-8">
-                {CATEGORY_ORDER.map(({ key, label }) => (
+                {categoryOrder.map(({ key, label }) => (
                   <div key={key} className="category-section">
                     <div className="category-header">
                       <div className="category-title-wrap">
@@ -684,6 +754,9 @@ export default function CateringMenuItems() {
               {isGeneral && packagePrice ? (
                 <p className="text-sm mt-1">Price: ${packagePrice.toFixed(2)} per person</p>
               ) : null}
+              {minPeopleRequired > 0 && (
+                <p className="text-xs opacity-80 mt-1">Minimum {minPeopleRequired} people required.</p>
+              )}
             </div>
             <button className="modal-submit-btn mt-2" onClick={addSelectionToCart}>
               CONFIRM

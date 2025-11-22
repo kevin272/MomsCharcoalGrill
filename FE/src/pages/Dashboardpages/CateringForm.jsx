@@ -1,5 +1,5 @@
 // src/pages/admin/CateringForm.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axiosInstance from "../../config/axios.config.js";
 import MenuItemPicker from "./MenuItemPicker";
 import Modal from "../../components/Dashboard/Modal.jsx";
@@ -10,12 +10,31 @@ export default function CateringForm({
   onClose,
   onSuccess
 }) {
-  const DEFAULT_LIMITS = useMemo(() => ({
-    chicken: 1,
-    salad: 2,
-    veggies: 2,
-    breadroll: 1,
+  const GENERAL_PROFILES = useMemo(() => ({
+    classic: {
+      key: "classic",
+      label: "Chicken, salads, veggies & bread rolls",
+      defaults: { chicken: 1, salad: 2, veggies: 2, breadroll: 1 },
+    },
+    roast_and_chicken: {
+      key: "roast_and_chicken",
+      label: "Roast + chicken with salads, veggies & bread rolls",
+      defaults: { roast: 1, chicken: 1, salad: 2, veggies: 2, breadroll: 1 },
+    },
   }), []);
+
+  const getPresetDefaults = useCallback(
+    (type) => GENERAL_PROFILES[type]?.defaults || GENERAL_PROFILES.classic.defaults,
+    [GENERAL_PROFILES]
+  );
+
+  const initialGeneralType = useMemo(() => {
+    if (initial?.selectionRules?.type && GENERAL_PROFILES[initial.selectionRules.type]) {
+      return initial.selectionRules.type;
+    }
+    const hasRoast = Boolean(initial?.selectionRules?.categoryLimits?.roast);
+    return hasRoast ? "roast_and_chicken" : "classic";
+  }, [GENERAL_PROFILES, initial]);
 
   const [title, setTitle] = useState(initial?.title || "");
   const [slug, setSlug] = useState(initial?.slug || "");
@@ -29,7 +48,11 @@ export default function CateringForm({
   const [itemExtras, setItemExtras] = useState({});
   const [selectionRules, setSelectionRules] = useState({
     enabled: Boolean(initial?.selectionRules?.enabled),
-    categoryLimits: { ...DEFAULT_LIMITS, ...(initial?.selectionRules?.categoryLimits || {}) },
+    type: initialGeneralType,
+    categoryLimits: {
+      ...getPresetDefaults(initialGeneralType),
+      ...(initial?.selectionRules?.categoryLimits || {}),
+    },
   });
   const [itemsLookup, setItemsLookup] = useState({});
 
@@ -54,7 +77,11 @@ export default function CateringForm({
       setIsActive(false);
       setSelectedItemIds([]);
       setItemExtras({});
-      setSelectionRules({ enabled: false, categoryLimits: { ...DEFAULT_LIMITS } });
+      setSelectionRules({
+        enabled: false,
+        type: "classic",
+        categoryLimits: { ...getPresetDefaults("classic") },
+      });
       setPreview("");
       setImageFile(null);
       return;
@@ -79,9 +106,13 @@ export default function CateringForm({
       });
     }
     setItemExtras(extrasMap);
+    const nextType = (initial?.selectionRules?.type && GENERAL_PROFILES[initial.selectionRules.type])
+      ? initial.selectionRules.type
+      : (initial?.selectionRules?.categoryLimits?.roast ? "roast_and_chicken" : "classic");
     setSelectionRules({
       enabled: Boolean(initial.selectionRules?.enabled),
-      categoryLimits: { ...DEFAULT_LIMITS, ...(initial?.selectionRules?.categoryLimits || {}) },
+      type: nextType,
+      categoryLimits: { ...getPresetDefaults(nextType), ...(initial?.selectionRules?.categoryLimits || {}) },
     });
     // hydrate preview image from existing data
     const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
@@ -92,7 +123,7 @@ export default function CateringForm({
       return `${SERVER_URL}${p.startsWith("/") ? "" : "/"}${p}`;
     };
     if (initial.image) setPreview(joinImageUrl(initial.image));
-  }, [initial, DEFAULT_LIMITS]);
+  }, [GENERAL_PROFILES, getPresetDefaults, initial]);
 
   useEffect(() => {
     if (!title) return;
@@ -187,9 +218,10 @@ export default function CateringForm({
       const safeRules = selectionRules.enabled
         ? {
             enabled: true,
+            type: selectionRules.type || "classic",
             categoryLimits: selectionRules.categoryLimits,
           }
-        : { enabled: false, categoryLimits: {} };
+        : { enabled: false, type: selectionRules.type || "classic", categoryLimits: {} };
       fd.append("selectionRules", JSON.stringify(safeRules));
       if (imageFile) fd.append("image", imageFile);
 
@@ -209,6 +241,20 @@ export default function CateringForm({
       setSaving(false);
     }
   };
+
+  const activePreset = GENERAL_PROFILES[selectionRules.type] || GENERAL_PROFILES.classic;
+  const limitKeys = Array.from(
+    new Set([
+      ...Object.keys(activePreset.defaults || {}),
+      ...Object.keys(selectionRules.categoryLimits || {}),
+    ])
+  );
+  const presetSummary = limitKeys
+    .map((key) => {
+      const val = selectionRules.categoryLimits?.[key] ?? activePreset.defaults?.[key] ?? 0;
+      return `${val} ${key}`;
+    })
+    .join(", ");
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -387,34 +433,75 @@ export default function CateringForm({
               type="checkbox"
               checked={selectionRules.enabled}
               onChange={(e) =>
-                setSelectionRules((prev) => ({
-                  ...prev,
-                  enabled: e.target.checked,
-                  categoryLimits: e.target.checked ? { ...DEFAULT_LIMITS, ...prev.categoryLimits } : {},
-                }))
+                setSelectionRules((prev) => {
+                  const nextLimits = e.target.checked
+                    ? { ...getPresetDefaults(prev.type || "classic"), ...(prev.categoryLimits || {}) }
+                    : {};
+                  return { ...prev, enabled: e.target.checked, categoryLimits: nextLimits };
+                })
               }
             />
             <label htmlFor="selectionRules" className="text-gray-200 font-semibold">
-              Apply general catering limits (1 chicken, 2 salads, 2 veggies, 1 bread roll)
+              Apply general catering limits
             </label>
           </div>
           {selectionRules.enabled && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-              {Object.entries(DEFAULT_LIMITS).map(([key, defaultVal]) => (
-                <div key={key}>
-                  <label className="block mb-1 text-sm font-semibold text-gray-200 capitalize">
-                    {key}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
-                    value={selectionRules.categoryLimits?.[key] ?? defaultVal}
-                    onChange={(e) => updateLimit(key, e.target.value)}
-                  />
+            <>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-semibold text-gray-200">General catering type</p>
+                <div className="flex flex-wrap gap-3">
+                  {Object.values(GENERAL_PROFILES).map((preset) => {
+                    const isActive = (selectionRules.type || "classic") === preset.key;
+                    return (
+                      <label
+                        key={preset.key}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer ${
+                          isActive ? "border-red-500/70 bg-red-500/10" : "border-gray-700 bg-[#111111]"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="generalType"
+                          value={preset.key}
+                          checked={isActive}
+                          onChange={(e) => {
+                            const nextType = e.target.value;
+                            setSelectionRules((prev) => {
+                              const defaults = getPresetDefaults(nextType);
+                              const nextLimits = { ...defaults };
+                              Object.entries(prev.categoryLimits || {}).forEach(([key, val]) => {
+                                if (defaults[key] !== undefined) nextLimits[key] = val;
+                              });
+                              return { ...prev, type: nextType, categoryLimits: nextLimits };
+                            });
+                          }}
+                        />
+                        <span className="text-sm text-gray-100">{preset.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                {limitKeys.map((key) => {
+                  const defaultVal = activePreset.defaults?.[key] ?? 0;
+                  return (
+                    <div key={key}>
+                      <label className="block mb-1 text-sm font-semibold text-gray-200 capitalize">
+                        {key}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full bg-[#141414] border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+                        value={selectionRules.categoryLimits?.[key] ?? defaultVal}
+                        onChange={(e) => updateLimit(key, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 

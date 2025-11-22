@@ -115,7 +115,8 @@ export default function MenuCarousel({
     const safeText = (v, fallback = "") => {
       if (v == null) return fallback;
       if (typeof v === "object") return typeof v.name === "string" ? v.name : fallback;
-      const s = String(v);
+      const s = String(v).trim();
+      if (!s) return fallback;
       return looksLikeId(s) ? fallback : s;
     };
 
@@ -128,14 +129,27 @@ export default function MenuCarousel({
       return top && top.s > 0 ? top.b : "Featured";
     };
 
+    const makeLabels = (bucketLabel, item) => {
+      const categoryLabel = safeText(item?.category, "");
+      const nameLabel = safeText(item?.name, "");
+      const title = bucketLabel && bucketLabel !== "Featured"
+        ? bucketLabel
+        : (categoryLabel || nameLabel || "Featured"); // prefer category/name over "Featured"
+      const subtitle = bucketLabel && bucketLabel !== "Featured"
+        ? (categoryLabel || nameLabel)
+        : (nameLabel || categoryLabel);
+      return { title, subtitle: subtitle || "" };
+    };
+
     const toCard = (bucket, item) => {
-      const name = safeText(item?.name, "");
-      const label = name || safeText(bucket, "");
+      const bucketLabel = safeText(bucket, "");
+      const { title, subtitle } = makeLabels(bucketLabel, item);
+
       return {
-        title: label,
-        subtitle: safeText(bucket, ""),
+        title,
+        subtitle,
         src: joinImageUrl(item?.image || item?.img || ""),
-        alt: label || safeText(bucket, ""),
+        alt: title,
       };
     };
 
@@ -150,9 +164,8 @@ export default function MenuCarousel({
       .filter((it) => !!(it?.image || it?.img))
       .map((it) => {
         const bucketTitle = guessBucketForItem(it);
-        const name = safeText(it?.name, "");
-        const title = name || bucketTitle;
-        return { title, subtitle: bucketTitle, src: joinImageUrl(it?.image || it?.img || ""), alt: title };
+        const { title, subtitle } = makeLabels(bucketTitle, it);
+        return { title, subtitle, src: joinImageUrl(it?.image || it?.img || ""), alt: title };
       });
 
     const combined = [...firstWave, ...secondWave, ...fallback].filter((c) => !!c.src);
@@ -268,9 +281,10 @@ export default function MenuCarousel({
   // Styles use pageCount (not item count); rely on App.css for layout
   const trackStyle = useMemo(
     () => ({
-      transform: `translateX(-${pageCount ? (index * (150 / pageCount)) : 0}%)`,
+      // Always shift by a full page width; avoid partial slides on any device
+      transform: `translateX(-${index * 100}%)`,
     }),
-    [index, pageCount]
+    [index]
   );
 
 

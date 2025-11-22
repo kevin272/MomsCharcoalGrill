@@ -119,7 +119,7 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
                     <div className="flex-grow-1">
                       <div style={{ color: "#fff", fontWeight: 600, lineHeight: 1.2 }}>{name}</div>
                       <div className="small text-muted">
-                        {price != null ? `NPR ${Number(price).toFixed(2)}` : "—"}
+                        {price != null ? `A$ ${Number(price).toFixed(2)}` : "—"}
                       </div>
                     </div>
                   </label>
