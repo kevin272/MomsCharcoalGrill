@@ -27,20 +27,23 @@ jobs:
         run: npm run build
         working-directory: FE
 
-      - name: Write SSH key
+      - name: Install sshpass
         run: |
-          mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.VPS_SSH_KEY }}" | tr -d '\r' | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          sudo apt-get update
+          sudo apt-get install -y sshpass
 
       - name: Sync FE dist
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          rsync -az --delete --exclude '.well-known' -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }}" \
+          sshpass -e rsync -az --delete --exclude '.well-known' -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }}" \
             FE/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_FE_PATH }}/
 
       - name: Deploy BE and restart PM2
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
           set -e
           cd ${{ secrets.VPS_BE_PATH }}
           git pull origin main
