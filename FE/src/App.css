@@ -7387,3 +7387,84 @@ html, body, #root, .app-layout, main, .homepage {
   object-position: center;
   border-radius: 50%;
 }
+
+/* Skeleton helpers */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: skeleton-shimmer 1.2s infinite;
+}
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton-line {
+  height: 12px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+}
+.skeleton-line--wide { width: 60%; }
+.skeleton-line--short { width: 35%; }
+.skeleton-line--price { width: 80px; margin-left: auto; }
+.skeleton-circle { border-radius: 999px; }
+.skeleton-card { pointer-events: none; }
+
+.hot-dishes-grid--skeleton {
+  opacity: 0.95;
+}
+.hot-dish-card--skeleton .hot-dish-hover-bg {
+  opacity: 0.35;
+}
+.hot-dish-skeleton-image {
+  width: 160px;
+  height: 160px;
+}
+.hot-dish-skeleton-cart {
+  width: 32px;
+  height: 32px;
+  margin-top: 8px;
+  margin-left: auto;
+}
+
+.catering-option-card.skeleton-card {
+  background-color: #0f0f0f;
+  border-color: #1c1c1c;
+}
+.catering-option-card.skeleton-card:hover {
+  background-color: #0f0f0f;
+  transform: none;
+}
+
+.img-carousel--skeleton .img-carousel__viewport {
+  border-radius: 12px;
+}
+.img-carousel__viewport--skeleton {
+  aspect-ratio: 16 / 9;
+  min-height: 260px;
+}
+.img-carousel__skeleton-media {
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-grid--skeleton {
+  width: 100%;
+}
+.gallery-image-container--skeleton {
+  pointer-events: none;
+}
+.gallery-skeleton-tile {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}

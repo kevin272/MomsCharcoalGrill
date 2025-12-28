@@ -106,12 +106,24 @@ export default function Gallery() {
     <div className="gallery-page">
       <Breadcrumb
         title="Gallery"
-        backgroundImage="https://api.builder.io/api/v1/image/assets/TEMP/8f3784c8c4f948c9b9545fa1d56598510743f14c?width=3456"
+        backgroundImage="Gallery.jpg"
       />
 
       <section className="gallery-grid-section">
         <div className="gallery-container">
-          {loading && <div style={{ padding: 32, textAlign: "center" }}>Loading gallery…</div>}
+          {loading && (
+            <div className="gallery-grid gallery-grid--skeleton" aria-busy="true">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={`gallery-skeleton-${i}`}
+                  className="gallery-image-container gallery-image-container--skeleton"
+                  aria-hidden="true"
+                >
+                  <div className="skeleton gallery-skeleton-tile" />
+                </div>
+              ))}
+            </div>
+          )}
           {!!error && !loading && (
             <div style={{ padding: 32, textAlign: "center", color: "crimson" }}>
               {error}

@@ -12,6 +12,7 @@ export default function ImageCarousel({
   const SERVER_URL = API_BASE.replace(/\/api$/, "");
 
   const [slides, setSlides] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
   const pausedRef = useRef(false);
@@ -27,6 +28,7 @@ export default function ImageCarousel({
   // Fetch slides
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     (async () => {
       try {
         const r = await fetch(`${API_BASE}${endpointBase}?type=${encodeURIComponent(type)}&isActive=true`);
@@ -42,6 +44,8 @@ export default function ImageCarousel({
           setSlides([]);
           setIndex(0);
         }
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
     return () => {
@@ -67,6 +71,18 @@ export default function ImageCarousel({
     pausedRef.current = false;
     setIndex((i) => i);
   };
+
+  if (loading) {
+    return (
+      <div className={`img-carousel img-carousel--skeleton ${className}`} aria-busy="true">
+        <div className="img-carousel__wrap">
+          <div className="img-carousel__viewport img-carousel__viewport--skeleton">
+            <div className="skeleton img-carousel__skeleton-media" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!len) return null;
   const cur = data[index];

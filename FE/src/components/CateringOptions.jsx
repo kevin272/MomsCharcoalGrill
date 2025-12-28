@@ -102,7 +102,10 @@ function Card({ pkg, itemsById, itemsReady }) {
         <div className="catering-option-meta">
           {!hasItemRefs && <span className="opacity-70">No items listed</span>}
           {hasItemRefs && !itemsReady && (
-            <span className="opacity-70">Loading menu…</span>
+            <div className="catering-items-skeleton" aria-hidden="true">
+              <div className="skeleton skeleton-line skeleton-line--wide" />
+              <div className="skeleton skeleton-line" style={{ width: "70%" }} />
+            </div>
           )}
           {hasItemRefs && itemsReady && (
             preview.length ? (
@@ -219,7 +222,24 @@ export default function CateringOptions() {
     };
   }, []);
 
-  if (loading) return <div className="text-gray-600">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="catering-options-grid container" aria-busy="true">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={`catering-skeleton-${i}`} className="catering-option-card skeleton-card" aria-hidden="true">
+            <div className="catering-option-image skeleton" />
+            <div className="catering-option-content">
+              <div className="skeleton skeleton-line skeleton-line--short" />
+              <div className="skeleton skeleton-line skeleton-line--wide" />
+              <div className="skeleton skeleton-line" style={{ width: "85%" }} />
+              <div className="skeleton skeleton-line" style={{ width: "65%" }} />
+              <div className="skeleton skeleton-line" style={{ width: "40%", marginTop: "12px" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (err) return <div className="text-red-600">{err}</div>;
   if (!pkgs.length) return <div className="text-gray-600">No catering options available right now.</div>;
 
