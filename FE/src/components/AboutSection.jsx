@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 const About = () => (
   <section className="about-section">
@@ -8,21 +9,27 @@ const About = () => (
       </div>
 
       <div className="about-content">
-        <h2>Mom's Charcoal and Grill Legacy</h2>
+        <h2>Mum's Charcoal & Grill</h2>
         <p>
-          Mum's Charcoal & Grill opened its doors in December 2016 at Pialba Place, 
-          introducing authentic charcoal-grilled cuisine to Hervey Bay. The idea was born 
-          in 2015, when two brothers visited the region and immediately felt at home. 
-          Hervey Bay's relaxed lifestyle, friendly community, and climate reminded them 
-          of their hometown of Pokhara, Nepal. What they could not find, however, was a 
-          place that served the style of charcoal chicken they had grown up enjoying.
+          Mum's Charcoal & Grill opened its doors in December 2016 at Pialba
+Place, introducing authentic charcoal-grilled cuisine to Hervey Bay.
+The idea was born in 2015, when two brothers visited the region and
+immediately felt at home.
+
+
         </p>
         <p>
-          With prior experience in the charcoal chicken industry, they saw an opportunity 
-          to bring something new to the local dining scene. The name Mum's Charcoal & Grill 
-          was chosen to reflect the values of home-style cooking—fresh, wholesome meals 
-          prepared with the same care and attention as in a family kitchen.
+          Hervey Bay's relaxed lifestyle, friendly community, and climate
+reminded them of their hometown of Pokhara, Nepal. What they
+could not find, however, was a place that served the style of charcoal
+chicken they had grown up enjoying.
         </p>
+<a href="https://www.couriermail.com.au/news/queensland/fraser-coast/the-business-taking-hervey-bays-tastebuds-by-storm/news-story/24a9355d845e424a273ca55f709f288c?fbclid=IwY2xjawOi-91leHRuA2FlbQIxMQBzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeDWnhWQOjBsNq1eEDv5HCEVkxNQYu7eK_tCVbl4R1do2LOopgLn6043P5d3g_aem_R8Nm3ONcTECCH0FX6VX6qA#.WGtp6fhFbxU.facebook">
+  <button className="px-4 py-2 bg-blue-600 text-white rounded transform scale-110 hover:scale-125 transition-transform duration-300">
+    Read More
+  </button>
+</a>
+
       </div>
     </div>
   </section>

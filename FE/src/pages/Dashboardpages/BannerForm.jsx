@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "../../config/axios.config";
 import DashboardLayout from "../../components/Dashboard/DashboardLayout";
@@ -7,12 +7,19 @@ import DashboardLayout from "../../components/Dashboard/DashboardLayout";
 const resolveImage = (url) => url || "";
 
 const normalizeMenuArray = (arr = []) =>
-  arr.map((m) => ({
-    _id: m._id,
-    name: m.name,
-    image: m.image,
-    category: m.category?.name || "", // <-- include category to avoid undefined
-  }));
+  arr.map((m, idx) => {
+    const cat = m?.category;
+    const categoryLabel = typeof cat === "object" && cat !== null
+      ? (cat.name || cat.title || cat.label || cat.slug || "")
+      : (typeof cat === "string" ? cat : "");
+    const id = m?._id || m?.id || m?.value || m?.menuItem || m?.item || idx;
+    return {
+      _id: String(id),
+      name: m?.name || m?.title || `Item ${idx + 1}`,
+      image: m?.image || m?.photo || "",
+      category: categoryLabel,
+    };
+  });
 
 export default function BannerForm() {
   const { id } = useParams();
@@ -42,7 +49,7 @@ export default function BannerForm() {
         if (!b) return;
         setForm({
           items: normalizeMenuArray(b.items || []),
-          primaryItem: b.primaryItem?._id || b.primaryItem || "",
+          primaryItem: b.primaryItem?._id || b.primaryItem?.id || b.primaryItem || "",
           isActive: !!b.isActive,
           order: b.order ?? 0,
         });
@@ -54,7 +61,20 @@ export default function BannerForm() {
   }, [id, isEdit]);
 
   // -------- Fetch MenuItems (try menu-items then fallback to menu)
-  const fetchMenu = async (q = "") => {
+  const mergeMenuResults = useCallback((list = []) => {
+    const map = new Map();
+    (Array.isArray(list) ? list : []).forEach((mi) => {
+      if (!mi?._id) return;
+      map.set(mi._id, mi);
+    });
+    (Array.isArray(form.items) ? form.items : []).forEach((mi) => {
+      if (!mi?._id) return;
+      if (!map.has(mi._id)) map.set(mi._id, mi);
+    });
+    return Array.from(map.values());
+  }, [form.items]);
+
+  const fetchMenu = useCallback(async (q = "") => {
     setError("");
     setLoadingMenu(true);
     try {
@@ -69,22 +89,22 @@ export default function BannerForm() {
           /* ignore */
         }
       }
-      setMenuResults(list || []);
+      setMenuResults(mergeMenuResults(list || []));
     } catch (e) {
       console.error(e);
       setError(e?.response?.data?.message || "Failed to load menu items.");
-      setMenuResults([]);
+      setMenuResults(mergeMenuResults([]));
     } finally {
       setLoadingMenu(false);
     }
-  };
+  }, [mergeMenuResults]);
 
   // initial load + debounced search
-  useEffect(() => { fetchMenu(""); }, []);
+  useEffect(() => { fetchMenu(""); }, [fetchMenu]);
   useEffect(() => {
     const t = setTimeout(() => fetchMenu(menuQuery), 250);
     return () => clearTimeout(t);
-  }, [menuQuery]);
+  }, [fetchMenu, menuQuery]);
 
   // -------- Form helpers
   const addItem = (mi) => {

@@ -118,7 +118,7 @@ export default function ContactDashboard() {
                 ✖
               </button>
 
-              <h2>{selectedMsg.subject}</h2>
+              {/* <h2 className="pl-10">{selectedMsg.subject}</h2> */}
 
               <div className="space-y-2">
                 <p>

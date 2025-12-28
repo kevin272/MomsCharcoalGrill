@@ -110,6 +110,22 @@ async function sendOrderReceipt({ order }) {
   });
 }
 
+/** Send: Internal notification for a new order */
+async function sendOrderNotification({ order }) {
+  if (!order || !SMTP_USER) return;
+  const subject = `New order received (#${order._id})`;
+  const html = renderTemplate('order-unified', { ...ctx(order), mode: 'notify' });
+
+  await sendMail({
+    to: SMTP_USER,
+    cc: EMAIL_INTERNAL_CC,
+    bcc: EMAIL_INTERNAL_BCC,
+    subject,
+    html,
+    text: subject,
+  });
+}
+
 /** Send: Payment confirmed */
 async function sendOrderPaid({ order }) {
   if (!order?.customer?.email) return;
@@ -144,6 +160,7 @@ async function sendOrderCompleted({ order }) {
 
 module.exports = {
   sendOrderReceipt,
+  sendOrderNotification,
   sendOrderPaid,
   sendOrderCompleted,
 };

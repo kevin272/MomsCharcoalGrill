@@ -42,7 +42,7 @@ function ODModal({ open, onClose, title, children, widthClass = "max-w-4xl" }) {
       <div ref={dialogRef} className={`od-modal__card ${widthClass}`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="od-modal__card-header">
           <h5 className="od-modal__card-title">{title}</h5>
-          <button className="od-modal__card-close" onClick={onClose} aria-label="Close">×</button>
+          <button className="od-modal__card-close" onClick={onClose} aria-label="Close">X</button>
         </div>
         <div className="od-modal__card-body">{children}</div>
       </div>
@@ -78,22 +78,42 @@ async function fetchWithFallbacks(getterFns) {
 /* ---------- Page ---------- */
 export default function CateringDashboard() {
   const [options, setOptions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
 
   const imgBase = useMemo(() => SERVER_URL || "", []);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
-  const fetchOptions = async () => {
+  const fetchOptions = async (targetPage = page) => {
     setLoading(true);
     setError("");
     try {
       const res = await fetchWithFallbacks([
-        () => axiosInstance.get("/catering-options"),
+        () => axiosInstance.get("/catering-options", { params: { page: targetPage, limit } }),
       ]);
-      const data = res?.data?.data || res?.data || [];
-      setOptions(Array.isArray(data) ? data : []);
+      const payload = res && typeof res === "object" ? res : res ?? {};
+      const data =
+        Array.isArray(payload?.data?.data) ? payload.data.data :
+        Array.isArray(payload?.data) ? payload.data :
+        Array.isArray(payload?.items) ? payload.items :
+        Array.isArray(payload) ? payload :
+        [];
+
+      const reportedTotal = Number(payload?.total ?? payload?.data?.total ?? payload?.count ?? payload?.data?.count);
+      const rawPage = Number(payload?.page ?? payload?.data?.page);
+      const rawLimit = Number(payload?.limit ?? payload?.data?.limit);
+      const serverPaginated = Number.isFinite(rawPage) || Number.isFinite(rawLimit) || Number.isFinite(reportedTotal);
+      const sliced = serverPaginated
+        ? data
+        : data.slice((targetPage - 1) * limit, (targetPage - 1) * limit + limit);
+
+      setOptions(Array.isArray(sliced) ? sliced : []);
+      setTotal(Number.isFinite(reportedTotal) ? reportedTotal : data.length);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load catering options");
     } finally {
@@ -102,9 +122,9 @@ export default function CateringDashboard() {
   };
 
   useEffect(() => {
-    fetchOptions();
+    fetchOptions(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page]);
 
   const handleAdd = () => {
     setEditing(null);
@@ -121,9 +141,13 @@ export default function CateringDashboard() {
     setEditing(null);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (nextPage = page) => {
     handleClose();
-    fetchOptions();
+    if (nextPage !== page) {
+      setPage(nextPage);
+      return;
+    }
+    fetchOptions(nextPage);
   };
 
   const handleDelete = async (id) => {
@@ -133,7 +157,18 @@ export default function CateringDashboard() {
         () => axiosInstance.delete(`/catering/${id}`),
         () => axiosInstance.delete(`/catering-options/${id}`),
       ]);
+      const nextTotal = Math.max(0, total - 1);
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / limit));
+      const nextPage = Math.min(page, nextTotalPages);
+
+      setTotal(nextTotal);
       setOptions((prev) => prev.filter((x) => x._id !== id));
+
+      if (nextPage !== page) {
+        setPage(nextPage);
+      } else {
+        fetchOptions(nextPage);
+      }
     } catch (e) {
       alert(e?.response?.data?.message || e?.message || "Delete failed");
     }
@@ -143,13 +178,10 @@ export default function CateringDashboard() {
     <DashboardLayout title="Catering Options">
       <div className="flex justify-between items-center mb-4">
         <div className="text-sm text-gray-400">
-          {loading ? "Loading…" : `${options.length} option(s)`}
-          {error ? <span className="text-red-400 ml-3">• {error}</span> : null}
+          {loading ? "Loading..." : `${total} option(s)`}
+          {error ? <span className="text-red-400 ml-3">Error: {error}</span> : null}
         </div>
-        <button
-          onClick={handleAdd}
-          className="od-btn"
-        >
+        <button onClick={handleAdd} className="od-btn">
           + Add New
         </button>
       </div>
@@ -184,37 +216,31 @@ export default function CateringDashboard() {
           return (
             <tr key={_id}>
               <td className="px-3 py-2" style={{ width: 160, height: 160 }}>
-                  <div className="thumb-fixed">
-                {imgSrc ? (
-                  <img
-                    src={joinImageUrl(imgSrc)}
-                    alt={title || "Catering option"}
-                    className="w-16 h-16 object-cover rounded-md border border-gray-200/20"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-md bg-gray-800/70 border border-gray-200/10 grid place-items-center text-xs text-gray-400">
-                    No Image
-                  </div>
-                )}
+                <div className="thumb-fixed">
+                  {imgSrc ? (
+                    <img
+                      src={joinImageUrl(imgSrc)}
+                      alt={title || "Catering option"}
+                      className="w-16 h-16 object-cover rounded-md border border-gray-200/20"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-md bg-gray-800/70 border border-gray-200/10 grid place-items-center text-xs text-gray-400">
+                      No Image
+                    </div>
+                  )}
                 </div>
               </td>
               <td className="px-3 py-2">{title || "-"}</td>
               <td className="px-3 py-2">{price ?? "-"}</td>
               <td className="px-3 py-2 capitalize">
-                {priceType === "per_person" ? "Per Person" : priceType === "per_tray" ? "Per Tray" : (priceType || "-")}
+                {priceType === "per_person" ? "Per Person" : priceType === "per_tray" ? "Per Tray" : priceType || "-"}
               </td>
-              <td className="px-3 py-2">{isActive ? "✅" : "❌"}</td>
+              <td className="px-3 py-2">{isActive ? "Yes" : "No"}</td>
               <td className="px-3 py-2 text-right whitespace-nowrap">
-                <button
-                  onClick={() => handleEdit(opt)}
-                  className="od-btn"
-                >
+                <button onClick={() => handleEdit(opt)} className="od-btn">
                   Edit
                 </button>
-                <button
-                  onClick={() => handleDelete(_id)}
-                  className="od-btn od-btn--danger"
-                >
+                <button onClick={() => handleDelete(_id)} className="od-btn od-btn--danger">
                   Delete
                 </button>
               </td>
@@ -223,19 +249,24 @@ export default function CateringDashboard() {
         })}
       />
 
-      {/* ---------- Modal (exact OrderDashboard vibe) ---------- */}
-<CateringForm
-    open={showForm}
-    initial={editing}
-    onClose={() => {
-      setShowForm(false);
-      setEditing(null);
-    }}
-    onSuccess={() => {
-      setShowForm(false);
-      setEditing(null);
-      fetchOptions();
-    }}
-  />    </DashboardLayout>
+      {!loading && (
+        <div className="d-flex justify-content-end g-3 mt-3">
+          <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            Prev
+          </button>
+          <span style={{ alignSelf: "center" }}>Page {page} / {totalPages}</span>
+          <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
+        </div>
+      )}
+
+      <CateringForm
+        open={showForm}
+        initial={editing}
+        onClose={handleClose}
+        onSuccess={() => handleSuccess(1)}
+      />
+    </DashboardLayout>
   );
 }

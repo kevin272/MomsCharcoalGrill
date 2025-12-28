@@ -6,6 +6,7 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const {
   sendOrderReceipt,
+  sendOrderNotification,
   sendOrderPaid,
   sendOrderCompleted,
 } = require('../utils/mailer');
@@ -169,6 +170,7 @@ router.post('/checkout', async (req, res) => {
     });
 
     sendOrderReceipt({ order }).catch(console.error);
+    sendOrderNotification({ order }).catch(console.error);
     res.status(201).json({ success: true, data: order });
   } catch (err) {
     console.error(err);

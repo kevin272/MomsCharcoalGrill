@@ -57,7 +57,20 @@ export default function CateringForm({
   const [itemsLookup, setItemsLookup] = useState({});
 
   const initialItemIds = useMemo(
-    () => (Array.isArray(initial?.items) ? initial.items.map(String) : []),
+    () => {
+      if (Array.isArray(initial?.items) && initial.items.length) {
+        return initial.items.map(String);
+      }
+      if (Array.isArray(initial?.itemConfigurations) && initial.itemConfigurations.length) {
+        return initial.itemConfigurations
+          .map((cfg) => {
+            const id = cfg?.menuItem?._id || cfg?.menuItem || cfg?._id || cfg?.id;
+            return id ? String(id) : null;
+          })
+          .filter(Boolean);
+      }
+      return [];
+    },
     [initial]
   );
   const [selectedItemIds, setSelectedItemIds] = useState(initialItemIds);
@@ -93,8 +106,16 @@ export default function CateringForm({
     setPriceType(initial.priceType || "per_tray");
     setMinPeople(initial.minPeople ?? "");
     setIsActive(Boolean(initial.isActive));
+    const fallbackIds = Array.isArray(initial.itemConfigurations)
+      ? initial.itemConfigurations
+          .map((cfg) => cfg?.menuItem?._id || cfg?.menuItem || cfg?._id || cfg?.id)
+          .filter(Boolean)
+          .map(String)
+      : [];
     setSelectedItemIds(
-      Array.isArray(initial.items) ? initial.items.map(String) : []
+      Array.isArray(initial.items) && initial.items.length
+        ? initial.items.map(String)
+        : fallbackIds
     );
     const extrasMap = {};
     if (Array.isArray(initial.itemConfigurations)) {

@@ -6,7 +6,7 @@ function MenuPage() {
     <div className="menu-page">
 
       {/* Breadcrumb with title + play icon */}
-      <Breadcrumb title="MENU" backgroundImage="/Rectangle 40.png">
+      <Breadcrumb title="MENU" backgroundImage="/MENU BANNER.jpg">
       </Breadcrumb>
 
       <MenuImageSection />

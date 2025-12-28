@@ -76,9 +76,9 @@ export default function CateringOptionPage() {
 
   const priceLabel =
     pkg.perPersonPrice !== undefined && pkg.perPersonPrice !== ""
-      ? `$${Number(pkg.perPersonPrice).toFixed(2)} / person`
+      ? `AUD${Number(pkg.perPersonPrice).toFixed(2)} / person`
       : pkg.trayPrice !== undefined && pkg.trayPrice !== ""
-      ? `$${Number(pkg.trayPrice).toFixed(2)} / tray`
+      ? `AUD${Number(pkg.trayPrice).toFixed(2)} / tray`
       : "";
 
   return (

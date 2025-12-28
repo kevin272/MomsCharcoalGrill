@@ -34,11 +34,31 @@ exports.list = async (req, res) => {
     if (typeof isActive !== 'undefined') filter.isActive = isActive === 'true';
     if (slug) filter.slug = slug;
 
+    const rawPage = Number.parseInt(req.query.page, 10);
+    const rawLimit = Number.parseInt(req.query.limit, 10);
+    const shouldPaginate = Number.isFinite(rawPage) || Number.isFinite(rawLimit);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 10;
+
     const query = CateringOption.find(filter).sort({ order: 1, createdAt: -1 });
     if (populate === '1') {
       query
         .populate({ path: 'items', populate: { path: 'category', select: 'name slug' } })
         .populate({ path: 'itemConfigurations.menuItem', populate: { path: 'category', select: 'name slug' } });
+    }
+
+    // If page/limit is provided, return paginated payload with metadata; otherwise keep legacy response.
+    if (shouldPaginate) {
+      const total = await CateringOption.countDocuments(filter);
+      const data = await query.skip((page - 1) * limit).limit(limit).exec();
+      return res.json({
+        success: true,
+        data,
+        total,
+        page,
+        pages: Math.max(1, Math.ceil(total / limit)),
+        limit,
+      });
     }
 
     const data = await query.exec();

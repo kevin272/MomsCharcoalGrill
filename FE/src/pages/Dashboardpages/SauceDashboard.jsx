@@ -131,7 +131,7 @@ export default function SauceDashboard() {
           <td className="px-4 py-3 text-left">{row.name}</td>
 
           {/* Price */}
-          <td className="px-4 py-3">${row.price.toFixed(2)}</td>
+          <td className="px-4 py-3">AUD {row.price.toFixed(2)}</td>
 
           {/* Availability */}
           <td className="px-4 py-3">

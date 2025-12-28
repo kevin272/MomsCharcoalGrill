@@ -9,11 +9,13 @@ let partialsLoaded = false;
 
 function registerHelpers() {
   // currency helper: {{currency totals.grandTotal 'NPR'}}
-  Handlebars.registerHelper('currency', function (value, code = 'NPR') {
+  Handlebars.registerHelper('currency', function (value, code = 'AUD') {
     try {
-      return new Intl.NumberFormat('en-NP', {
+      const currencyCode = code || 'AUD';
+      const locale = process.env.EMAIL_LOCALE || 'en-AU';
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: code,
+        currency: currencyCode,
         maximumFractionDigits: 0,
       }).format(Number(value || 0));
     } catch {

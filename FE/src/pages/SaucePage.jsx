@@ -103,12 +103,10 @@ const SaucePage = () => {
                   <div className="hot-dish-content">
                     <div className="hot-dish-header">
                       <h3 className="hot-dish-name">{sauce.name}</h3>
-                      <span className="hot-dish-price">${sauce.price}</span>
+                      <span className="hot-dish-price">AUD {sauce.price}</span>
                     </div>
                     <p className="hot-dish-description">{sauce.description}</p>
-
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                        
                         <button
                           className={`hot-dish-cart-btn ${inCart ? "in-cart" : ""}`}
                           onClick={() => handleAddToCart(sauce, itemId)}
@@ -151,7 +149,6 @@ const SaucePage = () => {
                       </div>
                     </div>
                   </div>
-                
               )})}
             </div>
           </div>

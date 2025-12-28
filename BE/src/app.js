@@ -34,7 +34,9 @@ const app = express();
 // ✅ FIXED: proper CORS handling
 const allowedOrigins = [
   'https://mumscharcoalgrill.netlify.app',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'https://mumscharcoalandgrill.com.au/',
+  'https://www.mumscharcoalandgrill.com.au/'
 ];
 
 app.use((req, res, next) => {

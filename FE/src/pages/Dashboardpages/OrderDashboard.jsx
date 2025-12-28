@@ -250,7 +250,7 @@ export default function OrderDashboard() {
         {r.customerName ? `${r.customerName}${r.customerPhone ? ` (${r.customerPhone})` : ''}` : '—'}
       </td>
       <td className="od-cell">{r.paymentMethod || 'N/A'}</td>
-      <td className="od-cell od-cell--right">{r.grandTotal != null ? money.format(r.grandTotal) : '—'}</td>
+      <td className="od-cell od-cell--right">AUD {r.grandTotal != null ?  (r.grandTotal) : '—'}</td>
       <td className="od-cell">
         <div className="od-status">
           <span className={`od-badge od-badge--${r.status}`}>{r.status}</span>
@@ -386,8 +386,8 @@ function OrderDetailsBody({ order, money }) {
                       {detail && <div className="od-td__meta">{detail}</div>}
                     </td>
                     <td className="od-td od-td--right">{qty}</td>
-                    <td className="od-td od-td--right">{money.format(price)}</td>
-                    <td className="od-td od-td--right">{money.format(price * qty)}</td>
+                    <td className="od-td od-td--right">AUD{(price)}</td>
+                    <td className="od-td od-td--right">AUD{(price * qty)}</td>
                   </tr>
                 )
               })}
@@ -405,11 +405,11 @@ function OrderDetailsBody({ order, money }) {
         <div className="od-card od-card--totals">
           <div className="od-card__title">Totals</div>
           <div className="od-totals">
-            <div><span>Subtotal </span><strong>{totals?.subtotal != null ? money.format(totals.subtotal) : '—'}</strong></div>
-            <div><span>GST  </span><strong>{totals?.gst != null ? money.format(totals.gst) : '—'}</strong></div>
-            <div><span>Delivery </span><strong>{totals?.delivery != null ? money.format(totals.delivery) : '—'}</strong></div>
+            <div><span>Subtotal </span><strong>AUD {totals?.subtotal != null ?  (totals.subtotal) : '—'}</strong></div>
+            <div><span>GST  </span><strong>AUD {totals?.gst != null ?  (totals.gst) : '—'}</strong></div>
+            <div><span>Delivery </span><strong>AUD {totals?.delivery != null ?  (totals.delivery) : '—'}</strong></div>
             <hr />
-            <div className="od-grand"><span>Grand Total </span><strong>{totals?.grandTotal != null ? money.format(totals.grandTotal) : '—'}</strong></div>
+            <div className="od-grand"><span>Grand Total </span><strong>AUD {totals?.grandTotal != null ?  (totals.grandTotal) : '—'}</strong></div>
           </div>
         </div>
       </div>

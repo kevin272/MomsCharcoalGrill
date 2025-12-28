@@ -1,11 +1,13 @@
 // src/pages/admin/MenuForm.jsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../config/axios.config";
 import { slugify } from "../../utils/slugify";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api$/, "");
+const CHICKEN_SLUG = "chicken";
+const CHICKEN_PLACEHOLDER = "__create_chicken__";
 
 const absUrl = (u = "") => {
   if (!u) return "";
@@ -30,6 +32,75 @@ export default function MenuForm() {
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
 
+  const normalizeCategories = useCallback((list = []) => {
+    const normalized = list.map((c, idx) => {
+      const id = c?._id || c?.id || c?.value || c?.slug || c?.name || idx;
+      return {
+        _id: String(id),
+        name: c?.name || c?.title || c?.label || c?.slug || "Untitled",
+        slug: c?.slug || slugify(c?.name || c?.title || ""),
+        isPlaceholder: false,
+      };
+    });
+    const hasChicken = normalized.some((c) => c.slug?.toLowerCase() === CHICKEN_SLUG || c.name?.toLowerCase() === "chicken");
+    if (!hasChicken) {
+      normalized.push({
+        _id: CHICKEN_PLACEHOLDER,
+        name: "Chicken",
+        slug: CHICKEN_SLUG,
+        isPlaceholder: true,
+      });
+    }
+    return normalized;
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get("/menu-categories"); // adjust route name
+      const list = res?.data?.data || res?.data || res || [];
+      const normalized = normalizeCategories(Array.isArray(list) ? list : []);
+      setCategories(normalized);
+      return normalized;
+    } catch (err) {
+      console.error("Failed to load categories", err);
+      return [];
+    }
+  }, [normalizeCategories]);
+
+  const ensureChickenCategory = useCallback(async () => {
+    const existing = categories.find(
+      (c) => !c.isPlaceholder && (c.slug?.toLowerCase() === CHICKEN_SLUG || c.name?.toLowerCase() === "chicken")
+    );
+    if (existing) return existing._id;
+    try {
+      const res = await axiosInstance.post("/menu-categories", {
+        name: "Chicken",
+        slug: CHICKEN_SLUG,
+        isActive: true,
+      });
+      const created = res?.data?.data || res?.data || res || {};
+      const id = created?._id || created?.id || created?.value || created?.slug || CHICKEN_SLUG;
+      const normalized = {
+        _id: String(id),
+        name: created?.name || "Chicken",
+        slug: created?.slug || CHICKEN_SLUG,
+        isPlaceholder: false,
+      };
+      setCategories((prev) => {
+        const filtered = (prev || []).filter((c) => c._id !== CHICKEN_PLACEHOLDER);
+        return [...filtered, normalized];
+      });
+      return id;
+    } catch (err) {
+      console.error("Failed to create Chicken category", err);
+      const refreshed = await fetchCategories();
+      const fallback = refreshed.find(
+        (c) => c.slug?.toLowerCase() === CHICKEN_SLUG || c.name?.toLowerCase() === "chicken"
+      );
+      return fallback?._id || "";
+    }
+  }, [categories, fetchCategories]);
+
   // load for edit
   useEffect(() => {
     if (!id) return;
@@ -53,18 +124,9 @@ export default function MenuForm() {
     })();
   }, [id]);
 
-    useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await axiosInstance.get("/menu-categories"); // adjust route name
-        const list = res?.data?.data || res?.data || res || [];
-        setCategories(Array.isArray(list) ? list : []); // backend should return an array of categories
-      } catch (err) {
-        console.error("Failed to load categories", err);
-      }
-    }
+  useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
 
   const onFileChange = (e) => {
@@ -89,10 +151,20 @@ export default function MenuForm() {
   setError("");
 
   try {
+    let categoryId = category;
+    if (categoryId === CHICKEN_PLACEHOLDER) {
+      categoryId = await ensureChickenCategory();
+    }
+
+    if (!categoryId) {
+      setError("Please choose a category.");
+      return;
+    }
+
     const common = {
       name,
       slug: slugify(name),              // <-- add
-      category,                         // <-- must be _id if schema is ObjectId ref
+      category: categoryId,             // <-- must be _id if schema is ObjectId ref
       price: Number(price || 0),
       description,
       isAvailable,
@@ -162,7 +234,7 @@ export default function MenuForm() {
     <option value="">-- Select Category --</option>
     {categories.map((c) => (
       <option key={c._id} value={c._id}>
-        {c.name}
+        {c.name}{c.isPlaceholder ? " (create)" : ""}
       </option>
     ))}
   </select>

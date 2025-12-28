@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import axiosInstance from "../../config/axios.config";
 import { Link, useNavigate } from "react-router-dom";
+import axiosInstance from "../../config/axios.config";
 import DashboardLayout from "../../components/Dashboard/DashboardLayout";
 import DashboardTable from "../../components/Dashboard/DashboardTable";
 
@@ -22,7 +22,6 @@ const toArray = (body) =>
   [];
 
 const toObj = (body) =>
-  // Prefer nested data object when present and not an array. Avoid treating arrays as objects.
   (body?.data?.data && !Array.isArray(body.data.data) && typeof body.data.data === "object") ? body.data.data :
   (body?.data && !Array.isArray(body.data) && typeof body.data === "object") ? body.data :
   (typeof body === "object" && !Array.isArray(body) ? body : {});
@@ -37,14 +36,13 @@ export default function MenuDashboard() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  // simple cache: pagesCache[page] = { items: [...], total }
   const [pagesCache, setPagesCache] = useState({});
+  const [categoryLookup, setCategoryLookup] = useState({});
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   // Load a page, using cache when possible. If prefetch is true we won't set loading/UI state.
   const loadPage = async (p = page, { force = false, prefetch = false } = {}) => {
-    // if cached and not forced, use cache
     if (!force && pagesCache[p]) {
       if (!prefetch) {
         setItems(pagesCache[p].items);
@@ -67,14 +65,15 @@ export default function MenuDashboard() {
         id: m._id || m.id || String(i),
         name: m.name || m.title || "Untitled",
         price: m.price ?? 0,
-        category: m.category || m.type || "General",
+        categoryId: (typeof m.category === "object" ? (m.category?._id || m.category?.id || m.category?.value) : m.category) || m.type || "",
+        categoryName: (typeof m.category === "object" ? (m.category?.name || m.category?.title || m.category?.label || m.category?.slug) : "") || "",
+        categoryRaw: m.category || m.type || "",
         image: joinImageUrl(m.image || m.photo || m.thumb || ""),
         isAvailable: !!m.isAvailable,
         featured: !!m.featured,
         createdAt: m.createdAt || m.created_at || "",
       }));
 
-      // save to cache
       setPagesCache((prev) => ({ ...prev, [p]: { items: mapped, total: Number(data?.total) || list.length } }));
 
       if (!prefetch) {
@@ -82,18 +81,15 @@ export default function MenuDashboard() {
         setTotal(Number(data?.total) || list.length);
       }
 
-      // prefetch next page (fire-and-forget) if there are more pages
       const totalCount = Number(data?.total) || list.length;
       const totalPagesLocal = Math.max(1, Math.ceil(totalCount / limit));
       if (p < totalPagesLocal && !pagesCache[p + 1]) {
-        // don't await
         loadPage(p + 1, { force: false, prefetch: true }).catch(() => {});
       }
     } catch (e) {
       console.error(e);
       if (!prefetch) {
         setErr(e?.response?.data?.message || e?.message || "Failed to load menu.");
-        // if unauthorized, bounce to login
         if (String(e?.response?.status) === "401") {
           navigate("/login", { replace: true });
         }
@@ -113,11 +109,27 @@ export default function MenuDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/menu-categories");
+        const cats = toArray(res);
+        const map = {};
+        cats.forEach((c) => {
+          const id = c?._id || c?.id || c?.slug || c?.value;
+          const name = c?.name || c?.title || c?.label || c?.slug;
+          if (id && name) map[id] = name;
+        });
+        setCategoryLookup(map);
+      } catch (e) {
+        console.error("Failed to load categories", e);
+      }
+    })();
+  }, []);
+
   const onSearch = () => {
-    // clear cache for the new query and load page 1
     setPagesCache({});
     setPage(1);
-    // explicitly load page 1 for the new query
     loadPage(1, { force: true }).catch(() => {});
   };
 
@@ -129,9 +141,7 @@ export default function MenuDashboard() {
     if (!window.confirm("Delete this menu item?")) return;
     try {
       await axiosInstance.delete(`/menu/${id}`);
-      // optimistic update
       setItems((prev) => prev.filter((x) => x.id !== id));
-      // adjust total
       setTotal((t) => Math.max(0, t - 1));
     } catch (e) {
       alert(e?.response?.data?.message || e?.message || "Delete failed.");
@@ -160,32 +170,53 @@ export default function MenuDashboard() {
     }
   };
 
+  const formatCategory = (row) => {
+    const raw = row?.categoryRaw ?? row?.category ?? row?.categoryId;
+    const named = row?.categoryName;
+    if (!raw && !named) return "General";
+
+    if (named) return named;
+
+    if (typeof raw === "object" && raw !== null) {
+      const direct = raw.name || raw.title || raw.label || raw.slug;
+      if (direct) return direct;
+      const id = raw._id || raw.id || raw.value;
+      if (id && categoryLookup[id]) return categoryLookup[id];
+      return id || "General";
+    }
+
+    if (typeof raw === "string") {
+      return categoryLookup[raw] || raw || "General";
+    }
+
+    return "General";
+  };
+
   return (
     <DashboardLayout
       title="Menu Dashboard"
       actions={
-        
-          <div className="d-flex g-3" style={{ alignItems: "center" }}>
-      <div className="d-flex g-2" role="tablist" aria-label="Menu dashboards">
-        <Link className="od-btn od-btn--ghost" to="/admin/menu">Items</Link>
-        <Link className="od-btn od-btn--ghost" to="/admin/menu-slides">Slides</Link>
-      </div>
-          <input
-            type="search"
-            placeholder="Search by name/category…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onSearchKey}
-            className="od-input"
-            style={{ minWidth: 280 }}
-          />
-          <button className="od-btn od-btn--ghost" onClick={onSearch}>Search</button>
-          <Link className="od-btn" to="/admin/menu/new">Add Item</Link>
+        <div className="menu-dashboard__actions">
+          <div className="menu-dashboard__tabs" role="tablist" aria-label="Menu dashboards">
+            <Link className="od-btn od-btn--ghost" to="/admin/menu">Items</Link>
+            <Link className="od-btn od-btn--ghost" to="/admin/menu-slides">Slides</Link>
+          </div>
+          <div className="menu-dashboard__search-row">
+            <input
+              type="search"
+              placeholder="Search by name/category..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onSearchKey}
+              className="od-input menu-dashboard__search"
+            />
+            <button className="od-btn od-btn--ghost" onClick={onSearch}>Search</button>
+          </div>
+          <Link className="od-btn menu-dashboard__add" to="/admin/menu/new">Add Item</Link>
         </div>
       }
     >
-      {/* Loading / Error */}
-      {loading && <div>Loading…</div>}
+      {loading && <div>Loading...</div>}
       {!!err && <div style={{ color: "crimson" }}>{err}</div>}
 
       {!loading && !err && (
@@ -219,11 +250,11 @@ export default function MenuDashboard() {
                       }}
                     />
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </td>
                 <td>{row.name}</td>
-                <td>{row.category}</td>
+                <td>{formatCategory(row)}</td>
                 <td>{Number(row.price).toFixed(2)}</td>
                 <td>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -266,7 +297,6 @@ export default function MenuDashboard() {
             emptyMessage="No items found."
           />
 
-          {/* Pager */}
           <div className="d-flex justify-content-end g-3 mt-3">
             <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Prev

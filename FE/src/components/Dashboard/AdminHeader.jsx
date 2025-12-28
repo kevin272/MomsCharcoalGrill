@@ -33,8 +33,8 @@ export default function AdminHeader() {
 {/* Mobile/desktop unified trigger */}
 <DisclosureButton className="admin-header__trigger group">
   <span className="sr-only">=</span>
-  <Bars3Icon className="block h-8 w-8 group-data-open:hidden" />
-  <XMarkIcon className="hidden h-8 w-8 group-data-open:block" />
+  <Bars3Icon className="block h-10 w-10 group-data-open:hidden outline-none" />
+  <XMarkIcon className="hidden h-10 w-10 group-data-open:block" />
 </DisclosureButton>
 
 
@@ -68,13 +68,15 @@ export default function AdminHeader() {
           {/* Mobile panel */}
           <DisclosurePanel className="admin-header__panel sm:hidden">
             {NAV.map((item) => (
-              <button
+              <NavLink
                 key={item.href}
-                onClick={() => { navigate(item.href); close(); }}
-                className={linkBase + ' text-left'}
+                to={item.href}
+                end={item.href === '/admin'}
+                className={({ isActive }) => (isActive ? activeClass : linkBase)}
+                onClick={() => close()}
               >
                 {item.name}
-              </button>
+              </NavLink>
             ))}
           </DisclosurePanel>
         </>

@@ -122,6 +122,20 @@ function detectCategory(item, categoryKeys = []) {
   return best.score > 0 ? best.key : null;
 }
 
+function resolveCategoryKeyFromData(item, categoryKeys = []) {
+  const known = categoryKeys.length ? categoryKeys : Object.keys(CATEGORY_META);
+  const rawKey = String(item?.categoryKey || "").toLowerCase();
+  const slug = String(item?.categorySlug || "").toLowerCase();
+  const name = String(item?.categoryName || "").toLowerCase();
+  if (rawKey) return rawKey;
+  for (const key of known) {
+    const k = String(key).toLowerCase();
+    if (slug === k || name === k) return key;
+    if (slug.includes(k) || name.includes(k)) return key;
+  }
+  return null;
+}
+
 function inferGeneralType(selectionRules) {
   const type = selectionRules?.type;
   if (type && GENERAL_PROFILES[type]) return type;
@@ -150,6 +164,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
           : (typeof menu?.price === "number" ? menu.price : 0),
         extraOptions,
         glutenFree,
+        categoryKey: resolveCategoryKeyFromData({ categorySlug: menu?.category?.slug, categoryName: menu?.category?.name }, categoryKeys),
       };
     });
   }
@@ -168,6 +183,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
         price: typeof option?.price === "number" ? option.price : (typeof raw?.price === "number" ? raw.price : 0),
         extraOptions: [],
         glutenFree,
+        categoryKey: resolveCategoryKeyFromData({ categorySlug: raw?.category?.slug, categoryName: raw?.category?.name }, categoryKeys),
       };
     });
   }
@@ -179,10 +195,10 @@ function formatPrice(option) {
   const val = typeof option.price === "number" ? option.price : null;
   if (val == null) return "";
   switch (option.priceType) {
-    case "per_person": return `$${val.toFixed(2)} per person`;
-    case "per_tray": return `$${val.toFixed(2)} / tray`;
-    case "fixed": return `$${val.toFixed(2)}`;
-    default: return `$${val.toFixed(2)}`;
+    case "per_person": return `AUD ${val.toFixed(2)} per person`;
+    case "per_tray": return `AUD ${val.toFixed(2)} / tray`;
+    case "fixed": return `$AUD ${val.toFixed(2)}`;
+    default: return `AUD ${val.toFixed(2)}`;
   }
 }
 
@@ -269,7 +285,7 @@ export default function CateringMenuItems() {
     return base.map((item, idx) => {
       const imageSource = item.image || option?.image || "";
       const normalizedImage = imageSource ? toPublicUrl(imageSource, SERVER_URL) : PLACEHOLDER;
-      const categoryKey = item.categoryKey || detectCategory(item, categoryKeys);
+      const categoryKey = resolveCategoryKeyFromData(item, categoryKeys) || detectCategory(item, categoryKeys);
       const glutenFree = typeof item.glutenFree !== "undefined"
         ? !!item.glutenFree
         : resolveGlutenFree(item, option);
@@ -302,6 +318,7 @@ export default function CateringMenuItems() {
     () => normalizeLimits(pkg?.selectionRules, activeProfile),
     [activeProfile, pkg?.selectionRules]
   );
+  const minWarning = isGeneral && minPeopleRequired > 0 && (Number(confirmQty) || 0) < minPeopleRequired;
 
   const groupedItems = useMemo(() => {
     if (!isGeneral) return { groups: {}, others: [] };
@@ -378,21 +395,6 @@ export default function CateringMenuItems() {
     let alive = true;
     setLoading(true);
     setErr("");
-    // simple local cache to avoid re-fetching every visit
-    const TTL = 5 * 60 * 1000; // 5 minutes
-    const key = `mcg:catering:option:${API_URL}:${optionId}`;
-    try {
-      const cached = JSON.parse(localStorage.getItem(key) || 'null');
-      const cachedPkg = cached?.pkg || cached?.option;
-      if (cached && cached.exp > Date.now() && cachedPkg && Array.isArray(cached.items)) {
-        const readyItems = buildItems(cachedPkg, cached.items);
-        setPkg(cachedPkg);
-        setItems(readyItems);
-        setLoading(false);
-        return () => { alive = false; };
-      }
-    } catch {}
-
     (async () => {
       setLoading(true);
       setErr("");
@@ -412,7 +414,6 @@ export default function CateringMenuItems() {
           const mapped = buildItems(data);
           setPkg(data);
           setItems(mapped);
-          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -438,7 +439,6 @@ export default function CateringMenuItems() {
           const mapped = buildItems(data);
           setPkg(data);
           setItems(mapped);
-          try { localStorage.setItem(key, JSON.stringify({ exp: Date.now() + TTL, pkg: data, items: mapped })); } catch {}
           setLoading(false);
           return;
         } catch (e) {
@@ -461,13 +461,6 @@ export default function CateringMenuItems() {
     setExtrasModal({ open: false, item: null, delta: 1 });
     setConfirmQty(Math.max(1, minPeopleRequired || 1));
   }, [minPeopleRequired, optionId]);
-
-  useEffect(() => {
-    if (!confirmOpen) return;
-    if (minPeopleRequired > 0 && (Number(confirmQty) || 0) < minPeopleRequired) {
-      setConfirmQty(minPeopleRequired);
-    }
-  }, [confirmOpen, confirmQty, minPeopleRequired]);
 
   const handleAddToCart = (it) => {
     addToCart({
@@ -502,16 +495,18 @@ export default function CateringMenuItems() {
         toast.error(`Select required items first (${msg}).`);
         return;
       }
+      const current = Number(confirmQty) || 0;
+      setConfirmQty(current > 0 ? current : Math.max(1, minPeopleRequired || 1));
+      setConfirmOpen(true);
+      return;
     }
-    if (minPeopleRequired > 0 && (Number(confirmQty) || 0) < minPeopleRequired) {
-      setConfirmQty(minPeopleRequired);
-    }
-    setConfirmOpen(true);
+
+    addSelectionToCart(1);
   };
 
-  const addSelectionToCart = () => {
-    const multiplier = Math.max(1, Number(confirmQty) || 1);
-    if (minPeopleRequired > 0 && multiplier < minPeopleRequired) {
+  const addSelectionToCart = (overrideQty) => {
+    const multiplier = Math.max(1, Number(typeof overrideQty === "undefined" ? confirmQty : overrideQty) || 1);
+    if (isGeneral && minPeopleRequired > 0 && multiplier < minPeopleRequired) {
       toast.error(`Minimum ${minPeopleRequired} people required for this catering option.`);
       return;
     }
@@ -644,7 +639,7 @@ export default function CateringMenuItems() {
             {!!pkg.description && <p className="mt-2 opacity-80">{pkg.description}</p>}
             {isGeneral && (
               <p className="mt-3 text-sm opacity-80">
-                General catering lets you choose {selectionSummaryParts.join(", ").replace(/, ([^,]*)$/, " and $1")}.
+                You can choose {selectionSummaryParts.join(", ").replace(/, ([^,]*)$/, " and $1")}.
               </p>
             )}
           </div>
@@ -768,7 +763,7 @@ export default function CateringMenuItems() {
         <div className="modal-overlay">
           <div className="customer-details-modal">
             <div className="modal-header">
-              <h3>{isGeneral ? "How many people are you ordering for?" : "How many sets to add?"}</h3>
+              <h3>How many people are you ordering for?</h3>
             </div>
             <div className="customer-form">
               <input
@@ -776,16 +771,18 @@ export default function CateringMenuItems() {
                 min="1"
                 value={confirmQty}
                 onChange={(e) => setConfirmQty(e.target.value)}
-                placeholder={isGeneral ? "Number of people" : "Number of sets"}
+                placeholder={minWarning ? "Minimum not reached" : "Number of people"}
               />
               {isGeneral && packagePrice ? (
                 <p className="text-sm mt-1">Price: ${packagePrice.toFixed(2)} per person</p>
               ) : null}
               {minPeopleRequired > 0 && (
-                <p className="text-xs opacity-80 mt-1">Minimum {minPeopleRequired} people required.</p>
+                <p className={`text-xs mt-1 ${minWarning ? "text-red-600" : "opacity-80"}`}>
+                  {minWarning ? "Minimum not reached." : "Minimum requirement met."} Minimum {minPeopleRequired} people required.
+                </p>
               )}
             </div>
-            <button className="modal-submit-btn mt-2" onClick={addSelectionToCart}>
+            <button className="modal-submit-btn mt-2" onClick={() => addSelectionToCart()} disabled={minWarning}>
               CONFIRM
             </button>
           </div>

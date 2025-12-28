@@ -69,12 +69,77 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
     return p.startsWith("/") ? p : `/${p}`;
   };
 
+  const getCategoryKey = (it) => {
+    const cat = it?.category;
+    if (typeof cat === "object" && cat !== null) {
+      return cat._id || cat.id || cat.value || cat.slug || cat.name || "uncategorized";
+    }
+    if (typeof cat === "string") return cat.toLowerCase() || "uncategorized";
+    return "uncategorized";
+  };
+
+  const getCategoryLabel = (it) => {
+    const cat = it?.category;
+    if (typeof cat === "object" && cat !== null) {
+      return cat.name || cat.title || cat.label || cat.slug || "Uncategorized";
+    }
+    if (typeof cat === "string") return cat || "Uncategorized";
+    return "Uncategorized";
+  };
+
   const initials = (label = "") => {
     const parts = String(label).trim().split(/\s+/).slice(0, 2);
     return parts.map((p) => p[0]?.toUpperCase() || "").join("");
   };
 
   const selectedCount = Array.isArray(selected) ? selected.length : 0;
+  const groupedItems = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(items) ? items : []).forEach((it) => {
+      const key = getCategoryKey(it);
+      const label = getCategoryLabel(it);
+      if (!map.has(key)) map.set(key, { key, label, items: [] });
+      map.get(key).items.push(it);
+    });
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [items]);
+
+  const renderCard = (it) => {
+    const id = it?._id || it?.id;
+    const name = it?.name || it?.title || "Untitled";
+    const price = it?.price ?? it?.unitPrice ?? null;
+    const checked = Array.isArray(selected) && selected.includes(id);
+
+    return (
+      <label
+        key={id}
+        className={`menuitem-card ${checked ? "menuitem-card--active" : ""}`}
+      >
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={() => toggle(id)}
+        />
+        <div className="menuitem-card__avatar">
+          {it?.image ? (
+            <img src={toPublicUrl(it.image)} alt={name} />
+          ) : (
+            <span>{initials(name) || "M"}</span>
+          )}
+        </div>
+        <div className="menuitem-card__meta">
+          <div className="menuitem-card__name">{name}</div>
+          <div className="menuitem-card__sub">
+            {price != null ? `A$ ${Number(price).toFixed(2)}` : "No price"}
+          </div>
+          {getCategoryLabel(it) && (
+            <div className="menuitem-card__sub opacity-70">{getCategoryLabel(it)}</div>
+          )}
+        </div>
+        <span className="menuitem-card__check" aria-hidden>&#10003;</span>
+      </label>
+    );
+  };
 
   return (
     <div className="menuitem-picker revamped">
@@ -129,40 +194,18 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
         )}
 
         {!loading && !error && Array.isArray(items) && items.length > 0 && (
-          <div className="menuitem-picker__grid">
-            {items.map((it) => {
-              const id = it?._id || it?.id;
-              const name = it?.name || it?.title || "Untitled";
-              const price = it?.price ?? it?.unitPrice ?? null;
-              const checked = Array.isArray(selected) && selected.includes(id);
-
-              return (
-                <label
-                  key={id}
-                  className={`menuitem-card ${checked ? "menuitem-card--active" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!checked}
-                    onChange={() => toggle(id)}
-                  />
-                  <div className="menuitem-card__avatar">
-                    {it?.image ? (
-                      <img src={toPublicUrl(it.image)} alt={name} />
-                    ) : (
-                      <span>{initials(name) || "M"}</span>
-                    )}
-                  </div>
-                  <div className="menuitem-card__meta">
-                    <div className="menuitem-card__name">{name}</div>
-                    <div className="menuitem-card__sub">
-                      {price != null ? `A$ ${Number(price).toFixed(2)}` : "No price"}
-                    </div>
-                  </div>
-                  <span className="menuitem-card__check" aria-hidden>&#10003;</span>
-                </label>
-              );
-            })}
+          <div className="menuitem-picker__group-wrap">
+            {groupedItems.map((group) => (
+              <div key={group.key} className="menuitem-picker__group">
+                <div className="menuitem-picker__group-header">
+                  <span>{group.label}</span>
+                  <span className="menuitem-picker__group-count !text-yellow"> {group.items.length}</span>
+                </div>
+                <div className="menuitem-picker__grid">
+                  {group.items.map((it) => renderCard(it))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

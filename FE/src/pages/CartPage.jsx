@@ -3,6 +3,8 @@ import Breadcrumb from '../components/CateringHero';
 import { useCart } from '../context/CartContext.jsx';
 import { useToast } from '../components/common/ToastProvider.jsx';
 
+const isValidEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+
 /**
  * Shopping cart / checkout page.  Displays the items currently in the cart
  * using the CartContext and allows the user to enter special requirements
@@ -16,10 +18,12 @@ function CartPage() {
   const [showSpecialRequirements, setShowSpecialRequirements] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const toast = useToast()
-  
+  const [orderSuccess, setOrderSuccess] = useState(null);
+
   const [customerDetails, setCustomerDetails] = useState({
     fullName: '',
     phoneNumber: '',
+    email: '',
     street: '',
     suburb: '',
     state: '',
@@ -68,6 +72,11 @@ function resolveImage(src) {
   };
 
 const handleCustomerDetailsSubmit = async () => {
+  if (!isValidEmail(customerDetails.email || '')) {
+    alert('Please enter a valid email address for order confirmation.');
+    return;
+  }
+
   setShowCustomerDetails(false);
 
   const orderData = {
@@ -125,10 +134,19 @@ const handleCustomerDetailsSubmit = async () => {
       location.hostname === '127.0.0.1';
     return isLocal ? 'http://localhost:5000/api/' : '';
   })();
-  const API_BASE = (RAW || devGuess).replace(/\/+$/, '') + '/';
-  const url = new URL('orders/checkout', API_BASE).href;
 
-  console.log('Placing order →', url);
+  let base = (RAW || devGuess).replace(/\/+$/, '');
+  if (!/^https?:\/\//i.test(base)) {
+    const origin = typeof window !== 'undefined' && window.location
+      ? window.location.origin
+      : '';
+    const path = base.startsWith('/') ? base : `/${base || ''}`;
+    base = `${origin}${path}`.replace(/\/+$/, '');
+  }
+  const API_BASE = `${base}/`;
+  const url = `${API_BASE}orders/checkout`;
+
+  console.log('Placing order', url);
 
   try {
     const resp = await fetch(url, {
@@ -150,7 +168,19 @@ const handleCustomerDetailsSubmit = async () => {
     }
 
     clearCart();
-    toast.success(`Order placed successfully! Order ID: ${data?.data?._id || data?.data?.id || 'N/A'}`);
+    const orderId = data?.data?._id || data?.data?.id || data?.orderId || 'N/A';
+    setOrderSuccess({ id: orderId });
+    setSpecialRequirements('');
+    setCustomerDetails({
+      fullName: '',
+      phoneNumber: '',
+      email: '',
+      street: '',
+      suburb: '',
+      state: '',
+      postCode: '',
+    });
+    toast.success(`Order placed successfully! Order ID: ${orderId}`);
   } catch (err) {
     console.error(err);
     alert('Failed to place order: ' + (err?.message || 'Unknown error'));
@@ -221,7 +251,7 @@ const handleCustomerDetailsSubmit = async () => {
                           +
                         </button>
                       </div>
-                      <div className="cart-item-price">$ {item.price}</div>
+                      <div className="cart-item-price">AUD {item.price}</div>
                     </div>
                   </div>
                 </div>
@@ -250,7 +280,7 @@ const handleCustomerDetailsSubmit = async () => {
           <div className="order-summary-card">
             <div className="order-summary-header">
               <span className="order-total-label">Your Order Total</span>
-              <span className="order-total-amount">${subtotal}</span>
+              <span className="order-total-amount">AUD {subtotal}</span>
             </div>
             <div className="payment-details">
 <div className="payment-details">
@@ -272,16 +302,16 @@ const handleCustomerDetailsSubmit = async () => {
   <div className="order-breakdown">
     <div className="breakdown-item">
       <span>GST (10%)</span>
-      <span>$ {gst}</span>
+      <span>AUD {gst}</span>
     </div>
     <div className="breakdown-item">
       <span>Delivery Charge</span>
-      <span>$ {deliveryCharge}</span>
+      <span>AUD {deliveryCharge}</span>
     </div>
     <div className="breakdown-divider"></div>
     <div className="breakdown-total">
       <span>Grand Total</span>
-      <span>$ {grandTotal}</span>
+      <span>AUD {grandTotal}</span>
     </div>
   </div>
 </div>
@@ -383,6 +413,43 @@ const handleCustomerDetailsSubmit = async () => {
             <button className="modal-submit-btn" onClick={handleCustomerDetailsSubmit}>
               SUBMIT
             </button>
+          </div>
+        </div>
+      )}
+
+      {orderSuccess && (
+        <div className="modal-overlay">
+          <div className="customer-details-modal success-modal">
+            <div className="success-glow" aria-hidden />
+            <div className="modal-header">
+              <div className="success-icon" aria-hidden>✓</div>
+              <div>
+                <h3>Order placed successfully</h3>
+                <p className="text-sm opacity-80">
+                  Ref <span className="font-semibold">{orderSuccess.id}</span>
+                </p>
+              </div>
+            </div>
+            <p className="text-sm opacity-80">
+              We’ve logged your order and will confirm delivery details shortly. A confirmation email is on its way.
+            </p>
+            <div className="extras-actions success-actions">
+              <button
+                className="modal-submit-btn secondary"
+                onClick={() => setOrderSuccess(null)}
+              >
+                Close
+              </button>
+              <button
+                className="modal-submit-btn"
+                onClick={() => {
+                  setOrderSuccess(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                Continue shopping
+              </button>
+            </div>
           </div>
         </div>
       )}

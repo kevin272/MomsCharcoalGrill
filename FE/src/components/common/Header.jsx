@@ -16,7 +16,7 @@ function Header() {
     return {
       totalItems,
       totalPrice,
-      formattedTotal: totalPrice ? `$${totalPrice.toFixed(2)}` : '$0.00',
+      formattedTotal: totalPrice ? `AUD ${totalPrice.toFixed(2)}` : 'AUD 0.00',
     };
   }, [items]);
 
