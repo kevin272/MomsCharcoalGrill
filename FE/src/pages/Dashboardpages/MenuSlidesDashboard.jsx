@@ -123,14 +123,15 @@ function joinImageUrl(path) {
       slides.map((row, idx) => [
         idx + 1,
         row.image ? (
-          <img
-            src={row.image}
-            alt={row.title || "slide"}
-            style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }}
-            onError={(e) => (e.currentTarget.style.opacity = 0.25)}
-          />
+          <div className="dashboard-thumb">
+            <img
+              src={row.image}
+              alt={row.title || "slide"}
+              onError={(e) => (e.currentTarget.style.opacity = 0.25)}
+            />
+          </div>
         ) : (
-          "—"
+          <div className="dashboard-thumb dashboard-thumb--empty">No image</div>
         ),
         row.title || "—",
         row.type,

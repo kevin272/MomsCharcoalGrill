@@ -26,13 +26,6 @@ function normalizeOrder(raw = {}) {
      (addrLines || undefined) ??
      '')
 
-  const customer = {
-    name,
-    phone: c.phone ?? c.phoneNumber ?? c.mobile ?? raw.customerPhone ?? '',
-    email: c.email ?? c.mail ?? '',
-    address,
-  }
-
   // ---- items ----
   const items =
     raw.items ??
@@ -55,6 +48,18 @@ function normalizeOrder(raw = {}) {
   const slotFromDateWindow = (d.date && d.window) ? `${d.date} ${d.window}` : undefined
   const delivery = {
     slot: d.slot ?? d.time ?? slotFromDateWindow ?? d.date ?? d.method ?? null,
+  }
+  const deliveryMethodRaw =
+    d.method ?? raw.deliveryMethod ?? raw.fulfillmentMethod ?? raw.shippingMethod ?? null
+  const isPickup =
+    String(deliveryMethodRaw || delivery.slot || '').toLowerCase() === 'pickup'
+  const addressFinal = address || (isPickup ? 'Pickup' : '')
+
+  const customer = {
+    name,
+    phone: c.phone ?? c.phoneNumber ?? c.mobile ?? raw.customerPhone ?? '',
+    email: c.email ?? c.mail ?? '',
+    address: addressFinal,
   }
 
   const payment = {
@@ -147,15 +152,32 @@ export default function OrderDashboard() {
       if (!res.ok || !data?.success) throw new Error(data?.message || 'Failed to fetch orders')
       const list = Array.isArray(data.data) ? data.data : []
       setOrders(
-        list.map((o) => ({
-          id: o._id,
-          createdAt: o.createdAt,
-          customerName: o.customer?.name ?? '',
-          customerPhone: o.customer?.phone ?? '',
-          grandTotal: o.totals?.grandTotal ?? null,
-          status: o.status ?? 'new',
-          paymentMethod: paymentLabel(o),
-        }))
+        list.map((o) => {
+          const deliveryMethodRaw =
+            o?.delivery?.method ??
+            o?.delivery?.slot ??
+            o?.deliveryMethod ??
+            o?.fulfillmentMethod ??
+            ''
+          const deliveryMethod = String(deliveryMethodRaw).toLowerCase()
+          const isPickup = deliveryMethod === 'pickup'
+          const addressRaw =
+            o.customer?.address ??
+            o.customer?.addressLine ??
+            o.customer?.address1 ??
+            o.deliveryAddress ??
+            ''
+          return {
+            id: o._id,
+            createdAt: o.createdAt,
+            customerName: o.customer?.name ?? '',
+            customerPhone: o.customer?.phone ?? '',
+            customerAddress: isPickup && !addressRaw ? 'Pickup' : addressRaw,
+            grandTotal: o.totals?.grandTotal ?? null,
+            status: o.status ?? 'new',
+            paymentMethod: paymentLabel(o),
+          }
+        })
       )
     } catch (e) {
       setError(e.message || 'Unknown error')
@@ -236,6 +258,7 @@ export default function OrderDashboard() {
     { label: 'ID', maxWidth: 260, className: 'text-left' },
     { label: 'Created', maxWidth: 180, className: 'text-left' },
     { label: 'Customer', className: 'text-left' },
+    { label: 'Address', maxWidth: 240, className: 'text-left' },
     { label: 'Payment', maxWidth: 160, className: 'text-left' },
     { label: 'Total', maxWidth: 120, className: 'text-right' },
     { label: 'Status', maxWidth: 180, className: 'text-left' },
@@ -248,6 +271,13 @@ export default function OrderDashboard() {
       <td className="od-cell">{fmtDate(r.createdAt)}</td>
       <td className="od-cell">
         {r.customerName ? `${r.customerName}${r.customerPhone ? ` (${r.customerPhone})` : ''}` : '—'}
+      </td>
+      <td
+        className="od-cell"
+        title={r.customerAddress || ''}
+        style={{ maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      >
+        {r.customerAddress || '-'}
       </td>
       <td className="od-cell">{r.paymentMethod || 'N/A'}</td>
       <td className="od-cell od-cell--right">AUD {r.grandTotal != null ?  (r.grandTotal) : '—'}</td>
@@ -323,6 +353,11 @@ function OrderDetailsBody({ order, money }) {
   const [showRaw, setShowRaw] = useState(false)
   const items = Array.isArray(order?.items) ? order.items : []
   const { customer = {}, totals = {}, delivery = {}, notes = '', status, createdAt, __raw } = order
+  const deliverySlot = delivery?.slot
+  const deliveryLabel =
+    deliverySlot && String(deliverySlot).toLowerCase() === "pickup"
+      ? "Pickup"
+      : "Delivery"
 
   return (
     <div className="od-details">
@@ -341,7 +376,12 @@ function OrderDetailsBody({ order, money }) {
           <div className="od-meta"><span>Status</span><strong>{status || '—'}</strong></div>
           <div className="od-meta"><span>Created</span><strong>{createdAt ? new Date(createdAt).toLocaleString() : '—'}</strong></div>
           <div className="od-meta"><span>Payment</span><strong>{order?.payment?.method || order?.paymentMethod || order?.payment_mode || order?.paymentType || order?.payment_type || order?.__raw?.payment?.method || order?.__raw?.paymentMode || order?.__raw?.payment_mode || "N/A"}</strong></div>
-          {delivery?.slot && <div className="od-meta"><span>Delivery</span><strong>{delivery.slot}</strong></div>}
+          {deliverySlot && (
+            <div className="od-meta">
+              <span>{deliveryLabel}</span>
+              <strong>{deliverySlot}</strong>
+            </div>
+          )}
         </div>
       </div>
 

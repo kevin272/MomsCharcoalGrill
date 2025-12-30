@@ -111,19 +111,20 @@ export default function SauceDashboard() {
           <td className="px-4 py-3">{idx + 1}</td>
 
           {/* Image */}
-          <td className="px-4 py-3" style={{ width: 160, height: 160 }}>
+          <td className="px-4 py-3">
             {row.image ? (
-              <img
-                src={
-                  row.image.startsWith('http')
-                    ? row.image
-                    : `${API_BASE.replace('/api/', '/')}${row.image.replace(/^\/+/, '')}`
-                }
-                alt={row.name}
-                className="w-12 h-12 object-cover rounded-md mx-auto border"
-              />
+              <div className="dashboard-thumb">
+                <img
+                  src={
+                    row.image.startsWith('http')
+                      ? row.image
+                      : `${API_BASE.replace('/api/', '/')}${row.image.replace(/^\/+/, '')}`
+                  }
+                  alt={row.name}
+                />
+              </div>
             ) : (
-              <span className="text-gray-400">—</span>
+              <div className="dashboard-thumb dashboard-thumb--empty">No image</div>
             )}
           </td>
 

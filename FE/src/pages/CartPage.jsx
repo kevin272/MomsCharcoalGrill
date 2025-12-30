@@ -15,6 +15,7 @@ const isValidEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(va
 function CartPage() {
   const { items: cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
   const [paymentMode, setPaymentMode] = useState('COD');
+  const [fulfillmentMethod, setFulfillmentMethod] = useState('delivery');
   const [showSpecialRequirements, setShowSpecialRequirements] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const toast = useToast()
@@ -54,8 +55,9 @@ function resolveImage(src) {
     0,
   );
   const gst = Math.round(subtotal * 0.1);
-  const deliveryCharge = cartItems.length > 0 ? 50 : 0;
+  const deliveryCharge = cartItems.length > 0 && fulfillmentMethod !== 'pickup' ? 50 : 0;
   const grandTotal = subtotal + gst + deliveryCharge;
+  const deliveryLabel = fulfillmentMethod === 'pickup' ? 'Pickup' : 'Delivery Charge';
   const VITE_API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");
 
   const handlePlaceOrder = () => {
@@ -78,6 +80,11 @@ const handleCustomerDetailsSubmit = async () => {
   }
 
   setShowCustomerDetails(false);
+  const address = fulfillmentMethod === 'delivery'
+    ? [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
+        .filter(Boolean)
+        .join(', ')
+    : '';
 
   const orderData = {
     items: cartItems.map((item) => {
@@ -118,10 +125,9 @@ const handleCustomerDetailsSubmit = async () => {
       name: customerDetails.fullName,
       phone: customerDetails.phoneNumber,
       email: customerDetails.email || '',
-      address: [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
-        .filter(Boolean)
-        .join(', '),
+      address,
     },
+    delivery: { method: fulfillmentMethod },
     paymentMode,
     notes: specialRequirements,
   };
@@ -296,6 +302,18 @@ const handleCustomerDetailsSubmit = async () => {
       <option value="PAY_TO_CALL">Call to pay</option>
     </select>
   </label>
+
+  <div className="payment-mode-label">Order Type</div>
+  <label className="select-wrap">
+    <select
+      className="payment-select"
+      value={fulfillmentMethod}
+      onChange={(e) => setFulfillmentMethod(e.target.value)}
+    >
+      <option value="delivery">Delivery</option>
+      <option value="pickup">Pickup</option>
+    </select>
+  </label>
 </div>
 <p className="account-hint">Account No. <strong>123 222 223232 2</strong></p>
 
@@ -305,7 +323,7 @@ const handleCustomerDetailsSubmit = async () => {
       <span>AUD {gst}</span>
     </div>
     <div className="breakdown-item">
-      <span>Delivery Charge</span>
+      <span>{deliveryLabel}</span>
       <span>AUD {deliveryCharge}</span>
     </div>
     <div className="breakdown-divider"></div>
@@ -348,63 +366,71 @@ const handleCustomerDetailsSubmit = async () => {
             <div className="modal-header">
               <h3>Fill in your details</h3>
             </div>
-            <div className="customer-form">
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={customerDetails.fullName}
-                onChange={(e) => handleInputChange('fullName', e.target.value)}
-              />
+              <div className="customer-form">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={customerDetails.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                />
               <input
                 type="tel"
                 placeholder="Phone Number"
                 value={customerDetails.phoneNumber}
                 onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
               />
-              <input
-                type="email"
-                placeholder="Email (for order confirmation)"
-                value={customerDetails.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-              />
-              <div className="form-row">
                 <input
-                  type="text"
-                  placeholder="Street Name and Number"
-                  value={customerDetails.street}
-                  onChange={(e) => handleInputChange('street', e.target.value)}
+                  type="email"
+                  placeholder="Email (for order confirmation)"
+                  value={customerDetails.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                 />
-                <input
-                  type="text"
-                  placeholder="Suburb"
-                  value={customerDetails.suburb}
-                  onChange={(e) => handleInputChange('suburb', e.target.value)}
-                />
-              </div>
-              <div className="form-row">
-                <div className="state-dropdown">
-                  <select
-                    value={customerDetails.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                  >
-                    <option value="">State</option>
-                    <option value="NSW">NSW</option>
-                    <option value="VIC">VIC</option>
-                    <option value="QLD">QLD</option>
-                    <option value="WA">WA</option>
-                    <option value="SA">SA</option>
-                    <option value="TAS">TAS</option>
-                    <option value="ACT">ACT</option>
-                    <option value="NT">NT</option>
-                  </select>
+              {fulfillmentMethod === 'delivery' ? (
+                <>
+                  <div className="form-row">
+                    <input
+                      type="text"
+                      placeholder="Street Name and Number"
+                      value={customerDetails.street}
+                      onChange={(e) => handleInputChange('street', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Suburb"
+                      value={customerDetails.suburb}
+                      onChange={(e) => handleInputChange('suburb', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div className="state-dropdown">
+                      <select
+                        value={customerDetails.state}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                      >
+                        <option value="">State</option>
+                        <option value="NSW">NSW</option>
+                        <option value="VIC">VIC</option>
+                        <option value="QLD">QLD</option>
+                        <option value="WA">WA</option>
+                        <option value="SA">SA</option>
+                        <option value="TAS">TAS</option>
+                        <option value="ACT">ACT</option>
+                        <option value="NT">NT</option>
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Post Code"
+                      value={customerDetails.postCode}
+                      onChange={(e) => handleInputChange('postCode', e.target.value)}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="contact-info-text">
+                  Pickup selected. No delivery address required.
                 </div>
-                <input
-                  type="text"
-                  placeholder="Post Code"
-                  value={customerDetails.postCode}
-                  onChange={(e) => handleInputChange('postCode', e.target.value)}
-                />
-              </div>
+              )}
               <div className="contact-info-text">
                 Incase of confusion, Please contact:{' '}
                 <span className="contact-number">123 1313 12121</span>

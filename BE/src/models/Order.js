@@ -58,6 +58,16 @@ const CustomerSchema = new Schema(
 );
 
 /**
+ * Delivery/pickup metadata.
+ */
+const DeliverySchema = new Schema(
+  {
+    method: { type: String, enum: ['delivery', 'pickup'], default: 'delivery' },
+  },
+  { _id: false },
+);
+
+/**
  * Order schema.  Represents a single customer order containing multiple
  * items, totals, status and optional notes.  The `status` field is limited
  * to a handful of values representing the order lifecycle.
@@ -71,6 +81,7 @@ const OrderSchema = new Schema(
     enum: ['COD','PAY_TO_CALL'], 
     required: true 
   },
+    delivery: { type: DeliverySchema, default: undefined },
     totals: { type: TotalsSchema, required: true },
     status: {
       type: String,

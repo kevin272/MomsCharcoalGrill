@@ -215,20 +215,17 @@ export default function CateringDashboard() {
 
           return (
             <tr key={_id}>
-              <td className="px-3 py-2" style={{ width: 160, height: 160 }}>
-                <div className="thumb-fixed">
-                  {imgSrc ? (
+              <td className="px-3 py-2">
+                {imgSrc ? (
+                  <div className="dashboard-thumb">
                     <img
                       src={joinImageUrl(imgSrc)}
                       alt={title || "Catering option"}
-                      className="w-16 h-16 object-cover rounded-md border border-gray-200/20"
                     />
-                  ) : (
-                    <div className="w-16 h-16 rounded-md bg-gray-800/70 border border-gray-200/10 grid place-items-center text-xs text-gray-400">
-                      No Image
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="dashboard-thumb dashboard-thumb--empty">No image</div>
+                )}
               </td>
               <td className="px-3 py-2">{title || "-"}</td>
               <td className="px-3 py-2">{price ?? "-"}</td>

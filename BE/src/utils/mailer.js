@@ -87,7 +87,7 @@ function ctx(order) {
     shop: {
       name: "Mom’s Charcoal & Grill",
       supportEmail: 'support@momsgrill.com',
-      address: '2215 US Highway 1 South, North Brunswick, NJ 08902',
+      address: 'Pialba Place Shopping Centre, Old Maryborough Rd, Pialba QLD 4655',
       phone: '732.398.9022',
     },
     currency: process.env.EMAIL_CURRENCY || 'AUD',

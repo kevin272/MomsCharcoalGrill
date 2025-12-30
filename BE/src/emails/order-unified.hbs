@@ -113,7 +113,9 @@
                   <td align="right" style="padding:4px 0; font:700 14px/1.6 Arial,Helvetica,sans-serif; color:#f3f3f3;">{{currency totals.gst currency}}</td>
                 </tr>
                 <tr>
-                  <td style="padding:4px 0; font:14px/1.6 Arial,Helvetica,sans-serif; color:#eaeaea;">Delivery</td>
+                  <td style="padding:4px 0; font:14px/1.6 Arial,Helvetica,sans-serif; color:#eaeaea;">
+                    {{#if (eq order.delivery.method "pickup")}}Pickup{{else}}Delivery{{/if}}
+                  </td>
                   <td align="right" style="padding:4px 0; font:700 14px/1.6 Arial,Helvetica,sans-serif; color:#f3f3f3;">{{currency totals.delivery currency}}</td>
                 </tr>
                 <tr>

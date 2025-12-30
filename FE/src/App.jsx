@@ -32,6 +32,7 @@ import NoticeDashboard from './pages/Dashboardpages/NoticeDashboard';
 import NoticeAe from './pages/Dashboardpages/NoticeAE';
 import ScrollToTop from './components/ScrollToTop';
 import Merchandise from './pages/Merchandise';
+import PromoSettings from './pages/Dashboardpages/PromoSettings';
 
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
           <Route path="/admin/notices/" element={<NoticeDashboard />} />
           <Route path="/admin/notices/new" element={<NoticeAe />} />
           <Route path="/admin/notices/:id" element={<NoticeAe />} />
+          <Route path="/admin/promo" element={<PromoSettings />} />
 
         </Route>
       </Routes>

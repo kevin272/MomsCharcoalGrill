@@ -50,12 +50,16 @@ export default function NoticeDashboard() {
   const rowEls = rows.map(n => (
     <tr key={n._id} className="text-center">
       <td className="px-4 py-3">
-        <img
-          src={n.imageUrl}
-          alt=""
-          className="rounded"
-          style={{ width: 90, height: 48, objectFit: "cover", border: "1px solid rgba(255,255,255,.12)" }}
-        />
+        {n.imageUrl ? (
+          <div className="dashboard-thumb">
+            <img
+              src={n.imageUrl}
+              alt=""
+            />
+          </div>
+        ) : (
+          <div className="dashboard-thumb dashboard-thumb--empty">No image</div>
+        )}
       </td>
       <td className="px-4 py-3 font-semibold">{n.title || "—"}</td>
       <td className="px-4 py-3">

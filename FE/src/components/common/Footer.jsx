@@ -23,10 +23,10 @@ const Footer = () => {
         {/* Location */}
         <div className="footer-section">
           <h3>Location</h3>
-          <address>2215 US Highway 1 South, North Brunswick, NJ 08902</address>
+          <address>Pialba Place Shopping Centre, Old Maryborough Rd, Pialba QLD 4655</address>
           <div className="footer-map dark-map">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.262016535726!2d-74.49835259999999!3d40.4473374!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c3c4759962760d%3A0x19da9a1a347f34be!2s2215%20U.S.%20Rte%201%2C%20North%20Brunswick%20Township%2C%20NJ%2008902%2C%20USA!5e0!3m2!1sen!2snp!4v1760543165853!5m2!1sen!2snp"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3607.6109836456867!2d152.8405061!3d-25.283668599999995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6bec80304b5fb249%3A0xbe3bd27750bf44b4!2sMum&#39;s%20Charcoal%20%26%20Grill!5e0!3m2!1sen!2snp!4v1767103648547!5m2!1sen!2snp"
               width="100%"
               height="250"
               style={{

@@ -90,7 +90,7 @@ router.delete('/:id', async (req, res) => {
 // -------------------- CHECKOUT + RECEIPT EMAIL --------------------
 router.post('/checkout', async (req, res) => {
   try {
-    const { items = [], customer, paymentMode = 'COD', notes = '' } = req.body || {};
+    const { items = [], customer, paymentMode = 'COD', notes = '', delivery: deliveryInput } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'No items provided' });
     }
@@ -105,6 +105,11 @@ router.post('/checkout', async (req, res) => {
     const safePaymentMode = ['COD', 'PAY_TO_CALL'].includes(normalizedMode)
       ? normalizedMode
       : 'COD';
+    const rawDeliveryMethod = deliveryInput?.method || req.body?.deliveryMethod || req.body?.fulfillmentMethod;
+    const normalizedDeliveryMethod = typeof rawDeliveryMethod === 'string'
+      ? String(rawDeliveryMethod).toLowerCase().trim()
+      : '';
+    const deliveryMethod = normalizedDeliveryMethod === 'pickup' ? 'pickup' : 'delivery';
 
     const orderItems = [];
     let subtotal = 0;
@@ -149,9 +154,9 @@ router.post('/checkout', async (req, res) => {
     }
 
     const gst = Math.round(subtotal * 0.1);
-    const delivery = subtotal > 0 ? 50 : 0;
-    const grandTotal = subtotal + gst + delivery;
-    const totals = { subtotal, gst, delivery, grandTotal };
+    const deliveryFee = subtotal > 0 && deliveryMethod !== 'pickup' ? 50 : 0;
+    const grandTotal = subtotal + gst + deliveryFee;
+    const totals = { subtotal, gst, delivery: deliveryFee, grandTotal };
 
     const customerDoc = {
       name: customer.name,
@@ -163,6 +168,7 @@ router.post('/checkout', async (req, res) => {
     const order = await Order.create({
       items: orderItems,
       customer: customerDoc,
+      delivery: { method: deliveryMethod },
       paymentMode: safePaymentMode, // ✅ string, not a schema object
       totals,
       notes: notes || '',
