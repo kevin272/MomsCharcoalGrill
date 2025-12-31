@@ -20,6 +20,17 @@ function CartPage() {
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const toast = useToast()
   const [orderSuccess, setOrderSuccess] = useState(null);
+  const [customerErrors, setCustomerErrors] = useState({});
+  const [customerFormError, setCustomerFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const closeSpecialRequirements = () => setShowSpecialRequirements(false);
+  const closeCustomerDetails = () => {
+    setShowCustomerDetails(false);
+    setCustomerErrors({});
+    setCustomerFormError('');
+    setIsSubmitting(false);
+  };
+  const closeOrderSuccess = () => setOrderSuccess(null);
 
   const [customerDetails, setCustomerDetails] = useState({
     fullName: '',
@@ -70,16 +81,38 @@ function resolveImage(src) {
 
   const handleSpecialRequirementsSubmit = () => {
     setShowSpecialRequirements(false);
+    setCustomerErrors({});
+    setCustomerFormError('');
     setShowCustomerDetails(true);
   };
 
+  const validateCustomerDetails = () => {
+    const errors = {};
+    if (!customerDetails.fullName.trim()) errors.fullName = 'Full name is required.';
+    if (!customerDetails.phoneNumber.trim()) errors.phoneNumber = 'Phone number is required.';
+    const email = customerDetails.email.trim();
+    if (!email) errors.email = 'Email is required.';
+    else if (!isValidEmail(email)) errors.email = 'Enter a valid email address.';
+    if (fulfillmentMethod === 'delivery') {
+      if (!customerDetails.street.trim()) errors.street = 'Street is required.';
+      if (!customerDetails.suburb.trim()) errors.suburb = 'Suburb is required.';
+      if (!customerDetails.state.trim()) errors.state = 'State is required.';
+      if (!customerDetails.postCode.trim()) errors.postCode = 'Post code is required.';
+    }
+    return errors;
+  };
+
 const handleCustomerDetailsSubmit = async () => {
-  if (!isValidEmail(customerDetails.email || '')) {
-    alert('Please enter a valid email address for order confirmation.');
+  const errors = validateCustomerDetails();
+  if (Object.keys(errors).length) {
+    setCustomerErrors(errors);
+    setCustomerFormError('Please fix the highlighted fields.');
     return;
   }
 
-  setShowCustomerDetails(false);
+  setCustomerErrors({});
+  setCustomerFormError('');
+  setIsSubmitting(true);
   const address = fulfillmentMethod === 'delivery'
     ? [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
         .filter(Boolean)
@@ -174,6 +207,7 @@ const handleCustomerDetailsSubmit = async () => {
     }
 
     clearCart();
+    setShowCustomerDetails(false);
     const orderId = data?.data?._id || data?.data?.id || data?.orderId || 'N/A';
     setOrderSuccess({ id: orderId });
     setSpecialRequirements('');
@@ -189,13 +223,22 @@ const handleCustomerDetailsSubmit = async () => {
     toast.success(`Order placed successfully! Order ID: ${orderId}`);
   } catch (err) {
     console.error(err);
-    alert('Failed to place order: ' + (err?.message || 'Unknown error'));
+    setCustomerFormError(`Failed to place order: ${err?.message || 'Unknown error'}`);
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
 
   const handleInputChange = (field, value) => {
     setCustomerDetails((prev) => ({ ...prev, [field]: value }));
+    setCustomerErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+    if (customerFormError) setCustomerFormError('');
   };
 
   return (
@@ -341,8 +384,21 @@ const handleCustomerDetailsSubmit = async () => {
       </div>
       {/* Special Requirements Modal */}
       {showSpecialRequirements && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeSpecialRequirements();
+          }}
+        >
           <div className="special-requirements-modal">
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={closeSpecialRequirements}
+              aria-label="Close popup"
+            >
+              <span className="modal-close-icon" aria-hidden="true">X</span>
+            </button>
             <div className="modal-header">
               <h3>Any Special Requirements?</h3>
             </div>
@@ -361,51 +417,106 @@ const handleCustomerDetailsSubmit = async () => {
       )}
       {/* Customer Details Modal */}
       {showCustomerDetails && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeCustomerDetails();
+          }}
+        >
           <div className="customer-details-modal">
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={closeCustomerDetails}
+              aria-label="Close popup"
+            >
+              <span className="modal-close-icon" aria-hidden="true">X</span>
+            </button>
             <div className="modal-header">
               <h3>Fill in your details</h3>
             </div>
               <div className="customer-form">
+                {customerFormError && (
+                  <div className="form-error-banner" role="alert">
+                    {customerFormError}
+                  </div>
+                )}
+                <div className="field-group">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={customerDetails.fullName}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    className={customerErrors.fullName ? "input-error" : ""}
+                    aria-invalid={!!customerErrors.fullName}
+                  />
+                  {customerErrors.fullName && (
+                    <span className="form-error-text">{customerErrors.fullName}</span>
+                  )}
+                </div>
+              <div className="field-group">
                 <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={customerDetails.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={customerDetails.phoneNumber}
+                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                  className={customerErrors.phoneNumber ? "input-error" : ""}
+                  aria-invalid={!!customerErrors.phoneNumber}
                 />
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                value={customerDetails.phoneNumber}
-                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-              />
-                <input
-                  type="email"
-                  placeholder="Email (for order confirmation)"
-                  value={customerDetails.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
+                {customerErrors.phoneNumber && (
+                  <span className="form-error-text">{customerErrors.phoneNumber}</span>
+                )}
+              </div>
+                <div className="field-group">
+                  <input
+                    type="email"
+                    placeholder="Email (for order confirmation)"
+                    value={customerDetails.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className={customerErrors.email ? "input-error" : ""}
+                    aria-invalid={!!customerErrors.email}
+                  />
+                  {customerErrors.email && (
+                    <span className="form-error-text">{customerErrors.email}</span>
+                  )}
+                </div>
               {fulfillmentMethod === 'delivery' ? (
                 <>
                   <div className="form-row">
-                    <input
-                      type="text"
-                      placeholder="Street Name and Number"
-                      value={customerDetails.street}
-                      onChange={(e) => handleInputChange('street', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Suburb"
-                      value={customerDetails.suburb}
-                      onChange={(e) => handleInputChange('suburb', e.target.value)}
-                    />
+                    <div className="field-group">
+                      <input
+                        type="text"
+                        placeholder="Street Name and Number"
+                        value={customerDetails.street}
+                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        className={customerErrors.street ? "input-error" : ""}
+                        aria-invalid={!!customerErrors.street}
+                      />
+                      {customerErrors.street && (
+                        <span className="form-error-text">{customerErrors.street}</span>
+                      )}
+                    </div>
+                    <div className="field-group">
+                      <input
+                        type="text"
+                        placeholder="Suburb"
+                        value={customerDetails.suburb}
+                        onChange={(e) => handleInputChange('suburb', e.target.value)}
+                        className={customerErrors.suburb ? "input-error" : ""}
+                        aria-invalid={!!customerErrors.suburb}
+                      />
+                      {customerErrors.suburb && (
+                        <span className="form-error-text">{customerErrors.suburb}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="form-row">
-                    <div className="state-dropdown">
+                    <div className="field-group state-dropdown">
                       <select
                         value={customerDetails.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
+                        className={customerErrors.state ? "input-error" : ""}
+                        aria-invalid={!!customerErrors.state}
                       >
                         <option value="">State</option>
                         <option value="NSW">NSW</option>
@@ -417,13 +528,23 @@ const handleCustomerDetailsSubmit = async () => {
                         <option value="ACT">ACT</option>
                         <option value="NT">NT</option>
                       </select>
+                      {customerErrors.state && (
+                        <span className="form-error-text">{customerErrors.state}</span>
+                      )}
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Post Code"
-                      value={customerDetails.postCode}
-                      onChange={(e) => handleInputChange('postCode', e.target.value)}
-                    />
+                    <div className="field-group">
+                      <input
+                        type="text"
+                        placeholder="Post Code"
+                        value={customerDetails.postCode}
+                        onChange={(e) => handleInputChange('postCode', e.target.value)}
+                        className={customerErrors.postCode ? "input-error" : ""}
+                        aria-invalid={!!customerErrors.postCode}
+                      />
+                      {customerErrors.postCode && (
+                        <span className="form-error-text">{customerErrors.postCode}</span>
+                      )}
+                    </div>
                   </div>
                 </>
               ) : (
@@ -433,10 +554,14 @@ const handleCustomerDetailsSubmit = async () => {
               )}
               <div className="contact-info-text">
                 Incase of confusion, Please contact:{' '}
-                <span className="contact-number">123 1313 12121</span>
+                <span className="contact-number">+61741942975</span>
               </div>
             </div>
-            <button className="modal-submit-btn" onClick={handleCustomerDetailsSubmit}>
+            <button
+              className="modal-submit-btn"
+              onClick={handleCustomerDetailsSubmit}
+              disabled={isSubmitting}
+            >
               SUBMIT
             </button>
           </div>
@@ -444,9 +569,22 @@ const handleCustomerDetailsSubmit = async () => {
       )}
 
       {orderSuccess && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeOrderSuccess();
+          }}
+        >
           <div className="customer-details-modal success-modal">
             <div className="success-glow" aria-hidden />
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={closeOrderSuccess}
+              aria-label="Close popup"
+            >
+              <span className="modal-close-icon" aria-hidden="true">X</span>
+            </button>
             <div className="modal-header">
               <div className="success-icon" aria-hidden>✓</div>
               <div>
@@ -462,14 +600,14 @@ const handleCustomerDetailsSubmit = async () => {
             <div className="extras-actions success-actions">
               <button
                 className="modal-submit-btn secondary"
-                onClick={() => setOrderSuccess(null)}
+                onClick={closeOrderSuccess}
               >
                 Close
               </button>
               <button
                 className="modal-submit-btn"
                 onClick={() => {
-                  setOrderSuccess(null);
+                  closeOrderSuccess();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >

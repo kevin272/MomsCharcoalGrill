@@ -45,17 +45,17 @@ const Footer = () => {
         {/* Contact Info */}
         <div className="footer-section">
   <h3>Contact Us</h3>
-  <p>P: 732.398.9022</p>
-  <p>M: 917.518.4331</p>
-  <p>M: 347.784.9269</p>
-  <p>Fax: 732.658.3700</p>
-  <p>Email: <a href="mailto:gurupalace@hotmail.com">gurupalace@hotmail.com</a></p>
+<p>
+  <a href="tel:+61741942975">(+61) 7 4194 2975</a>
+</p>
+
+  <p>Email: <a href="mailto:mumscharcoalandgrill@gmail.com">mumscharcoalandgrill@gmail.com</a></p>
 <div
   style={{
     display: "flex",
     alignItems: "center",
-    gap: "12px",             // ✅ controls spacing between icons
-    marginTop: "6px",        // optional, gives breathing from above text
+    gap: "12px",             
+    marginTop: "6px",      
   }}
 >
   <a
@@ -125,7 +125,7 @@ const Footer = () => {
         {/* Quick Links */}
         <div className="footer-section">
           <h3>Quick Links</h3>
-          <ul>
+          <ul className="footer-links">
             <li><a href="/">Home</a></li>
             <li><a href="/menu">Menu</a></li>
             <li><a href="/gallery">Gallery</a></li>
@@ -135,12 +135,13 @@ const Footer = () => {
 
         {/* Hours */}
         <div className="footer-section">
-          <h3>Hours of Operation</h3>
-          <p className="days-open">6 DAYS OPEN</p>
-          <p>Monday, Wednesday-Friday: 11AM To 3PM</p>
-          <p>Saturday-Sunday: 10AM To 9:30PM</p>
-          <p>Tuesday: Closed</p>
-        </div>
+  <h3>Hours of Operation</h3>
+  <p className="days-open">6 DAYS OPEN</p>
+  <p>Monday–Friday: 8:30AM to 7:00PM</p>
+  <p>Saturday: 9:00AM to 7:00PM</p>
+  <p>Sunday: Closed</p>
+</div>
+
       </div>
     </div>
   </footer>

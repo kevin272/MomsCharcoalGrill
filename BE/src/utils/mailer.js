@@ -86,9 +86,9 @@ function ctx(order) {
     customer,
     shop: {
       name: "Mom’s Charcoal & Grill",
-      supportEmail: 'support@momsgrill.com',
+      supportEmail: 'mumscharcoalandgrill@gmail.com',
       address: 'Pialba Place Shopping Centre, Old Maryborough Rd, Pialba QLD 4655',
-      phone: '732.398.9022',
+      phone: '+61741942975',
     },
     currency: process.env.EMAIL_CURRENCY || 'AUD',
   };

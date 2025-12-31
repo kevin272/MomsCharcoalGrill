@@ -23,7 +23,9 @@ const Merchandise = () => {
         <p className="merch-note">
           Want to collaborate or have a special request? Reach us anytime at <br className="desktop-break" />
           <a href="mailto:mumscharcoalandgrill@gmail.com">mumscharcoalandgrill@gmail.com</a> or call&nbsp;
-          <a href="tel:0297879055">(02) 9787 9055</a>.
+          <a href="tel:+61741942975" aria-label="Call Mum's Charcoal and Grill">
+    (+61) 7 4194 2975
+  </a>
         </p>
       </div>
     </section>

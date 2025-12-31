@@ -126,6 +126,12 @@ export default function Hero() {
       "CHARCOAL CHICKEN"
     );
   }, [current]);
+  const titleWordCount = useMemo(() => {
+    return String(title || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+  }, [title]);
   const promoTextDisplay = (promoText || "").trim();
 
   const go = (dir) => {
@@ -142,27 +148,31 @@ export default function Hero() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Left content */}
-      <div key={`content-${idx}`} className="hero-content fade-in fade-stagger">
+      <div key={`content-${idx}`} className="hero-content">
         {promoTextDisplay && (
           <p className="hero-offer-banner">{promoTextDisplay}</p>
         )}
-        <h1 className="hero-title">{title}</h1>
+        <div className="hero-content-body fade-in fade-stagger">
+          <h1 className={`hero-title${titleWordCount > 2 ? " hero-title--compact" : ""}`}>
+            {title}
+          </h1>
 
-        <div className="specialty-button">
-          <span role="button" tabIndex={0} onClick={() => (window.location.href = "/menu")}>
-            <img src="Group 1000002314.png" alt="cta" />
-          </span>
-        </div>
-
-        {current.items?.length > 1 && (
-          <div className="hero-chips">
-            {current.items.slice(0, 5).map((m) => (
-              <span key={m._id} className="hero-chip">
-                {m.name}
-              </span>
-            ))}
+          <div className="specialty-button">
+            <span role="button" tabIndex={0} onClick={() => (window.location.href = "/menu")}>
+              <img src="Group 1000002314.png" alt="cta" />
+            </span>
           </div>
-        )}
+
+          {current.items?.length > 1 && (
+            <div className="hero-chips">
+              {current.items.slice(0, 5).map((m) => (
+                <span key={m._id} className="hero-chip">
+                  {m.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right visual with ring images */}

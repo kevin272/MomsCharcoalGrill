@@ -74,7 +74,7 @@ const SaucePage = () => {
   };
 
   return (
-    <div className="hot-dishes-page">
+    <div className="hot-dishes-page sauces-page">
       <Breadcrumb title="SAUCES" backgroundImage="/Saus.jpeg" />
 
       <main className="hot-dishes-main">
@@ -132,7 +132,7 @@ const SaucePage = () => {
                           <span className="hot-dish-price">AUD {sauce.price}</span>
                         </div>
                         <p className="hot-dish-description">{sauce.description}</p>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                        <div className="item-actions">
                           <button
                             className={`hot-dish-cart-btn ${inCart ? "in-cart" : ""}`}
                             onClick={() => handleAddToCart(sauce, itemId)}

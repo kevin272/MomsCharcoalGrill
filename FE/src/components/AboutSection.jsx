@@ -24,10 +24,14 @@ reminded them of their hometown of Pokhara, Nepal. What they
 could not find, however, was a place that served the style of charcoal
 chicken they had grown up enjoying.
         </p>
-<a href="https://www.couriermail.com.au/news/queensland/fraser-coast/the-business-taking-hervey-bays-tastebuds-by-storm/news-story/24a9355d845e424a273ca55f709f288c?fbclid=IwY2xjawOi-91leHRuA2FlbQIxMQBzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeDWnhWQOjBsNq1eEDv5HCEVkxNQYu7eK_tCVbl4R1do2LOopgLn6043P5d3g_aem_R8Nm3ONcTECCH0FX6VX6qA#.WGtp6fhFbxU.facebook">
-  <button className="px-4 py-2 bg-blue-600 text-white rounded transform scale-110 hover:scale-125 transition-transform duration-300">
-    Read More
-  </button>
+<a
+  href="https://www.couriermail.com.au/news/queensland/fraser-coast/the-business-taking-hervey-bays-tastebuds-by-storm/news-story/24a9355d845e424a273ca55f709f288c"
+>
+<button
+  className="read-more px-4 py-2 bg-blue-600 text-white rounded-3xl outline-none transform scale-110 hover:scale-125 transition-transform duration-300"
+>
+  Read More
+</button>
 </a>
 
       </div>

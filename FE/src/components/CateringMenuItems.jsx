@@ -621,7 +621,57 @@ export default function CateringMenuItems() {
     );
   };
 
-  if (loading) return <div className="container py-10 text-gray-700">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="option-menu-page">
+        <main className="hot-dishes-main">
+          <div className="hot-dishes-hero hero-skeleton" aria-hidden="true">
+            <div className="container">
+              <div
+                className="hero-skeleton__title skeleton"
+                style={{ marginLeft: "auto", marginRight: "auto" }}
+              />
+              <div
+                className="hero-skeleton__title hero-skeleton__title--short skeleton"
+                style={{ marginLeft: "auto", marginRight: "auto" }}
+              />
+              <div
+                className="hero-skeleton__badge skeleton"
+                style={{ marginLeft: "auto", marginRight: "auto" }}
+              />
+            </div>
+          </div>
+          <section className="hot-dishes-grid-section">
+            <div className="container">
+              <div className="hot-dishes-grid hot-dishes-grid--skeleton" aria-busy="true">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={`catering-package-skeleton-${index}`}
+                    className="hot-dish-card hot-dish-card--skeleton"
+                    aria-hidden="true"
+                  >
+                    <div className="hot-dish-hover-bg" aria-hidden />
+                    <div className="hot-dish-image-container">
+                      <div className="skeleton skeleton-circle hot-dish-skeleton-image" />
+                    </div>
+                    <div className="hot-dish-content">
+                      <div className="hot-dish-header">
+                        <div className="skeleton skeleton-line skeleton-line--wide" />
+                        <div className="skeleton skeleton-line skeleton-line--price" />
+                      </div>
+                      <div className="skeleton skeleton-line" style={{ width: "80%" }} />
+                      <div className="skeleton skeleton-line" style={{ width: "55%" }} />
+                      <div className="skeleton skeleton-circle hot-dish-skeleton-cart" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
   if (err) return <div className="container py-10 text-red-600">{err}</div>;
   if (!pkg) return <div className="container py-10">Not found.</div>;
 

@@ -176,9 +176,11 @@ function Header() {
       </div>
 
       <div className="contact-info">
-        <p>
-          214 William Street, Earlwood, NSW <a href="tel:0297879055">(02) 9787 9055</a>
-        </p>
+      <p>
+        Old Maryborough Rd, Pialba QLD 4655 ·
+        <a href="tel:+61741942975">(+61) 7 4194 2975</a>
+      </p>
+
       </div>
     </header>
   );
