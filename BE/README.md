@@ -110,6 +110,11 @@ PORT=5000
 NODE_ENV=development
 MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp
+# Either provide the individual credentials _or_ a single CLOUDINARY_URL
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+# CLOUDINARY_URL=cloudinary://key:secret@your-cloud-name
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
@@ -124,6 +129,7 @@ CLOUDINARY_UPLOAD_PRESET=
 - Supported formats: JPEG, JPG, PNG, GIF, WebP (configurable via `ALLOWED_FILE_TYPES`)
 - Maximum file size: 5MB by default (configurable via `MAX_FILE_SIZE`)
 - Uploaded files are grouped into folders based on the API route (e.g. `uploads/menu`, `uploads/gallery`)
+- You can configure Cloudinary with individual credentials or a single `CLOUDINARY_URL` connection string
 - Existing assets previously stored under `/uploads` remain accessible via Express static serving for backwards compatibility
 
 ### Migrating existing local uploads
