@@ -15,7 +15,7 @@ const SaucePage = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${import.meta?.env?.VITE_API_URL}sauces`);
+        const res = await fetch(`${import.meta?.env?.VITE_API_URL}/sauces`);
         const body = await res.json();
         const list = Array.isArray(body?.data) ? body.data : [];
         if (isMounted) {
