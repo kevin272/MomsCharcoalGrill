@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Breadcrumb from '../components/CateringHero';
 import { useCart } from '../context/CartContext.jsx';
 import { useToast } from '../components/common/ToastProvider.jsx';
+import { DEFAULT_DELIVERY_FEE, fetchDeliveryFee } from '../utils/settings';
 
 const isValidEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
@@ -23,6 +24,7 @@ function CartPage() {
   const [customerErrors, setCustomerErrors] = useState({});
   const [customerFormError, setCustomerFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(DEFAULT_DELIVERY_FEE);
   const closeSpecialRequirements = () => setShowSpecialRequirements(false);
   const closeCustomerDetails = () => {
     setShowCustomerDetails(false);
@@ -42,6 +44,17 @@ function CartPage() {
     postCode: '',
   });
   const [specialRequirements, setSpecialRequirements] = useState('');
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const fee = await fetchDeliveryFee();
+      if (mounted && typeof fee === 'number' && !Number.isNaN(fee)) {
+        setDeliveryFee(fee);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
 function resolveImage(src) {
   if (!src) return "";
   const RAW_API = (import.meta?.env?.VITE_API_URL || "").trim();
@@ -66,7 +79,9 @@ function resolveImage(src) {
     0,
   );
   const gst = Math.round(subtotal * 0.1);
-  const deliveryCharge = cartItems.length > 0 && fulfillmentMethod !== 'pickup' ? 50 : 0;
+  const deliveryCharge = cartItems.length > 0 && fulfillmentMethod !== 'pickup'
+    ? deliveryFee
+    : 0;
   const grandTotal = subtotal + gst + deliveryCharge;
   const deliveryLabel = fulfillmentMethod === 'pickup' ? 'Pickup' : 'Delivery Charge';
   const VITE_API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");

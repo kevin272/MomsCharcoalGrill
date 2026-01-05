@@ -52,6 +52,19 @@ const resolveGlutenFree = (...sources) => {
   });
 };
 
+const toNumberOrNull = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+const pickPrice = (...candidates) => {
+  for (const c of candidates) {
+    const n = toNumberOrNull(c);
+    if (n !== null) return n;
+  }
+  return 0;
+};
+
 const CartIcon = ({ className }) => (
   <svg
     viewBox="0 0 24 24"
@@ -151,6 +164,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
       const id = String(menu?._id || menu?.id || cfg?._id || cfg?.id || idx);
       const extraOptions = Array.isArray(cfg?.extraOptions) ? cfg.extraOptions.filter(Boolean) : [];
       const glutenFree = resolveGlutenFree(menu, cfg, option);
+      const useMenuItemPrice = !!cfg?.useMenuItemPrice;
       return {
         id,
         menuItemId: menu?._id || menu?.id || id,
@@ -159,12 +173,13 @@ function normalizeItems(option, serverUrl, categoryKeys) {
         image: toPublicUrl(menu?.image || option?.image || "", serverUrl),
         categoryName: menu?.category?.name || menu?.category?.slug || "",
         categorySlug: menu?.category?.slug || "",
-        price: typeof option?.price === "number"
-          ? option.price
-          : (typeof menu?.price === "number" ? menu.price : 0),
+        price: useMenuItemPrice
+          ? pickPrice(menu?.price, cfg?.price, option?.price)
+          : pickPrice(cfg?.price, option?.price, menu?.price),
         extraOptions,
         glutenFree,
         categoryKey: resolveCategoryKeyFromData({ categorySlug: menu?.category?.slug, categoryName: menu?.category?.name }, categoryKeys),
+        useMenuItemPrice,
       };
     });
   }
@@ -180,7 +195,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
         image: toPublicUrl(raw?.image || option?.image || "", serverUrl),
         categoryName: raw?.category?.name || raw?.category?.slug || "",
         categorySlug: raw?.category?.slug || "",
-        price: typeof option?.price === "number" ? option.price : (typeof raw?.price === "number" ? raw.price : 0),
+        price: pickPrice(raw?.price, option?.price),
         extraOptions: [],
         glutenFree,
         categoryKey: resolveCategoryKeyFromData({ categorySlug: raw?.category?.slug, categoryName: raw?.category?.name }, categoryKeys),
@@ -192,7 +207,7 @@ function normalizeItems(option, serverUrl, categoryKeys) {
 
 function formatPrice(option) {
   if (!option) return "";
-  const val = typeof option.price === "number" ? option.price : null;
+  const val = toNumberOrNull(option.price);
   if (val == null) return "";
   switch (option.priceType) {
     case "per_person": return `AUD ${val.toFixed(2)} per person`;
@@ -302,10 +317,10 @@ export default function CateringMenuItems() {
 
   const packagePrice = useMemo(() => {
     if (!pkg) return 0;
-    const direct = Number(pkg.price);
-    if (!Number.isNaN(direct) && direct > 0) return direct;
-    const perPerson = pkg.perPersonPrice ?? pkg.trayPrice;
-    return Number(perPerson) || 0;
+    const direct = toNumberOrNull(pkg.price);
+    if (direct !== null && direct > 0) return direct;
+    const perPerson = toNumberOrNull(pkg.perPersonPrice ?? pkg.trayPrice);
+    return perPerson ?? 0;
   }, [pkg]);
 
   const minPeopleRequired = useMemo(() => {
@@ -466,7 +481,7 @@ export default function CateringMenuItems() {
     addToCart({
       id: `menu-${it.id}`,
       name: it.name,
-      price: it.price,
+      price: pickPrice(it.price, packagePrice),
       image: it.image,
       glutenFree: !!it.glutenFree,
     });
@@ -553,7 +568,7 @@ export default function CateringMenuItems() {
         addToCart({
           id: `catering-${pkg?._id || optionId}-${it.id}-${extraLabel || "plain"}`,
           name: `${pkg?.title || "Catering"} - ${it.name}`,
-          price: typeof it.price === "number" ? it.price : packagePrice,
+          price: pickPrice(it.price, packagePrice),
           image: it.image || pkg?.image,
           quantity: qty * multiplier,
           extra: extraLabel,
@@ -573,9 +588,10 @@ export default function CateringMenuItems() {
     const qty = quantities[item.id] || 0;
     const hasExtras = Array.isArray(item.extraOptions) && item.extraOptions.length > 0;
     const showPrice = !isGeneral;
+    const displayPriceValue = pickPrice(item.price, pkg?.price);
     const displayPrice = isGeneral
       ? ""
-      : `$${Number(item.price || pkg?.price || 0).toFixed(2)}`;
+      : `$${displayPriceValue.toFixed(2)}`;
     const inCart = qty > 0 || isItemInCart(item);
 
     return (

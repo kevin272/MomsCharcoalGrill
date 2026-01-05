@@ -46,6 +46,7 @@ export default function CateringForm({
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [itemExtras, setItemExtras] = useState({});
+  const [itemPricing, setItemPricing] = useState({});
   const [selectionRules, setSelectionRules] = useState({
     enabled: Boolean(initial?.selectionRules?.enabled),
     type: initialGeneralType,
@@ -90,6 +91,7 @@ export default function CateringForm({
       setIsActive(false);
       setSelectedItemIds([]);
       setItemExtras({});
+      setItemPricing({});
       setSelectionRules({
         enabled: false,
         type: "classic",
@@ -118,15 +120,18 @@ export default function CateringForm({
         : fallbackIds
     );
     const extrasMap = {};
+    const pricingMap = {};
     if (Array.isArray(initial.itemConfigurations)) {
       initial.itemConfigurations.forEach((cfg) => {
         const id = cfg?.menuItem?._id || cfg?.menuItem || cfg?._id || cfg?.id;
         if (!id) return;
         const extraOptions = Array.isArray(cfg.extraOptions) ? cfg.extraOptions : [];
         extrasMap[String(id)] = extraOptions.join(", ");
+        pricingMap[String(id)] = !!cfg?.useMenuItemPrice;
       });
     }
     setItemExtras(extrasMap);
+    setItemPricing(pricingMap);
     const nextType = (initial?.selectionRules?.type && GENERAL_PROFILES[initial.selectionRules.type])
       ? initial.selectionRules.type
       : (initial?.selectionRules?.categoryLimits?.roast ? "roast_and_chicken" : "classic");
@@ -162,6 +167,13 @@ export default function CateringForm({
   // Drop extras when an item gets removed
   useEffect(() => {
     setItemExtras((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((id) => {
+        if (!selectedItemIds.includes(id)) delete next[id];
+      });
+      return next;
+    });
+    setItemPricing((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
         if (!selectedItemIds.includes(id)) delete next[id];
@@ -234,6 +246,7 @@ export default function CateringForm({
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
+        useMenuItemPrice: !!itemPricing[id],
       }));
       fd.append("itemConfigurations", JSON.stringify(itemConfigurations));
       const safeRules = selectionRules.enabled
@@ -436,7 +449,13 @@ export default function CateringForm({
 
         <section className="catering-form__section">
           <div className="catering-section__title">Menu items & extras</div>
-          <MenuItemPicker value={selectedItemIds} onChange={setSelectedItemIds} onItemsLoaded={handleItemsLoaded} />
+          <MenuItemPicker
+            value={selectedItemIds}
+            onChange={setSelectedItemIds}
+            onItemsLoaded={handleItemsLoaded}
+            pricingMode={itemPricing}
+            onPricingModeChange={setItemPricing}
+          />
 
           <div className="catering-extras">
             <div className="catering-extras__header">
@@ -477,7 +496,7 @@ export default function CateringForm({
         </section>
 
         <section className="catering-form__section">
-          <div className="catering-section__title">General selection rules</div>
+          <div className="catering-section__title">Ordering mode & rules</div>
           <div className="catering-rules">
             <div className="catering-rules__toggle">
               <div className="toggle-row">
@@ -494,9 +513,11 @@ export default function CateringForm({
                     })
                   }
                 />
-                <label htmlFor="selectionRules">Apply general catering limits</label>
+                <label htmlFor="selectionRules">Apply general catering limits (per-person bundle)</label>
               </div>
-              <p className="catering-helper">Gate how many items customers can choose per category.</p>
+              <p className="catering-helper">
+                On: customers pick by category with per-person pricing. Off: items are sold individually and use their own prices (ignores per-tray pricing).
+              </p>
             </div>
 
             {selectionRules.enabled && (

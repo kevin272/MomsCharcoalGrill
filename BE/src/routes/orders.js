@@ -4,12 +4,36 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
+const Setting = require('../models/Setting');
 const {
   sendOrderReceipt,
   sendOrderNotification,
   sendOrderPaid,
   sendOrderCompleted,
 } = require('../utils/mailer');
+
+const DELIVERY_FEE_KEY = 'deliveryFee';
+const DEFAULT_DELIVERY_FEE = 50;
+const DELIVERY_CACHE_TTL = 60 * 1000; // 1 minute
+let deliveryFeeCache = { value: DEFAULT_DELIVERY_FEE, ts: 0 };
+
+async function getDeliveryFee() {
+  const now = Date.now();
+  if (deliveryFeeCache.ts && now - deliveryFeeCache.ts < DELIVERY_CACHE_TTL) {
+    return deliveryFeeCache.value;
+  }
+
+  try {
+    const doc = await Setting.findOne({ key: DELIVERY_FEE_KEY });
+    const feeValue = Number(doc?.value);
+    const fee = Number.isFinite(feeValue) && feeValue >= 0 ? feeValue : DEFAULT_DELIVERY_FEE;
+    deliveryFeeCache = { value: fee, ts: now };
+    return fee;
+  } catch (err) {
+    // fall back to cached/default without blocking orders
+    return deliveryFeeCache.value ?? DEFAULT_DELIVERY_FEE;
+  }
+}
 
 // -------------------- LIST --------------------
 router.get('/', async (req, res) => {
@@ -154,7 +178,8 @@ router.post('/checkout', async (req, res) => {
     }
 
     const gst = Math.round(subtotal * 0.1);
-    const deliveryFee = subtotal > 0 && deliveryMethod !== 'pickup' ? 50 : 0;
+    const configuredDeliveryFee = await getDeliveryFee();
+    const deliveryFee = subtotal > 0 && deliveryMethod !== 'pickup' ? configuredDeliveryFee : 0;
     const grandTotal = subtotal + gst + deliveryFee;
     const totals = { subtotal, gst, delivery: deliveryFee, grandTotal };
 

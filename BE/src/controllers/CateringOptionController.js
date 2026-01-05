@@ -94,7 +94,8 @@ exports.create = async (req, res) => {
       .map((cfg) => {
         const menuItem = cfg?.menuItem || cfg?.item || cfg?._id || cfg?.id || cfg;
         const extraOptions = parseArrayField(cfg?.extraOptions);
-        return menuItem ? { menuItem, extraOptions } : null;
+        const useMenuItemPrice = Boolean(cfg?.useMenuItemPrice);
+        return menuItem ? { menuItem, extraOptions, useMenuItemPrice } : null;
       })
       .filter(Boolean);
 
@@ -103,7 +104,7 @@ exports.create = async (req, res) => {
       items = itemConfigurations.map((c) => c.menuItem);
     } else if (items.length) {
       // seed configurations with empty options to keep FE consistent
-      itemConfigurations = items.map((id) => ({ menuItem: id, extraOptions: [] }));
+      itemConfigurations = items.map((id) => ({ menuItem: id, extraOptions: [], useMenuItemPrice: false }));
     }
 
     // validate menu item ids exist
@@ -174,13 +175,14 @@ exports.update = async (req, res) => {
         .map((cfg) => {
           const menuItem = cfg?.menuItem || cfg?.item || cfg?._id || cfg?.id || cfg;
           const extraOptions = parseArrayField(cfg?.extraOptions);
-          return menuItem ? { menuItem, extraOptions } : null;
+          const useMenuItemPrice = Boolean(cfg?.useMenuItemPrice);
+          return menuItem ? { menuItem, extraOptions, useMenuItemPrice } : null;
         })
         .filter(Boolean);
       // keep items array synced for older clients
       payload.items = payload.itemConfigurations.map((c) => c.menuItem);
     } else if (Array.isArray(payload.items) && payload.items.length) {
-      payload.itemConfigurations = payload.items.map((id) => ({ menuItem: id, extraOptions: [] }));
+      payload.itemConfigurations = payload.items.map((id) => ({ menuItem: id, extraOptions: [], useMenuItemPrice: false }));
     }
 
     if (req.file) payload.image = req.file.path;

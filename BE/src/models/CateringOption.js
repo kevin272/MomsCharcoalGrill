@@ -6,6 +6,7 @@ const ItemConfigSchema = new mongoose.Schema(
   {
     menuItem: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem', required: true },
     extraOptions: [{ type: String, trim: true }],
+    useMenuItemPrice: { type: Boolean, default: false },
   },
   { _id: false },
 );

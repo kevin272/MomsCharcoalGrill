@@ -8,8 +8,17 @@ import axiosInstance from "../../config/axios.config.js";
  * - selectedIds: string[]        // legacy
  * - onChange: (ids: string[]) => void
  * - onItemsLoaded?: (items: any[]) => void
+ * - pricingMode?: Record<string, boolean> // per-id flag: true = use menu item price
+ * - onPricingModeChange?: (map: Record<string, boolean>) => void
  */
-export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLoaded }) {
+export default function MenuItemPicker({
+  value,
+  selectedIds,
+  onChange,
+  onItemsLoaded,
+  pricingMode = {},
+  onPricingModeChange,
+}) {
   // Normalize selected ids from either prop; always an array.
   const selected = useMemo(() => {
     if (Array.isArray(value)) return value;
@@ -63,6 +72,14 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
     }
   };
 
+  const togglePricing = (id) => {
+    if (typeof onPricingModeChange !== "function") return;
+    onPricingModeChange((prev = {}) => ({
+      ...prev,
+      [id]: !prev?.[id],
+    }));
+  };
+
   const toPublicUrl = (p) => {
     if (!p) return "";
     if (/^https?:\/\//i.test(p)) return p;
@@ -109,17 +126,22 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
     const name = it?.name || it?.title || "Untitled";
     const price = it?.price ?? it?.unitPrice ?? null;
     const checked = Array.isArray(selected) && selected.includes(id);
+    const useItemPrice = !!pricingMode?.[id];
 
     return (
-      <label
+      <div
         key={id}
         className={`menuitem-card ${checked ? "menuitem-card--active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => toggle(id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggle(id);
+          }
+        }}
       >
-        <input
-          type="checkbox"
-          checked={!!checked}
-          onChange={() => toggle(id)}
-        />
         <div className="menuitem-card__avatar">
           {it?.image ? (
             <img src={toPublicUrl(it.image)} alt={name} />
@@ -137,7 +159,25 @@ export default function MenuItemPicker({ value, selectedIds, onChange, onItemsLo
           )}
         </div>
         <span className="menuitem-card__check" aria-hidden>&#10003;</span>
-      </label>
+        {typeof onPricingModeChange === "function" && (
+          <div className="menuitem-card__controls">
+            <label
+              className="menuitem-card__pricing-toggle"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                checked={useItemPrice}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  togglePricing(id);
+                }}
+              />
+              <span>Use item price (ignore tray price)</span>
+            </label>
+          </div>
+        )}
+      </div>
     );
   };
 
