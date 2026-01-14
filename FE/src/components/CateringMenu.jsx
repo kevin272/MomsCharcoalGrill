@@ -17,7 +17,13 @@ const CateringMenu = () => {
         <h2 className="catering-menu-title">OUR CATERING MENU</h2>
 
         <div className="catering-menu-image-container">
-          <ImageCarousel type="cateringmenu" autoplay interval={4500} className="catering-menu-carousel" />
+          <ImageCarousel
+            type="cateringmenu"
+            autoplay
+            interval={4500}
+            className="catering-menu-carousel"
+            showPreviewButton
+          />
         </div>
 
         <div className="catering-download-section">

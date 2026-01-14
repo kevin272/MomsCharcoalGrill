@@ -35,8 +35,8 @@ const app = express();
 const allowedOrigins = [
   'https://mumscharcoalgrill.netlify.app',
   'http://localhost:5173',
-  'https://mumscharcoalandgrill.com.au/',
-  'https://www.mumscharcoalandgrill.com.au/'
+  'https://mumscharcoalandgrill.com.au',
+  'https://www.mumscharcoalandgrill.com.au'
 ];
 
 app.use((req, res, next) => {

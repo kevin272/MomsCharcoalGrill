@@ -373,7 +373,13 @@ const handleCustomerDetailsSubmit = async () => {
     </select>
   </label>
 </div>
-<p className="account-hint">Account No. <strong>123 222 223232 2</strong></p>
+{paymentMode === "PAY_TO_CALL" && (
+  <p className="account-hint">
+    <span>Account Name: <strong>AM SISTERS PTY LTD</strong></span><br />
+    <span>BSB: <strong>082-356</strong></span><br />
+    <span>Account No.: <strong>936056394</strong></span>
+  </p>
+)}
 
   <div className="order-breakdown">
     <div className="breakdown-item">

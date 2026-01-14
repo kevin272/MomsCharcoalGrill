@@ -10,6 +10,7 @@ function MenuImageSection() {
           autoplay
           interval={4500}
           className="menu-page-carousel"
+          showPreviewButton
         />
       </div>
     </section>

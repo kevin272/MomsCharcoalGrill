@@ -1,5 +1,7 @@
 // src/components/common/ImageCarousel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import GLightbox from "glightbox";
+import "glightbox/dist/css/glightbox.min.css";
 
 export default function ImageCarousel({
   type = "menu",
@@ -7,6 +9,7 @@ export default function ImageCarousel({
   autoplay = true,
   interval = 4000,
   className = "",
+  showPreviewButton = false,
 }) {
   const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "";
   const SERVER_URL = API_BASE.replace(/\/api$/, "");
@@ -16,14 +19,31 @@ export default function ImageCarousel({
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
   const pausedRef = useRef(false);
+  const lightboxRef = useRef(null);
+  const transitionTimerRef = useRef(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const data = useMemo(() => (Array.isArray(slides) ? slides : []), [slides]);
   const len = data.length;
   const wrap = (n) => (len ? (n + len) % len : 0);
 
-  const next = () => setIndex((i) => wrap(i + 1));
-  const prev = () => setIndex((i) => wrap(i - 1));
-  const go = (i) => setIndex(wrap(i));
+  const runTransition = (action) => {
+    transitionTimerRef.current && clearTimeout(transitionTimerRef.current);
+    setIsTransitioning(true);
+    action();
+    transitionTimerRef.current = setTimeout(() => {
+      setIsTransitioning(false);
+    }, 650);
+  };
+
+  const next = () => runTransition(() => setIndex((i) => wrap(i + 1)));
+  const prev = () => runTransition(() => setIndex((i) => wrap(i - 1)));
+  const go = (i) => runTransition(() => setIndex(wrap(i)));
+
+  const releaseLightbox = () => {
+    lightboxRef.current?.destroy();
+    lightboxRef.current = null;
+  };
 
   // Fetch slides
   useEffect(() => {
@@ -63,6 +83,13 @@ export default function ImageCarousel({
     return () => clearTimeout(timerRef.current);
   }, [autoplay, interval, len, index]);
 
+  useEffect(() => {
+    return () => {
+      transitionTimerRef.current && clearTimeout(transitionTimerRef.current);
+      releaseLightbox();
+    };
+  }, []);
+
   const onMouseEnter = () => {
     pausedRef.current = true;
     clearTimeout(timerRef.current);
@@ -91,9 +118,21 @@ export default function ImageCarousel({
     ? cur.image
     : `${SERVER_URL}${cur?.image || ""}`;
 
-// inside ImageCarousel.jsx return(...)
-return (
-  <div className={`img-carousel ${className}`} style={{ position: "relative" }}>
+  const openPreview = () => {
+    if (!imgSrc) return;
+    lightboxRef.current?.destroy();
+    const lightbox = GLightbox({
+      elements: [{ href: imgSrc, type: "image" }],
+      loop: false,
+      closeButton: true,
+    });
+    lightboxRef.current = lightbox;
+    lightbox.on("close", () => lightboxRef.current?.destroy());
+    lightbox.open();
+  };
+
+  return (
+    <div className={`img-carousel ${className}`} style={{ position: "relative" }}>
     {/* wrap to position arrows outside the image but inside component */}
     
     <div className="img-carousel__wrap">
@@ -113,7 +152,7 @@ return (
           <img
             src={imgSrc}
             alt={cur?.title || "Slide"}
-            className="img-carousel__image"
+            className={`img-carousel__image${isTransitioning ? " is-transitioning" : ""}`}
             loading="eager"
             style={{ width: "100%", height: "auto", display: "block" }}
           />
@@ -125,6 +164,17 @@ return (
           )}
         </a>
       </div>
+
+      {showPreviewButton && (
+        <button
+          type="button"
+          className="img-carousel__preview"
+          onClick={openPreview}
+          aria-label="Preview image"
+        >
+          Preview
+        </button>
+      )}
 
       {/* arrows OUTSIDE the image */}
       {len > 1 && (
@@ -152,13 +202,15 @@ return (
         </>
       )}
       {/* right arrow button */}
-<button
-  className="img-carousel__arrow img-carousel__arrow--right"
-  onClick={next}
-  aria-label="Next slide"
->
-  <img src="/CarouselArrow.svg" alt="Next" />
-</button>
+      {len > 1 && (
+        <button
+          className="img-carousel__arrow img-carousel__arrow--right"
+          onClick={next}
+          aria-label="Next slide"
+        >
+          <img src="/CarouselArrow.svg" alt="Next" />
+        </button>
+      )}
 
       </div>
 
@@ -176,6 +228,7 @@ return (
         </div>
       )}
     </div>
-);
-
+  );
 }
+
+
