@@ -4,11 +4,11 @@ import axiosInstance from "../config/axios.config.js";
 const BUCKETS = ["Chicken", "Salad", "Pasta", "Roll"];
 
 const KEYWORDS = {
-  Chicken: ["chicken","charcoal","roast","wings","drumstick","breast","thigh","tandoori","peri","bbq"],
-  Salad: ["salad","coleslaw","slaw","greek","potato","pumpkin","asian","garden","caesar","vinaigrette"],
-  Pasta: ["pasta","spaghetti","penne","fettuccine","alfredo","bolognese","lasagna","lasagne","mac","gnocchi"],
-  Roll: ["roll","bread roll","wrap","shawarma","kebab","sub","tortilla","burrito"],
-  HotDish: ["curry","stew","chili","hot dish","casserole","tagine","gumbo", "Josh"],
+  Chicken: ["chicken", "charcoal", "roast", "wings", "drumstick", "breast", "thigh", "tandoori", "peri", "bbq"],
+  Salad: ["salad", "coleslaw", "slaw", "greek", "potato", "pumpkin", "asian", "garden", "caesar", "vinaigrette"],
+  Pasta: ["pasta", "spaghetti", "penne", "fettuccine", "alfredo", "bolognese", "lasagna", "lasagne", "mac", "gnocchi"],
+  Roll: ["roll", "bread roll", "wrap", "shawarma", "kebab", "sub", "tortilla", "burrito"],
+  HotDish: ["curry", "stew", "chili", "hot dish", "casserole", "tagine", "gumbo", "Josh"],
 };
 
 const CATEGORY_HINTS = {
@@ -21,8 +21,8 @@ const CATEGORY_HINTS = {
 
 function scoreItemForBucket(item, bucket) {
   const name = String(item.name || "").toLowerCase();
-  const cat  = String(item.category || "").toLowerCase();
-  const img  = String(item.image || item.img || "").toLowerCase();
+  const cat = String(item.category || "").toLowerCase();
+  const img = String(item.image || item.img || "").toLowerCase();
   const keys = KEYWORDS[bucket];
 
   let score = 0;
@@ -296,6 +296,7 @@ export default function MenuCarousel({
 
   return (
     <section
+      id="menu-carousel"
       className="menu-carousel"
       ref={rootRef}
       tabIndex={0}

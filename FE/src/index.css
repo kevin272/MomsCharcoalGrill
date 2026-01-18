@@ -71,7 +71,8 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-input, textarea {
+input,
+textarea {
   font-family: inherit;
 }
 

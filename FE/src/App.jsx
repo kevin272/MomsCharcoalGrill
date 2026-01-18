@@ -27,7 +27,7 @@ import CateringMenu from './components/CateringMenuItems';
 import BannerDashboard from './pages/Dashboardpages/BannerDashboard';
 import BannerForm from './pages/Dashboardpages/BannerForm';
 import MenuSlidesDashboard from './pages/Dashboardpages/MenuSlidesDashboard';
-import {ToastProvider}  from './components/common/ToastProvider';
+import { ToastProvider } from './components/common/ToastProvider';
 import NoticeDashboard from './pages/Dashboardpages/NoticeDashboard';
 import NoticeAe from './pages/Dashboardpages/NoticeAE';
 import ScrollToTop from './components/ScrollToTop';
@@ -39,7 +39,7 @@ import DeliverySettings from './pages/Dashboardpages/DeliverySettings';
 function App() {
   return (
     <>
-                      <ScrollToTop behavior="auto"/>
+      <ScrollToTop behavior="smooth" />
 
       <Routes>
         <Route element={<Layout />}>
@@ -74,7 +74,7 @@ function App() {
           <Route path="/admin/sauces" element={<SauceDashboard />} />
           <Route path="/admin/sauces/new" element={<SauceForm />} />
           <Route path="/admin/sauces/:id/edit" element={<SauceForm />} />
-          <Route path ="admin/catering" element= {<CateringDashboard/>}/>
+          <Route path="admin/catering" element={<CateringDashboard />} />
           <Route path="/admin/banners" element={<BannerDashboard />} />
           <Route path="/admin/banners/new" element={<BannerForm />} />
           <Route path="/admin/banners/:id/edit" element={<BannerForm />} />
