@@ -55,23 +55,23 @@ function CartPage() {
     return () => { mounted = false; };
   }, []);
 
-function resolveImage(src) {
-  if (!src) return "";
-  const RAW_API = (import.meta?.env?.VITE_API_URL || "").trim();
-  const API = RAW_API.replace(/\/+$/, "");
-  const ORIGIN = API.replace(/\/api$/, "");
-  const escapeRe = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-  const ORIGIN_RE = new RegExp(`^${escapeRe(ORIGIN)}(?:${escapeRe(ORIGIN)})+`);
-  let s = String(src).trim();
-  s = s.replace(ORIGIN_RE, ORIGIN);
-  if (/^(?:https?:|data:|blob:)/i.test(s)) return s;
-  if (!s.startsWith("/")) s = `/${s}`;
-  try {
-    return new URL(s, ORIGIN).href;
-  } catch {
-    return `${ORIGIN}${s}`;
+  function resolveImage(src) {
+    if (!src) return "";
+    const RAW_API = (import.meta?.env?.VITE_API_URL || "").trim();
+    const API = RAW_API.replace(/\/+$/, "");
+    const ORIGIN = API.replace(/\/api$/, "");
+    const escapeRe = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const ORIGIN_RE = new RegExp(`^${escapeRe(ORIGIN)}(?:${escapeRe(ORIGIN)})+`);
+    let s = String(src).trim();
+    s = s.replace(ORIGIN_RE, ORIGIN);
+    if (/^(?:https?:|data:|blob:)/i.test(s)) return s;
+    if (!s.startsWith("/")) s = `/${s}`;
+    try {
+      return new URL(s, ORIGIN).href;
+    } catch {
+      return `${ORIGIN}${s}`;
+    }
   }
-}
 
   // Derived totals based off cart items
   const subtotal = cartItems.reduce(
@@ -84,7 +84,7 @@ function resolveImage(src) {
     : 0;
   const grandTotal = subtotal + gst + deliveryCharge;
   const deliveryLabel = fulfillmentMethod === 'pickup' ? 'Pickup' : 'Delivery Charge';
-  const VITE_API = (import.meta?.env?.VITE_API_URL|| "").replace(/\/+$/, "");
+  const VITE_API = (import.meta?.env?.VITE_API_URL || "").replace(/\/+$/, "");
 
   const handlePlaceOrder = () => {
     if (cartItems.length === 0) {
@@ -117,36 +117,36 @@ function resolveImage(src) {
     return errors;
   };
 
-const handleCustomerDetailsSubmit = async () => {
-  const errors = validateCustomerDetails();
-  if (Object.keys(errors).length) {
-    setCustomerErrors(errors);
-    setCustomerFormError('Please fix the highlighted fields.');
-    return;
-  }
+  const handleCustomerDetailsSubmit = async () => {
+    const errors = validateCustomerDetails();
+    if (Object.keys(errors).length) {
+      setCustomerErrors(errors);
+      setCustomerFormError('Please fix the highlighted fields.');
+      return;
+    }
 
-  setCustomerErrors({});
-  setCustomerFormError('');
-  setIsSubmitting(true);
-  const address = fulfillmentMethod === 'delivery'
-    ? [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
+    setCustomerErrors({});
+    setCustomerFormError('');
+    setIsSubmitting(true);
+    const address = fulfillmentMethod === 'delivery'
+      ? [customerDetails.street, customerDetails.suburb, customerDetails.state, customerDetails.postCode]
         .filter(Boolean)
         .join(', ')
-    : '';
+      : '';
 
-  const orderData = {
-    items: cartItems.map((item) => {
-      const selections = Array.isArray(item.items)
-        ? item.items.map((sel) => ({
+    const orderData = {
+      items: cartItems.map((item) => {
+        const selections = Array.isArray(item.items)
+          ? item.items.map((sel) => ({
             menuItem: sel.menuItem || sel.id || null,
             name: sel.name,
             qty: sel.qty,
             extras: sel.extras || [],
           }))
-        : [];
+          : [];
 
-      const selectionSummary = selections.length
-        ? selections
+        const selectionSummary = selections.length
+          ? selections
             .map((sel) => {
               const extras = Array.isArray(sel.extras) && sel.extras.length
                 ? ` (${sel.extras.join(', ')})`
@@ -154,95 +154,95 @@ const handleCustomerDetailsSubmit = async () => {
               return `${sel.name || ''} x${sel.qty || 0}${extras}`;
             })
             .join(' | ')
-        : (item.extra || '');
+          : (item.extra || '');
 
-      return {
-        menuItem: item.menuItem || null,
-        name: item.name,
-        extra: item.extra || '',
-        price: item.price,
-        image: item.image,
-        qty: item.quantity,
-        glutenFree: !!item.glutenFree,
-        items: selections,
-        selectedItems: selections, // keep legacy + explicit fields
-        selectionSummary,
-      };
-    }),
-    customer: {
-      name: customerDetails.fullName,
-      phone: customerDetails.phoneNumber,
-      email: customerDetails.email || '',
-      address,
-    },
-    delivery: { method: fulfillmentMethod },
-    paymentMode,
-    notes: specialRequirements,
+        return {
+          menuItem: item.menuItem || null,
+          name: item.name,
+          extra: item.extra || '',
+          price: item.price,
+          image: item.image,
+          qty: item.quantity,
+          glutenFree: !!item.glutenFree,
+          items: selections,
+          selectedItems: selections, // keep legacy + explicit fields
+          selectionSummary,
+        };
+      }),
+      customer: {
+        name: customerDetails.fullName,
+        phone: customerDetails.phoneNumber,
+        email: customerDetails.email || '',
+        address,
+      },
+      delivery: { method: fulfillmentMethod },
+      paymentMode,
+      notes: specialRequirements,
+    };
+
+    // --- Resolve API base robustly ---
+    const RAW = (import.meta?.env?.VITE_API_URL || '').trim();
+    const devGuess = (() => {
+      const isLocal =
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1';
+      return isLocal ? 'http://localhost:5000/api/' : '';
+    })();
+
+    let base = (RAW || devGuess).replace(/\/+$/, '');
+    if (!/^https?:\/\//i.test(base)) {
+      const origin = typeof window !== 'undefined' && window.location
+        ? window.location.origin
+        : '';
+      const path = base.startsWith('/') ? base : `/${base || ''}`;
+      base = `${origin}${path}`.replace(/\/+$/, '');
+    }
+    const API_BASE = `${base}/`;
+    const url = `${API_BASE}orders/checkout`;
+
+    console.log('Placing order', url);
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(orderData),
+      });
+
+      const ct = resp.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const text = await resp.text().catch(() => '');
+        throw new Error(`Non-JSON response ${resp.status} ${resp.statusText}. Snippet: ${text.slice(0, 160)}`);
+      }
+
+      const data = await resp.json();
+      if (!resp.ok || data?.success === false) {
+        throw new Error(data?.message || `Request failed (${resp.status})`);
+      }
+
+      clearCart();
+      setShowCustomerDetails(false);
+      const orderId = data?.data?._id || data?.data?.id || data?.orderId || 'N/A';
+      setOrderSuccess({ id: orderId });
+      setSpecialRequirements('');
+      setCustomerDetails({
+        fullName: '',
+        phoneNumber: '',
+        email: '',
+        street: '',
+        suburb: '',
+        state: '',
+        postCode: '',
+      });
+      toast.success(`Order placed successfully! Order ID: ${orderId}`);
+    } catch (err) {
+      console.error(err);
+      setCustomerFormError(`Failed to place order: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  // --- Resolve API base robustly ---
-  const RAW = (import.meta?.env?.VITE_API_URL || '').trim();
-  const devGuess = (() => {
-    const isLocal =
-      location.hostname === 'localhost' ||
-      location.hostname === '127.0.0.1';
-    return isLocal ? 'http://localhost:5000/api/' : '';
-  })();
-
-  let base = (RAW || devGuess).replace(/\/+$/, '');
-  if (!/^https?:\/\//i.test(base)) {
-    const origin = typeof window !== 'undefined' && window.location
-      ? window.location.origin
-      : '';
-    const path = base.startsWith('/') ? base : `/${base || ''}`;
-    base = `${origin}${path}`.replace(/\/+$/, '');
-  }
-  const API_BASE = `${base}/`;
-  const url = `${API_BASE}orders/checkout`;
-
-  console.log('Placing order', url);
-
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(orderData),
-    });
-
-    const ct = resp.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) {
-      const text = await resp.text().catch(() => '');
-      throw new Error(`Non-JSON response ${resp.status} ${resp.statusText}. Snippet: ${text.slice(0, 160)}`);
-    }
-
-    const data = await resp.json();
-    if (!resp.ok || data?.success === false) {
-      throw new Error(data?.message || `Request failed (${resp.status})`);
-    }
-
-    clearCart();
-    setShowCustomerDetails(false);
-    const orderId = data?.data?._id || data?.data?.id || data?.orderId || 'N/A';
-    setOrderSuccess({ id: orderId });
-    setSpecialRequirements('');
-    setCustomerDetails({
-      fullName: '',
-      phoneNumber: '',
-      email: '',
-      street: '',
-      suburb: '',
-      state: '',
-      postCode: '',
-    });
-    toast.success(`Order placed successfully! Order ID: ${orderId}`);
-  } catch (err) {
-    console.error(err);
-    setCustomerFormError(`Failed to place order: ${err?.message || 'Unknown error'}`);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
 
   const handleInputChange = (field, value) => {
@@ -269,7 +269,7 @@ const handleCustomerDetailsSubmit = async () => {
               <div key={item.id} className="cart-item">
                 <div className="cart-item-card">
                   <div className="cart-item-image">
-            <img src={resolveImage(item.image)} alt={item.name} />
+                    <img src={resolveImage(item.image)} alt={item.name} />
                   </div>
                   <div className="cart-item-details">
                     <div className="cart-item-info">
@@ -347,56 +347,56 @@ const handleCustomerDetailsSubmit = async () => {
               <span className="order-total-amount">AUD {subtotal}</span>
             </div>
             <div className="payment-details">
-<div className="payment-details">
-  <div className="payment-mode-label">Payment Mode</div>
+              <div className="payment-details">
+                <div className="payment-mode-label">Payment Mode</div>
 
-  <label className="select-wrap">
-    <select
-      className="payment-select"
-      value={paymentMode}
-      onChange={(e) => setPaymentMode(e.target.value)}
-    >
-      <option value="COD">Cash on Delivery</option>
-      <option value="PAY_TO_CALL">Call to pay</option>
-    </select>
-  </label>
+                <label className="select-wrap">
+                  <select
+                    className="payment-select"
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                  >
+                    <option value="COD">Cash on Delivery</option>
+                    <option value="PAY_TO_CALL">Call to pay</option>
+                  </select>
+                </label>
 
-  <div className="payment-mode-label">Order Type</div>
-  <label className="select-wrap">
-    <select
-      className="payment-select"
-      value={fulfillmentMethod}
-      onChange={(e) => setFulfillmentMethod(e.target.value)}
-    >
-      <option value="delivery">Delivery</option>
-      <option value="pickup">Pickup</option>
-    </select>
-  </label>
-</div>
-{paymentMode === "PAY_TO_CALL" && (
-  <p className="account-hint">
-    <span>Account Name: <strong>AM SISTERS PTY LTD</strong></span><br />
-    <span>BSB: <strong>082-356</strong></span><br />
-    <span>Account No.: <strong>936056394</strong></span>
-  </p>
-)}
+                <div className="payment-mode-label">Order Type</div>
+                <label className="select-wrap">
+                  <select
+                    className="payment-select"
+                    value={fulfillmentMethod}
+                    onChange={(e) => setFulfillmentMethod(e.target.value)}
+                  >
+                    <option value="delivery">Delivery</option>
+                    <option value="pickup">Pickup</option>
+                  </select>
+                </label>
+              </div>
+              {paymentMode === "PAY_TO_CALL" && (
+                <p className="account-hint">
+                  <span>Account Name: <strong>AM SISTERS PTY LTD</strong></span><br />
+                  <span>BSB: <strong>082-356</strong></span><br />
+                  <span>Account No.: <strong>936056394</strong></span>
+                </p>
+              )}
 
-  <div className="order-breakdown">
-    <div className="breakdown-item">
-      <span>GST (10%)</span>
-      <span>AUD {gst}</span>
-    </div>
-    <div className="breakdown-item">
-      <span>{deliveryLabel}</span>
-      <span>AUD {deliveryCharge}</span>
-    </div>
-    <div className="breakdown-divider"></div>
-    <div className="breakdown-total">
-      <span>Grand Total</span>
-      <span>AUD {grandTotal}</span>
-    </div>
-  </div>
-</div>
+              <div className="order-breakdown">
+                <div className="breakdown-item">
+                  <span>GST (10%)</span>
+                  <span>AUD {gst}</span>
+                </div>
+                <div className="breakdown-item">
+                  <span>{deliveryLabel}</span>
+                  <span>AUD {deliveryCharge}</span>
+                </div>
+                <div className="breakdown-divider"></div>
+                <div className="breakdown-total">
+                  <span>Grand Total</span>
+                  <span>AUD {grandTotal}</span>
+                </div>
+              </div>
+            </div>
             <button className="place-order-btn" onClick={handlePlaceOrder}>
               Place Order
             </button>
@@ -456,25 +456,25 @@ const handleCustomerDetailsSubmit = async () => {
             <div className="modal-header">
               <h3>Fill in your details</h3>
             </div>
-              <div className="customer-form">
-                {customerFormError && (
-                  <div className="form-error-banner" role="alert">
-                    {customerFormError}
-                  </div>
-                )}
-                <div className="field-group">
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={customerDetails.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    className={customerErrors.fullName ? "input-error" : ""}
-                    aria-invalid={!!customerErrors.fullName}
-                  />
-                  {customerErrors.fullName && (
-                    <span className="form-error-text">{customerErrors.fullName}</span>
-                  )}
+            <div className="customer-form">
+              {customerFormError && (
+                <div className="form-error-banner" role="alert">
+                  {customerFormError}
                 </div>
+              )}
+              <div className="field-group">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={customerDetails.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  className={customerErrors.fullName ? "input-error" : ""}
+                  aria-invalid={!!customerErrors.fullName}
+                />
+                {customerErrors.fullName && (
+                  <span className="form-error-text">{customerErrors.fullName}</span>
+                )}
+              </div>
               <div className="field-group">
                 <input
                   type="tel"
@@ -488,19 +488,19 @@ const handleCustomerDetailsSubmit = async () => {
                   <span className="form-error-text">{customerErrors.phoneNumber}</span>
                 )}
               </div>
-                <div className="field-group">
-                  <input
-                    type="email"
-                    placeholder="Email (for order confirmation)"
-                    value={customerDetails.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={customerErrors.email ? "input-error" : ""}
-                    aria-invalid={!!customerErrors.email}
-                  />
-                  {customerErrors.email && (
-                    <span className="form-error-text">{customerErrors.email}</span>
-                  )}
-                </div>
+              <div className="field-group">
+                <input
+                  type="email"
+                  placeholder="Email (for order confirmation)"
+                  value={customerDetails.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={customerErrors.email ? "input-error" : ""}
+                  aria-invalid={!!customerErrors.email}
+                />
+                {customerErrors.email && (
+                  <span className="form-error-text">{customerErrors.email}</span>
+                )}
+              </div>
               {fulfillmentMethod === 'delivery' ? (
                 <>
                   <div className="form-row">
@@ -597,7 +597,6 @@ const handleCustomerDetailsSubmit = async () => {
           }}
         >
           <div className="customer-details-modal success-modal">
-            <div className="success-glow" aria-hidden />
             <button
               type="button"
               className="modal-close-btn"

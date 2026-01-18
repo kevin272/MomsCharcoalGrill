@@ -96,66 +96,66 @@ const HotDishes = () => {
               {dishes.map((dish) => (
                 <div key={dish.id} className="hot-dish-card">
                   <div className="hot-dish-image-container">
-                    <img src={dish.image} alt={dish.name} className="hot-dish-image" />
+                    <img src={dish.image} alt={dish.name} className="hot-dish-image" loading="lazy" />
                   </div>
-                    <div className="hot-dish-content">
-                      <div className="hot-dish-header">
-                        {!!glutenFree[dish.id] && (
-                          <span className="gf-badge" aria-label="Gluten free">GF</span>
-                        )}
-                        <h3 className="hot-dish-name">{dish.name}</h3>
-                        <span className="hot-dish-price">${dish.price}</span>
-                        <button
-                          className="hot-dish-cart-btn"
-                          aria-label="Add to cart"
-                          onClick={() => handleAddToCart(dish)}
+                  <div className="hot-dish-content">
+                    <div className="hot-dish-header">
+                      {!!glutenFree[dish.id] && (
+                        <span className="gf-badge" aria-label="Gluten free">GF</span>
+                      )}
+                      <h3 className="hot-dish-name">{dish.name}</h3>
+                      <span className="hot-dish-price">${dish.price}</span>
+                      <button
+                        className="hot-dish-cart-btn"
+                        aria-label="Add to cart"
+                        onClick={() => handleAddToCart(dish)}
+                      >
+                        <svg
+                          width="28"
+                          height="28"
+                          viewBox="0 0 47 47"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
                         >
-                          <svg
-                            width="28"
-                            height="28"
-                            viewBox="0 0 47 47"
+                          <path
+                            d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z"
                             fill="currentColor"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M37.6006 30.9731H12.9872L8.25391 12.0398H42.3339L37.6006 30.9731Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
-                              stroke="currentColor"
-                              strokeWidth="1.28"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
-                              stroke="currentColor"
-                              strokeWidth="1.28"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
-                              stroke="currentColor"
-                              strokeWidth="1.28"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="hot-dish-description">{dish.description}</p>
-                      <label className="gf-option">
-                        <input
-                          type="checkbox"
-                          checked={!!glutenFree[dish.id]}
-                          onChange={(e) => setGlutenFree((m) => ({ ...m, [dish.id]: e.target.checked }))}
-                        />
-                        <span>Gluten-free (GF)</span>
-                      </label>
-                      {/* cart button moved into header for alignment */}
+                          />
+                          <path
+                            d="M3.51953 6.35986H6.83286L8.25286 12.0399M8.25286 12.0399L12.9862 30.9732H37.5995L42.3329 12.0399H8.25286Z"
+                            stroke="currentColor"
+                            strokeWidth="1.28"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M12.9845 40.4399C14.553 40.4399 15.8245 39.1684 15.8245 37.5999C15.8245 36.0314 14.553 34.7599 12.9845 34.7599C11.416 34.7599 10.1445 36.0314 10.1445 37.5999C10.1445 39.1684 11.416 40.4399 12.9845 40.4399Z"
+                            stroke="currentColor"
+                            strokeWidth="1.28"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M37.5978 40.4399C39.1663 40.4399 40.4378 39.1684 40.4378 37.5999C40.4378 36.0314 39.1663 34.7599 37.5978 34.7599C36.0293 34.7599 34.7578 36.0314 34.7578 37.5999C34.7578 39.1684 36.0293 40.4399 37.5978 40.4399Z"
+                            stroke="currentColor"
+                            strokeWidth="1.28"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
                     </div>
+                    <p className="hot-dish-description">{dish.description}</p>
+                    <label className="gf-option">
+                      <input
+                        type="checkbox"
+                        checked={!!glutenFree[dish.id]}
+                        onChange={(e) => setGlutenFree((m) => ({ ...m, [dish.id]: e.target.checked }))}
+                      />
+                      <span>Gluten-free (GF)</span>
+                    </label>
+                    {/* cart button moved into header for alignment */}
+                  </div>
                 </div>
               ))}
             </div>

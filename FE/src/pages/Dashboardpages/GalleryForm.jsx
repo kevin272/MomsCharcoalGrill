@@ -127,156 +127,155 @@ export default function GalleryForm() {
   };
 
   return (
-    <div className="container py-5" style={{ maxWidth: 860 }}>
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="m-0">Add Gallery Image(s)</h2>
-        <div className="btn-group" role="group">
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              mode === "single" ? "btn-primary" : "btn-outline-primary"
-            }`}
-            onClick={() => setMode("single")}
-          >
-            Single
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              mode === "bulk" ? "btn-primary" : "btn-outline-primary"
-            }`}
-            onClick={() => setMode("bulk")}
-          >
-            Bulk
-          </button>
+    <div className="admin-page-container">
+      <div className="admin-form-card">
+        <div className="admin-form-header">
+          <h2>Add Gallery Image(s)</h2>
+          <div className="accent-line"></div>
+
+          <div className="options-group mt-4">
+            <label className="checkbox-label">
+              <input
+                type="radio"
+                name="mode"
+                checked={mode === "single"}
+                onChange={() => setMode("single")}
+              />
+              <span>Single Upload</span>
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="radio"
+                name="mode"
+                checked={mode === "bulk"}
+                onChange={() => setMode("bulk")}
+              />
+              <span>Bulk Upload</span>
+            </label>
+          </div>
         </div>
-      </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <div className="form-error-banner mb-4">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
-        {mode === "single" ? (
-          <>
-            <div className="mb-3">
-              <label className="form-label">Title</label>
-              <input
-                type="text"
-                className="form-control"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="admin-form-grid">
+          {mode === "single" ? (
+            <>
+              <div className="form-field full-width">
+                <label>Image Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  placeholder="Enter a descriptive title"
+                />
+              </div>
 
-            <div className="mb-3">
-              <label className="form-label">Image</label>
-              <input
-                type="file"
-                className="form-control"
-                onChange={onSingleFile}
-                accept="image/*"
-                required
-              />
-              {image && (
-                <div className="mt-2">
-                  <small className="text-muted">
-                    {image.name} — {(image.size / 1024).toFixed(0)} KB
-                  </small>
+              <div className="form-field full-width">
+                <label>Select Image</label>
+                <div className="image-upload-zone">
+                  <input
+                    type="file"
+                    onChange={onSingleFile}
+                    accept="image/*"
+                    required
+                  />
+                  {image && (
+                    <div className="mt-2 text-sm text-gray-400">
+                      {image.name} — {(image.size / 1024).toFixed(0)} KB
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="form-field full-width">
+                <label>Images (Multiple)</label>
+                <div className="image-upload-zone">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={onBulkFiles}
+                    accept="image/*"
+                  />
+                </div>
+              </div>
+
+              {validFiles.length > 0 && (
+                <div className="form-field full-width">
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Preview</th>
+                          <th>Title</th>
+                          <th>Size</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {validFiles.map((f, i) => (
+                          <tr key={i}>
+                            <td>
+                              <img
+                                src={URL.createObjectURL(f)}
+                                alt=""
+                                className="thumb-preview"
+                                onLoad={(e) =>
+                                  URL.revokeObjectURL(e.currentTarget.src)
+                                }
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                className="table-input"
+                                value={titles[i] ?? ""}
+                                onChange={(e) => updateTitleAt(i, e.target.value)}
+                                placeholder={stripExt(f.name)}
+                              />
+                            </td>
+                            <td>{(f.size / 1024).toFixed(0)} KB</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="mb-3">
-              <label className="form-label">Images (multiple)</label>
-              <input
-                type="file"
-                className="form-control"
-                multiple
-                onChange={onBulkFiles}
-                accept="image/*"
-              />
-            </div>
+            </>
+          )}
 
-            {validFiles.length > 0 && (
-              <div className="mb-4">
-                <div className="table-responsive">
-                  <table className="table table-sm align-middle">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Preview</th>
-                        <th>Filename</th>
-                        <th>Title</th>
-                        <th>Size</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {validFiles.map((f, i) => (
-                        <tr key={i}>
-                          <td>{i + 1}</td>
-                          <td>
-                            <img
-                              src={URL.createObjectURL(f)}
-                              alt=""
-                              style={{
-                                width: 80,
-                                height: 56,
-                                objectFit: "cover",
-                                borderRadius: 6,
-                              }}
-                              onLoad={(e) =>
-                                URL.revokeObjectURL(e.currentTarget.src)
-                              }
-                            />
-                          </td>
-                          <td>{f.name}</td>
-                          <td>
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              value={titles[i] ?? ""}
-                              onChange={(e) => updateTitleAt(i, e.target.value)}
-                              placeholder={stripExt(f.name)}
-                            />
-                          </td>
-                          <td>{(f.size / 1024).toFixed(0)} KB</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {submitting && (
-          <div className="mb-3">
-            <div className="progress">
-              <div
-                className="progress-bar"
-                role="progressbar"
-                style={{ width: `${progress}%` }}
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                {progress}%
+          {submitting && (
+            <div className="form-field full-width">
+              <div className="admin-progress-container">
+                <div
+                  className="admin-progress-bar"
+                  style={{ width: `${progress}%` }}
+                ></div>
+                <span className="progress-text">{progress}% Uploaded</span>
               </div>
             </div>
+          )}
+
+          <div className="form-actions">
+            <button className="submit-btn" disabled={submitting}>
+              {submitting
+                ? "Uploading..."
+                : mode === "single"
+                  ? "Upload Image"
+                  : "Upload All"}
+            </button>
+            <button
+              type="button"
+              className="back-btn"
+              onClick={() => navigate("/admin/gallery")}
+            >
+              Back to Gallery
+            </button>
           </div>
-        )}
-
-        <button className="btn btn-primary" disabled={submitting}>
-          {submitting
-            ? "Uploading..."
-            : mode === "single"
-            ? "Upload"
-            : "Upload All"}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

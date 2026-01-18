@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 
 const NAV = [
   { name: 'Admin', href: '/admin' },
-  {name: 'Notices', href: '/admin/notices' },
+  { name: 'Notices', href: '/admin/notices' },
   { name: 'Gallery', href: '/admin/gallery' },
   { name: 'Menu', href: '/admin/menu' },
   { name: 'Catering', href: '/admin/catering' },
@@ -18,7 +18,7 @@ const NAV = [
 
 export default function AdminHeader() {
   const navigate = useNavigate()
-  const signOut = () => { localStorage.removeItem('token'); navigate('/login', { replace:true }) }
+  const signOut = () => { localStorage.removeItem('token'); navigate('/login', { replace: true }) }
 
   const linkBase = 'admin-header__link'
   const activeClass = 'admin-header__link admin-header__link--active'
@@ -30,14 +30,14 @@ export default function AdminHeader() {
           <div className="admin-header__inner">
             <div className="admin-header__bar">
               {/* Mobile trigger */}
-              <div className="sm:hidden">
+              <div>
                 {/* remove .admin-header__nav completely */}
-{/* Mobile/desktop unified trigger */}
-<DisclosureButton className="admin-header__trigger group">
-  <span className="sr-only">=</span>
-  <Bars3Icon className="block h-10 w-10 group-data-open:hidden outline-none" />
-  <XMarkIcon className="hidden h-10 w-10 group-data-open:block" />
-</DisclosureButton>
+                {/* Mobile/desktop unified trigger */}
+                <DisclosureButton className="admin-header__trigger group">
+                  <span className="sr-only">=</span>
+                  <Bars3Icon className="block h-10 w-10 group-data-open:hidden outline-none" />
+                  <XMarkIcon className="hidden h-10 w-10 group-data-open:block" />
+                </DisclosureButton>
 
 
               </div>
@@ -68,7 +68,7 @@ export default function AdminHeader() {
           </div>
 
           {/* Mobile panel */}
-          <DisclosurePanel className="admin-header__panel sm:hidden">
+          <DisclosurePanel className="admin-header__panel">
             {NAV.map((item) => (
               <NavLink
                 key={item.href}

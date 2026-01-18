@@ -147,196 +147,189 @@ export default function MenuForm() {
   };
 
   const onSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
+    e.preventDefault();
+    setError("");
 
-  try {
-    let categoryId = category;
-    if (categoryId === CHICKEN_PLACEHOLDER) {
-      categoryId = await ensureChickenCategory();
+    try {
+      let categoryId = category;
+      if (categoryId === CHICKEN_PLACEHOLDER) {
+        categoryId = await ensureChickenCategory();
+      }
+
+      if (!categoryId) {
+        setError("Please choose a category.");
+        return;
+      }
+
+      const common = {
+        name,
+        slug: slugify(name),              // <-- add
+        category: categoryId,             // <-- must be _id if schema is ObjectId ref
+        price: Number(price || 0),
+        description,
+        isAvailable,
+        featured,
+        glutenFree,
+      };
+
+      let payload, headers;
+
+      if (image) {
+        // Need multipart only when a file is present
+        const fd = new FormData();
+        Object.entries(common).forEach(([k, v]) => fd.append(k, String(v)));
+        fd.append("image", image);        // pick one server key; avoid duplicating
+        payload = fd;
+        headers = { "Content-Type": "multipart/form-data" };
+      } else {
+        // Send JSON so express.json() can parse it
+        payload = common;
+        headers = { "Content-Type": "application/json" };
+      }
+
+      if (id) {
+        await axiosInstance.put(`/menu/${id}`, payload, { headers });
+      } else {
+        await axiosInstance.post(`/menu`, payload, { headers });
+      }
+
+      navigate("/admin/menu", { replace: true });
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Save failed";
+      setError(msg);
+      console.error("Menu submit error:", err?.response?.data || err);
     }
 
-    if (!categoryId) {
-      setError("Please choose a category.");
-      return;
-    }
-
-    const common = {
-      name,
-      slug: slugify(name),              // <-- add
-      category: categoryId,             // <-- must be _id if schema is ObjectId ref
-      price: Number(price || 0),
-      description,
-      isAvailable,
-      featured,
-      glutenFree,
-    };
-
-    let payload, headers;
-
-    if (image) {
-      // Need multipart only when a file is present
-      const fd = new FormData();
-      Object.entries(common).forEach(([k, v]) => fd.append(k, String(v)));
-      fd.append("image", image);        // pick one server key; avoid duplicating
-      payload = fd;
-      headers = { "Content-Type": "multipart/form-data" };
-    } else {
-      // Send JSON so express.json() can parse it
-      payload = common;
-      headers = { "Content-Type": "application/json" };
-    }
-
-    if (id) {
-      await axiosInstance.put(`/menu/${id}`, payload, { headers });
-    } else {
-      await axiosInstance.post(`/menu`, payload, { headers });
-    }
-
-    navigate("/admin/menu", { replace: true });
-  } catch (err) {
-    const msg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
-      err?.message ||
-      "Save failed";
-    setError(msg);
-    console.error("Menu submit error:", err?.response?.data || err);
-  }
-
-};
+  };
   return (
-    <div className="container py-5">
-      <div className="card shadow-lg border-0 rounded-4 mx-auto" style={{ maxWidth: 1000 }}>
-        <div className="card-body p-5">
-          <h2 className="mb-4 fw-bold text-center">{id ? "Edit Menu Item" : "Add Menu Item"}</h2>
-          {error && <div className="alert alert-danger">{error}</div>}
+    <div className="admin-page-container">
+      <div className="admin-form-card">
+        <div className="admin-form-header">
+          <h2>{id ? "Edit Menu Item" : "Add Menu Item"}</h2>
+          <div className="accent-line"></div>
+        </div>
 
-          <form onSubmit={onSubmit} className="row g-4">
-            <div className="col-12">
-              <label className="form-label fw-semibold">Name</label>
-              <input
-                className="form-control form-control-lg"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+        {error && <div className="form-error-banner mb-4">{error}</div>}
+
+        <form onSubmit={onSubmit} className="admin-form-grid">
+          <div className="form-field full-width">
+            <label>Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="e.g. Traditional Charcoal Chicken"
+            />
+          </div>
+
+          <div className="form-field half-width">
+            <label>Category</label>
+            <div className="select-wrap">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 required
-              />
+              >
+                <option value="">-- Select Category --</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}{c.isPlaceholder ? " (create)" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
 
-            <div className="col-md-6">
-  <label className="form-label fw-semibold">Category</label>
-  <select
-    className="form-control form-control-lg"
-    value={category}
-    onChange={(e) => setCategory(e.target.value)}
-    required
-  >
-    <option value="">-- Select Category --</option>
-    {categories.map((c) => (
-      <option key={c._id} value={c._id}>
-        {c.name}{c.isPlaceholder ? " (create)" : ""}
-      </option>
-    ))}
-  </select>
-</div>
+          <div className="form-field half-width">
+            <label>Price (AUD)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+            />
+          </div>
 
+          <div className="form-field full-width">
+            <label>Description</label>
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter item description..."
+            />
+          </div>
 
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Price</label>
-              <input
-                type="number"
-                step="0.01"
-                className="form-control form-control-lg"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="col-12">
-              <label className="form-label fw-semibold">Description</label>
-              <textarea
-                className="form-control"
-                rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-
-            <div className="col-12 d-flex align-items-end gap-4">
-              <div className="form-check">
+          <div className="form-field full-width">
+            <div className="options-group">
+              <label className="checkbox-label">
                 <input
-                  id="isAvailable"
-                  className="form-check-input"
                   type="checkbox"
                   checked={isAvailable}
                   onChange={(e) => setIsAvailable(e.target.checked)}
                 />
-                <label className="form-check-label" htmlFor="isAvailable">
-                  Available
-                </label>
-              </div>
-              <div className="form-check">
+                <span>Available for order</span>
+              </label>
+              <label className="checkbox-label">
                 <input
-                  id="featured"
-                  className="form-check-input"
                   type="checkbox"
                   checked={featured}
                   onChange={(e) => setFeatured(e.target.checked)}
                 />
-                <label className="form-check-label" htmlFor="featured">
-                  Featured
-                </label>
-              </div>
-              <div className="form-check">
+                <span>Featured Item</span>
+              </label>
+              <label className="checkbox-label">
                 <input
-                  id="glutenFree"
-                  className="form-check-input"
                   type="checkbox"
                   checked={glutenFree}
                   onChange={(e) => setGlutenFree(e.target.checked)}
                 />
-                <label className="form-check-label" htmlFor="glutenFree">
-                  Gluten-free (GF)
-                </label>
-              </div>
+                <span>Gluten-free (GF)</span>
+              </label>
             </div>
+          </div>
 
-            <div className="col-12">
-              <label className="form-label fw-semibold">Image</label>
-              <input type="file" className="form-control" accept="image/*" onChange={onFileChange} />
+          <div className="form-field full-width">
+            <label>Item Image</label>
+            <div className="image-upload-zone">
+              <input type="file" accept="image/*" onChange={onFileChange} />
               {preview && (
-                <div className="mt-3">
+                <div className="image-preview">
                   <img
                     src={preview}
                     alt="Preview"
-                    style={{ width: 160, height: 120, objectFit: "cover", borderRadius: 8 }}
                     onError={(e) => {
                       e.currentTarget.src =
                         "data:image/svg+xml;charset=UTF-8," +
                         encodeURIComponent(
-                          `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'><rect width='100%' height='100%' fill='#e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='#9ca3af'>no image</text></svg>`
+                          `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'><rect width='100%' height='100%' fill='#1a1a1a'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='#333'>no image</text></svg>`
                         );
                     }}
                   />
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="col-12 d-flex gap-3">
-              <button className="btn btn-primary btn-lg rounded-3 fw-bold" type="submit">
-                {id ? "Update Item" : "Create Item"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-lg rounded-3"
-                onClick={() => navigate(-1)}
-              >
-                Back
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="form-actions">
+            <button className="submit-btn" type="submit">
+              {id ? "Update Item" : "Create Item"}
+            </button>
+            <button
+              type="button"
+              className="back-btn"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

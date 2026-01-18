@@ -11,7 +11,7 @@ const normalizeMenuArray = (arr = []) =>
     const cat = m?.category;
     const categoryLabel = typeof cat === "object" && cat !== null
       ? (cat.name || cat.title || cat.label || cat.slug || "")
-      : (typeof cat === "string" ? cat : "");
+      : (typeof cat === "string" && !/^[0-9a-fA-F]{24}$/.test(cat) ? cat : ""); // Hide if it looks like an ObjectId
     const id = m?._id || m?.id || m?.value || m?.menuItem || m?.item || idx;
     return {
       _id: String(id),
@@ -155,160 +155,138 @@ export default function BannerForm() {
   return (
     <DashboardLayout
       title={isEdit ? "Edit Hero Banner" : "New Hero Banner"}
-      actions={<Link to="/admin/banners" className="od-btn">Back</Link>}
     >
-      <form className="banner-form" onSubmit={onSubmit}>
-        <div className="banner-form__head">
-          <div>
-            <p className="catering-kicker">Hero banner</p>
-            <div className="banner-form__title-row">
-              <h1>{isEdit ? "Edit Hero Banner" : "New Hero Banner"}</h1>
-              <span className={`catering-pill ${form.isActive ? "pill--green" : "pill--gray"}`}>
-                {form.isActive ? "Active" : "Hidden"}
-              </span>
-            </div>
-            <div className="catering-pill-row">
-              <span className="catering-pill pill--outline">{form.items.length} item{form.items.length === 1 ? "" : "s"} attached</span>
-              <span className="catering-pill pill--outline">Primary: {form.primaryItem ? "set" : "not set"}</span>
-            </div>
-          </div>
-          <div className="catering-form__head-actions">
-            <Link to="/admin/banners" className="catering-ghost-btn">Back</Link>
-          </div>
-        </div>
+      <div className="admin-form-container">
+        {error && <div className="alert alert-danger mb-4">{error}</div>}
 
-        {error && (
-          <div className="catering-alert catering-alert--error">{error}</div>
-        )}
+        <form onSubmit={onSubmit} className="admin-form grid-2">
+          <div className="form-field">
+            <label className="form-label">Display Order</label>
+            <input
+              className="form-control"
+              type="number"
+              placeholder="0"
+              value={form.order}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, order: Number(e.target.value) }))
+              }
+            />
+            <p className="form-help">Lower numbers appear first.</p>
+          </div>
 
-        <div className="banner-form__grid">
-          <section className="banner-card">
-            <div className="catering-section__title">Display settings</div>
-            <div className="banner-field-grid">
-              <div className="catering-field">
-                <label>Order</label>
+          <div className="form-field">
+            <label className="form-label">Banner Status</label>
+            <div className="pt-2">
+              <label className="switch">
                 <input
-                  type="number"
-                  className="od-input"
-                  value={form.order}
+                  type="checkbox"
+                  checked={form.isActive}
                   onChange={(e) =>
-                    setForm((s) => ({ ...s, order: Number(e.target.value) }))
+                    setForm((s) => ({ ...s, isActive: e.target.checked }))
                   }
                 />
-              </div>
-              <div className="catering-field catering-toggle">
-                <label htmlFor="isActive">Status</label>
-                <div className="toggle-row">
-                  <input
-                    id="isActive"
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, isActive: e.target.checked }))
-                    }
-                  />
-                  <span>{form.isActive ? "Visible" : "Hidden"}</span>
-                </div>
-              </div>
+                <span className="track">
+                  <span className="thumb"></span>
+                </span>
+                <span className="label">Visible on homepage</span>
+              </label>
             </div>
-          </section>
+          </div>
 
-          <section className="banner-card">
-            <div className="catering-section__title">Attached item</div>
-            <p className="catering-helper">Only one menu item can be linked to a banner. Re-select to replace.</p>
-            <div className="catering-pill-row">
-              <span className="catering-pill pill--outline">
-                {form.primaryItem ? "Item selected" : "No item chosen"}
-              </span>
-            </div>
-          </section>
-        </div>
-
-        <section className="banner-card">
-          <div className="banner-card__title-row">
-            <div>
-              <p className="catering-kicker">Attach menu items</p>
-              <h4 className="banner-card__title">Search and add</h4>
-            </div>
-            <div className="menuitem-picker__input banner-search">
+          <div className="form-field span-2">
+            <h4 className="mt-4 mb-3 text-yellow-400 font-bold uppercase text-xs tracking-widest">
+              1. Search & Select Menu Item
+            </h4>
+            <div className="mb-4">
               <input
-                className="banner-search-input"
-                placeholder="Search menu items..."
+                className="form-control"
+                placeholder="Search by menu item name..."
                 value={menuQuery}
                 onChange={(e) => setMenuQuery(e.target.value)}
               />
             </div>
+
+            <div className="banner-results-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {loadingMenu ? (
+                <div className="p-8 text-center text-gray-500">Loading menu...</div>
+              ) : menuResults.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 border border-dashed border-gray-800 rounded-xl">No matching items.</div>
+              ) : (
+                <div className="banner-results__grid">
+                  {menuResults.map((mi) => (
+                    <div
+                      key={mi._id}
+                      className={`banner-result-card ${form.primaryItem === mi._id ? 'active' : ''}`}
+                      onClick={() => addItem(mi)}
+                    >
+                      <div className="banner-result__img">
+                        <img src={resolveImage(mi.image)} alt={mi.name} />
+                      </div>
+                      <div className="banner-result__body">
+                        <div className="banner-result__name">{mi.name}</div>
+                        <div className="banner-result__sub">{mi.category}</div>
+                        <div className="banner-result__cta">
+                          {form.primaryItem === mi._id ? "✓ SELECTED" : "+ ADD TO BANNER"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="banner-results">
-            {loadingMenu ? (
-              <div className="menuitem-picker__state">Loading menu items...</div>
-            ) : menuResults.length === 0 ? (
-              <div className="menuitem-picker__state">No items found.</div>
+          <div className="form-field span-2">
+            <h4 className="mt-6 mb-3 text-yellow-400 font-bold uppercase text-xs tracking-widest">
+              2. Banner Preview
+            </h4>
+            {form.items.length === 0 ? (
+              <div className="border border-dashed border-gray-800 rounded-xl p-12 text-center text-gray-600">
+                <p>No item selected yet. Use the search above.</p>
+              </div>
             ) : (
-              <div className="banner-results__grid">
-                {menuResults.map((mi) => (
-                  <button
-                    key={mi._id}
-                    type="button"
-                    className="banner-result-card"
-                    onClick={() => addItem(mi)}
-                    title="Add"
-                    disabled={form.primaryItem === mi._id}
-                  >
-                    <div className="banner-result__img">
+              <div className="banner-selected">
+                {form.items.map((mi) => (
+                  <div key={mi._id} className="banner-selected__row">
+                    <div className="banner-selected__thumb">
                       <img src={resolveImage(mi.image)} alt={mi.name} />
                     </div>
-                    <div className="banner-result__body">
-                      <div className="banner-result__name">{mi.name}</div>
-                      {mi.category && <div className="banner-result__sub">{mi.category}</div>}
-                      <span className="banner-result__cta">{form.primaryItem === mi._id ? "Selected" : "Add"}</span>
+                    <div className="banner-selected__meta">
+                      <div className="banner-selected__name">{mi.name}</div>
+                      <div className="banner-selected__sub">{mi.category}</div>
                     </div>
-                  </button>
+                    <div className="banner-selected__primary">
+                      <span className="text-yellow-400 text-xs font-bold uppercase">Main Display Item</span>
+                    </div>
+                    <div className="banner-selected__actions">
+                      <button
+                        type="button"
+                        className="od-btn od-btn--danger"
+                        onClick={() => removeItem(mi._id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
-        </section>
 
-        <section className="banner-card">
-          <div className="banner-card__title-row">
-            <div>
-              <p className="catering-kicker">Attached item</p>
-              <h4 className="banner-card__title">Preview & replace</h4>
-              <p className="catering-helper">Click "Add" on another result to replace the attached item.</p>
-            </div>
+          <div className="form-actions span-2 mt-8 flex gap-3">
+            <button className="od-btn" type="submit" disabled={saving}>
+              {saving ? "Saving…" : isEdit ? "Update Banner" : "Create Banner"}
+            </button>
+            <button
+              type="button"
+              className="od-btn od-btn--secondary"
+              onClick={() => navigate("/admin/banners")}
+            >
+              Cancel
+            </button>
           </div>
-
-          {form.items.length === 0 ? (
-            <div className="catering-empty">No item selected yet.</div>
-          ) : (
-            <div className="banner-selected">
-              {form.items.map((mi) => (
-                <div key={mi._id} className="banner-selected__row">
-                  <div className="banner-selected__thumb">
-                    <img src={resolveImage(mi.image)} alt={mi.name} />
-                  </div>
-                  <div className="banner-selected__meta">
-                    <div className="banner-selected__name">{mi.name}</div>
-                    {mi.category && <div className="banner-selected__sub">{mi.category}</div>}
-                  </div>
-                  <div className="banner-selected__actions">
-                    <button type="button" className="catering-primary-btn" onClick={() => removeItem(mi._id)}>Remove</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <div className="catering-form__footer">
-          <Link className="catering-ghost-btn" to="/admin/banners">Cancel</Link>
-          <button className="catering-primary-btn" type="submit" disabled={saving}>
-            {saving ? "Saving…" : isEdit ? "Update Banner" : "Create Banner"}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </DashboardLayout>
   );
 }

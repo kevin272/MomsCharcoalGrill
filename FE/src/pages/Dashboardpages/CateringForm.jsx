@@ -110,9 +110,9 @@ export default function CateringForm({
     setIsActive(Boolean(initial.isActive));
     const fallbackIds = Array.isArray(initial.itemConfigurations)
       ? initial.itemConfigurations
-          .map((cfg) => cfg?.menuItem?._id || cfg?.menuItem || cfg?._id || cfg?.id)
-          .filter(Boolean)
-          .map(String)
+        .map((cfg) => cfg?.menuItem?._id || cfg?.menuItem || cfg?._id || cfg?.id)
+        .filter(Boolean)
+        .map(String)
       : [];
     setSelectedItemIds(
       Array.isArray(initial.items) && initial.items.length
@@ -251,10 +251,10 @@ export default function CateringForm({
       fd.append("itemConfigurations", JSON.stringify(itemConfigurations));
       const safeRules = selectionRules.enabled
         ? {
-            enabled: true,
-            type: selectionRules.type || "classic",
-            categoryLimits: selectionRules.categoryLimits,
-          }
+          enabled: true,
+          type: selectionRules.type || "classic",
+          categoryLimits: selectionRules.categoryLimits,
+        }
         : { enabled: false, type: selectionRules.type || "classic", categoryLimits: {} };
       fd.append("selectionRules", JSON.stringify(safeRules));
       if (imageFile) fd.append("image", imageFile);
@@ -296,159 +296,122 @@ export default function CateringForm({
 
   return (
     <Modal open={open} onClose={onClose}>
-      <form className="catering-form p-4 md:p-5 catering-form--revamp" onSubmit={handleSubmit}>
-        <div className="catering-form__head">
-          <div>
-            <p className="catering-kicker">Catering option</p>
-            <div className="catering-form__title-row">
-              <h2 className="catering-form__title">
-                {initial ? "Edit Catering Option" : "New Catering Option"}
-              </h2>
-              <span className={`catering-pill ${isActive ? "pill--green" : "pill--gray"}`}>
-                {activeBadge}
-              </span>
-            </div>
-            <div className="catering-pill-row">
-              <span className="catering-pill pill--outline">{priceHint}</span>
-              <span className="catering-pill pill--outline">{priceType === "per_person" ? "Per person" : "Per tray"}</span>
-              <span className="catering-pill pill--outline">{minLabel}</span>
-            </div>
-          </div>
-          <div className="catering-form__head-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="catering-ghost-btn"
-            >
-              Close
-            </button>
+      <div className="admin-form-header px-6 pt-6">
+        <h2>{initial ? "Edit Catering Option" : "New Catering Option"}</h2>
+        <div className="accent-line"></div>
+      </div>
+
+      {err && <div className="form-error-banner mx-6 mb-4">{err}</div>}
+
+      <form className="admin-form-grid p-6 pt-0" onSubmit={handleSubmit}>
+        <div className="form-field full-width">
+          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Basics</h4>
+        </div>
+
+        <div className="form-field half-width">
+          <label>Title *</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., BBQ Feast"
+            required
+          />
+        </div>
+
+        <div className="form-field half-width">
+          <label>Slug *</label>
+          <input
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="bbq-feast"
+            required
+          />
+        </div>
+
+        <div className="form-field half-width">
+          <label>Display Order</label>
+          <input
+            type="number"
+            value={order}
+            onChange={(e) => setOrder(e.target.value)}
+            min="0"
+          />
+        </div>
+
+        <div className="form-field half-width">
+          <label>Status</label>
+          <div className="options-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+              />
+              <span>{isActive ? "Visible on site" : "Hidden"}</span>
+            </label>
           </div>
         </div>
 
-        {err && (
-          <div className="catering-alert catering-alert--error">
-            {err}
+        <div className="form-field full-width">
+          <label>Cover Image</label>
+          <div className="image-upload-zone">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                setImageFile(f);
+                if (f) setPreview(URL.createObjectURL(f));
+              }}
+            />
+            {preview && (
+              <div className="image-preview">
+                <img src={preview} alt="preview" />
+              </div>
+            )}
           </div>
-        )}
-
-        <div className="catering-form__section-grid">
-          <section className="catering-form__section">
-            <div className="catering-section__title">Basics</div>
-            <div className="catering-field-grid">
-              <div className="catering-field">
-                <label>Title</label>
-                <input
-                  className="od-input"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., BBQ Feast"
-                  required
-                />
-              </div>
-              <div className="catering-field">
-                <label>Slug</label>
-                <input
-                  className="od-input"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="bbq-feast"
-                  required
-                />
-              </div>
-              <div className="catering-field">
-                <label>Display Order</label>
-                <input
-                  type="number"
-                  className="od-input"
-                  value={order}
-                  onChange={(e) => setOrder(e.target.value)}
-                  min="0"
-                />
-              </div>
-              <div className="catering-field catering-toggle">
-                <label htmlFor="isActive">Status</label>
-                <div className="toggle-row">
-                  <input
-                    id="isActive"
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                  />
-                  <span>{isActive ? "Visible on site" : "Hidden"}</span>
-                </div>
-              </div>
-              <div className="catering-field catering-upload">
-                <label>Cover Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="od-input"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] || null;
-                    setImageFile(f);
-                    if (f) setPreview(URL.createObjectURL(f));
-                  }}
-                />
-                {preview ? (
-                  <div className="catering-upload__preview">
-                    <img
-                      src={preview}
-                      alt="preview"
-                      onError={(e) => (e.currentTarget.style.opacity = 0.4)}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </section>
-
-          <section className="catering-form__section">
-            <div className="catering-section__title">Pricing & People</div>
-            <div className="catering-field-grid">
-              <div className="catering-field">
-                <label>Price</label>
-                <input
-                  type="number"
-                  className="od-input"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="160"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div className="catering-field">
-                <label>Price Type</label>
-                <select
-                  className="od-select"
-                  value={priceType}
-                  onChange={(e) => setPriceType(e.target.value)}
-                >
-                  <option value="per_tray">Per Tray</option>
-                  <option value="per_person">Per Person</option>
-                </select>
-              </div>
-              <div className="catering-field">
-                <label>Minimum People</label>
-                <input
-                  type="number"
-                  className="od-input"
-                  value={minPeople}
-                  onChange={(e) => setMinPeople(e.target.value)}
-                  placeholder="20"
-                  min="0"
-                />
-              </div>
-              <div className="catering-note">
-                <p>Customers will see this pricing and minimum on the package page.</p>
-              </div>
-            </div>
-          </section>
         </div>
 
-        <section className="catering-form__section">
-          <div className="catering-section__title">Menu items & extras</div>
+        <div className="form-field full-width mt-4">
+          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Pricing & Minimums</h4>
+        </div>
+
+        <div className="form-field half-width">
+          <label>Price</label>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="160"
+            min="0"
+            step="0.01"
+          />
+        </div>
+
+        <div className="form-field half-width">
+          <label>Price Type</label>
+          <select
+            value={priceType}
+            onChange={(e) => setPriceType(e.target.value)}
+          >
+            <option value="per_tray">Per Tray</option>
+            <option value="per_person">Per Person</option>
+          </select>
+        </div>
+
+        <div className="form-field half-width">
+          <label>Minimum People</label>
+          <input
+            type="number"
+            value={minPeople}
+            onChange={(e) => setMinPeople(e.target.value)}
+            placeholder="20"
+            min="0"
+          />
+        </div>
+
+        <div className="form-field full-width mt-6 border-t border-gray-900 pt-6">
+          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Menu Selection</h4>
           <MenuItemPicker
             value={selectedItemIds}
             onChange={setSelectedItemIds}
@@ -456,144 +419,115 @@ export default function CateringForm({
             pricingMode={itemPricing}
             onPricingModeChange={setItemPricing}
           />
+        </div>
 
-          <div className="catering-extras">
-            <div className="catering-extras__header">
-              <div>
-                <p className="catering-kicker">Extras</p>
-                <h4>Offer add-ons per item (comma separated)</h4>
-                <p className="catering-helper">Shown to customers when ordering this catering option.</p>
-              </div>
-              <span className="catering-pill pill--outline">
-                {selectedItemIds.length} item{selectedItemIds.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            {selectedItemIds.length === 0 && (
-              <p className="catering-empty">Select menu items first.</p>
-            )}
-            <div className="catering-extras__grid">
+        {selectedItemIds.length > 0 && (
+          <div className="form-field full-width mt-6 bg-gray-950 p-6 border border-gray-900">
+            <h4 className="text-white font-bold uppercase text-xs tracking-widest mb-4">Item Add-ons (Extras)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {selectedItemIds.map((id) => {
                 const item = itemsLookup[id];
                 const label = item?.name || item?.title || `Item ${id}`;
                 return (
-                  <div key={id} className="catering-extras__card">
-                    <div className="catering-extras__title">{label}</div>
+                  <div key={id} className="form-field">
+                    <label className="text-xs text-gray-500">{label}</label>
                     <input
                       type="text"
-                      className="catering-extras__input"
-                      placeholder="Example: with gravy, extra spicy"
+                      className="text-sm"
+                      placeholder="e.g. extra gravy, spicy"
                       value={itemExtras[id] || ""}
                       onChange={(e) =>
                         setItemExtras((prev) => ({ ...prev, [id]: e.target.value }))
                       }
                     />
-                    <p className="catering-helper">Separate with a comma. Leave blank if none.</p>
                   </div>
                 );
               })}
             </div>
           </div>
-        </section>
+        )}
 
-        <section className="catering-form__section">
-          <div className="catering-section__title">Ordering mode & rules</div>
-          <div className="catering-rules">
-            <div className="catering-rules__toggle">
-              <div className="toggle-row">
-                <input
-                  id="selectionRules"
-                  type="checkbox"
-                  checked={selectionRules.enabled}
-                  onChange={(e) =>
-                    setSelectionRules((prev) => {
-                      const nextLimits = e.target.checked
-                        ? { ...getPresetDefaults(prev.type || "classic"), ...(prev.categoryLimits || {}) }
-                        : {};
-                      return { ...prev, enabled: e.target.checked, categoryLimits: nextLimits };
-                    })
-                  }
-                />
-                <label htmlFor="selectionRules">Apply general catering limits (per-person bundle)</label>
-              </div>
-              <p className="catering-helper">
-                On: customers pick by category with per-person pricing. Off: items are sold individually and use their own prices (ignores per-tray pricing).
-              </p>
-            </div>
-
-            {selectionRules.enabled && (
-              <>
-                <div className="catering-rules__presets">
-                  {Object.values(GENERAL_PROFILES).map((preset) => {
-                    const isPresetActive = (selectionRules.type || "classic") === preset.key;
-                    return (
-                      <label
-                        key={preset.key}
-                        className={`catering-pill pill--outline preset-pill ${isPresetActive ? "preset-pill--active" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name="generalType"
-                          value={preset.key}
-                          checked={isPresetActive}
-                          onChange={(e) => {
-                            const nextType = e.target.value;
-                            setSelectionRules((prev) => {
-                              const defaults = getPresetDefaults(nextType);
-                              const nextLimits = { ...defaults };
-                              Object.entries(prev.categoryLimits || {}).forEach(([key, val]) => {
-                                if (defaults[key] !== undefined) nextLimits[key] = val;
-                              });
-                              return { ...prev, type: nextType, categoryLimits: nextLimits };
-                            });
-                          }}
-                        />
-                        <span>{preset.label}</span>
-                        {isPresetActive && <span className="preset-pill__tag">Selected</span>}
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div className="catering-rules__grid">
-                  {limitKeys.map((key) => {
-                    const defaultVal = activePreset.defaults?.[key] ?? 0;
-                    return (
-                      <div key={key} className="catering-field">
-                        <label className="capitalize">{key}</label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="od-input"
-                          value={selectionRules.categoryLimits?.[key] ?? defaultVal}
-                          onChange={(e) => updateLimit(key, e.target.value)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="catering-helper">
-                  Preset summary: {presetSummary}
-                </div>
-              </>
-            )}
+        <div className="form-field full-width mt-6 border-t border-gray-900 pt-6">
+          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Order Rules</h4>
+          <div className="options-group mb-4">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={selectionRules.enabled}
+                onChange={(e) =>
+                  setSelectionRules((prev) => {
+                    const nextLimits = e.target.checked
+                      ? { ...getPresetDefaults(prev.type || "classic"), ...(prev.categoryLimits || {}) }
+                      : {};
+                    return { ...prev, enabled: e.target.checked, categoryLimits: nextLimits };
+                  })
+                }
+              />
+              <span>Use per-person bundle limits</span>
+            </label>
           </div>
-        </section>
 
-        <div className="catering-form__footer">
-          <button
-            type="button"
-            onClick={onClose}
-            className="catering-ghost-btn"
-          >
-            Cancel
+          {selectionRules.enabled && (
+            <div className="bg-gray-950 p-6 border border-gray-900">
+              <div className="flex flex-wrap gap-2 mb-6">
+                {Object.values(GENERAL_PROFILES).map((preset) => {
+                  const isActive = (selectionRules.type || "classic") === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all ${isActive
+                        ? 'border-yellow-400 bg-yellow-400 text-black'
+                        : 'border-gray-800 text-gray-400 hover:border-gray-600'
+                        }`}
+                      onClick={() => {
+                        const nextType = preset.key;
+                        setSelectionRules((prev) => {
+                          const defaults = getPresetDefaults(nextType);
+                          const nextLimits = { ...defaults };
+                          Object.entries(prev.categoryLimits || {}).forEach(([key, val]) => {
+                            if (defaults[key] !== undefined) nextLimits[key] = val;
+                          });
+                          return { ...prev, type: nextType, categoryLimits: nextLimits };
+                        });
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {limitKeys.map((key) => {
+                  const defaultVal = activePreset.defaults?.[key] ?? 0;
+                  return (
+                    <div key={key} className="form-field">
+                      <label className="capitalize">{key}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={selectionRules.categoryLimits?.[key] ?? defaultVal}
+                        onChange={(e) => updateLimit(key, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="form-field full-width flex gap-4 mt-8 pb-8">
+          <button className="submit-btn" type="submit" disabled={saving}>
+            {saving ? "Saving..." : (initial ? "Update Package" : "Create Package")}
           </button>
           <button
-            type="submit"
-            disabled={saving}
-            className="catering-primary-btn"
+            type="button"
+            className="back-btn"
+            onClick={onClose}
           >
-            {saving ? "Saving..." : (initial ? "Update" : "Create")}
+            Cancel
           </button>
         </div>
       </form>

@@ -43,52 +43,39 @@ export default function PromoSettings() {
   };
 
   return (
-    <DashboardLayout title="Promo Banner">
-      <form className="banner-form" onSubmit={onSubmit}>
-        <div className="banner-form__head">
-          <div>
-            <p className="catering-kicker">Homepage</p>
-            <div className="banner-form__title-row">
-              <h1>Promo banner text</h1>
-            </div>
-            <p className="catering-helper">
-              This line appears on the hero banner and promo strip.
-            </p>
-          </div>
+    <div className="admin-page-container">
+      <div className="admin-form-card">
+        <div className="admin-form-header">
+          <h2>Hero Promo Bar</h2>
+          <div className="accent-line"></div>
         </div>
 
-        {loading && (
-          <div className="catering-note">Loading current promo text...</div>
-        )}
-        {status && (
-          <div className="catering-note">{status}</div>
-        )}
-        {error && (
-          <div className="catering-alert catering-alert--error">{error}</div>
-        )}
+        {loading && <div className="p-4 text-center text-gray-500">Loading current promo...</div>}
+        {status && <div className="form-success-banner mb-4">{status}</div>}
+        {error && <div className="form-error-banner mb-4">{error}</div>}
 
-        <section className="banner-card">
-          <div className="catering-section__title">Text</div>
-          <div className="catering-field">
-            <label htmlFor="promoText">Promo line</label>
+        <form onSubmit={onSubmit} className="admin-form-grid">
+          <div className="form-field full-width">
+            <label htmlFor="promoText">Promotional Text</label>
             <input
               id="promoText"
-              className="od-input"
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={DEFAULT_PROMO_BANNER_TEXT}
               disabled={loading || saving}
             />
+            <p className="mt-2 text-xs text-gray-500">
+              This text appears prominently on the homepage hero section. Leave blank to hide.
+            </p>
           </div>
-          <p className="catering-helper">Leave blank to hide the promo message.</p>
-        </section>
 
-        <div className="catering-form__footer">
-          <button className="catering-primary-btn" type="submit" disabled={saving || loading}>
-            {saving ? "Saving..." : "Save changes"}
-          </button>
-        </div>
-      </form>
-    </DashboardLayout>
+          <div className="form-actions mt-4">
+            <button className="submit-btn" type="submit" disabled={saving || loading}>
+              {saving ? "Saving..." : "Save Promo Text"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

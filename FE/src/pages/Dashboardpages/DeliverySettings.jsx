@@ -50,56 +50,42 @@ export default function DeliverySettings() {
   };
 
   return (
-    <DashboardLayout title="Delivery Fee">
-      <form className="banner-form" onSubmit={onSubmit}>
-        <div className="banner-form__head">
-          <div>
-            <p className="catering-kicker">Checkout</p>
-            <div className="banner-form__title-row">
-              <h1>Delivery fee</h1>
-            </div>
-            <p className="catering-helper">
-              Set the delivery charge applied to online orders. Pickup stays free.
-            </p>
-          </div>
+    <div className="admin-page-container">
+      <div className="admin-form-card">
+        <div className="admin-form-header">
+          <h2>Delivery Settings</h2>
+          <div className="accent-line"></div>
         </div>
 
-        {loading && (
-          <div className="catering-note">Loading current delivery fee...</div>
-        )}
-        {status && (
-          <div className="catering-note">{status}</div>
-        )}
-        {error && (
-          <div className="catering-alert catering-alert--error">{error}</div>
-        )}
+        {loading && <div className="p-4 text-center text-gray-500">Loading settings...</div>}
+        {status && <div className="form-success-banner mb-4">{status}</div>}
+        {error && <div className="form-error-banner mb-4">{error}</div>}
 
-        <section className="banner-card">
-          <div className="catering-section__title">Pricing</div>
-          <div className="catering-field">
-            <label htmlFor="deliveryFee">Delivery fee (AUD)</label>
+        <form onSubmit={onSubmit} className="admin-form-grid">
+          <div className="form-field full-width">
+            <label htmlFor="deliveryFee">Standard Delivery Fee (AUD)</label>
             <input
               id="deliveryFee"
               type="number"
               min="0"
               step="0.01"
-              className="od-input"
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={loading || saving}
+              placeholder="e.g. 5.00"
             />
+            <p className="mt-2 text-xs text-gray-500">
+              This fee is applied to all delivery orders. In-store pickup remains free.
+            </p>
           </div>
-          <p className="catering-helper">
-            Customers see this fee in the cart unless they choose pickup.
-          </p>
-        </section>
 
-        <div className="catering-form__footer">
-          <button className="catering-primary-btn" type="submit" disabled={saving || loading}>
-            {saving ? "Saving..." : "Save changes"}
-          </button>
-        </div>
-      </form>
-    </DashboardLayout>
+          <div className="form-actions mt-4">
+            <button className="submit-btn" type="submit" disabled={saving || loading}>
+              {saving ? "Saving..." : "Save Delivery Fee"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

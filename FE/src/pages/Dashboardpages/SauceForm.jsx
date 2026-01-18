@@ -80,47 +80,103 @@ export default function SauceForm() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 720 , marginTop: '20px' }}>
-      <h2 className="mb-3">{isEdit ? 'Edit Sauce' : 'Add Sauce'}</h2>
-      {err && <p style={{ color: 'tomato' }}>{err}</p>}
-      <form onSubmit={onSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Name *</label>
-          <input className="form-control" name="name" value={form.name} onChange={onChange} required />
+    <div className="admin-page-container">
+      <div className="admin-form-card">
+        <div className="admin-form-header">
+          <h2>{isEdit ? 'Edit Sauce' : 'Add Sauce'}</h2>
+          <div className="accent-line"></div>
         </div>
 
-        <div className="mb-3">
-          <label className="form-label">Price (NPR/USD) *</label>
-          <input className="form-control" name="price" type="number" min="0" step="0.01" value={form.price} onChange={onChange} required />
-        </div>
+        {err && <div className="form-error-banner mb-4">{err}</div>}
 
-        <div className="mb-3">
-          <label className="form-label">Description</label>
-          <textarea className="form-control" rows={3} name="description" value={form.description} onChange={onChange} />
-        </div>
+        <form onSubmit={onSubmit} className="admin-form-grid">
+          <div className="form-field full-width">
+            <label>Name *</label>
+            <input
+              name="name"
+              value={form.name}
+              onChange={onChange}
+              required
+              placeholder="e.g. Garlic Aioli"
+            />
+          </div>
 
-        <div className="mb-3">
-          <label className="form-label">Image (upload)</label>
-          <input className="form-control" type="file" accept="image/*" onChange={onFile} />
-          {preview ? (
-            <div style={{ marginTop: 8 }}>
-              <img src={preview} alt="preview" style={{ maxWidth: 240, borderRadius: 8 }} />
+          <div className="form-field half-width">
+            <label>Price (AUD) *</label>
+            <input
+              name="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={onChange}
+              required
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="form-field half-width">
+            <label>Display Order</label>
+            <input
+              name="order"
+              type="number"
+              value={form.order}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="form-field full-width">
+            <label>Description</label>
+            <textarea
+              rows={3}
+              name="description"
+              value={form.description}
+              onChange={onChange}
+              placeholder="Briefly describe the sauce..."
+            />
+          </div>
+
+          <div className="form-field full-width">
+            <label>Product Image</label>
+            <div className="image-upload-zone">
+              <input type="file" accept="image/*" onChange={onFile} />
+              {preview && (
+                <div className="image-preview">
+                  <img src={preview} alt="preview" />
+                </div>
+              )}
             </div>
-          ) : null}
-        </div>
+          </div>
 
-        <div className="mb-3 form-check">
-          <input className="form-check-input" type="checkbox" id="isAvailable" name="isAvailable" checked={form.isAvailable} onChange={onChange} />
-          <label className="form-check-label" htmlFor="isAvailable">Available</label>
-        </div>
+          <div className="form-field full-width">
+            <div className="options-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  id="isAvailable"
+                  name="isAvailable"
+                  checked={form.isAvailable}
+                  onChange={onChange}
+                />
+                <span>Available for order</span>
+              </label>
+            </div>
+          </div>
 
-        <div className="mb-3">
-          <label className="form-label">Order (sort)</label>
-          <input className="form-control" name="order" type="number" value={form.order} onChange={onChange} />
-        </div>
-
-        <button className="btn btn-primary" disabled={loading}>{loading ? 'Saving…' : 'Save'}</button>
-      </form>
+          <div className="form-actions">
+            <button className="submit-btn" disabled={loading}>
+              {loading ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              className="back-btn"
+              onClick={() => navigate('/admin/sauces')}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
