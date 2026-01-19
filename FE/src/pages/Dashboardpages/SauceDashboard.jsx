@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/Dashboard/DashboardLayout'
 import DashboardTable from '../../components/Dashboard/DashboardTable'
+import axiosInstance from '../../config/axios.config'
 
 export default function SauceDashboard() {
   const navigate = useNavigate()
@@ -10,28 +11,25 @@ export default function SauceDashboard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Base API URL
-  const API_BASE =
-    (import.meta.env?.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/?$/, '/')
-      : 'http://localhost:5000/api/')
+  // Base API URL for image display
+  const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+  const SERVER_URL = API_URL.replace(/\/api$/, "");
 
   // ---------- Fetch ----------
   const fetchSauces = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${API_BASE}sauces`, { credentials: 'include' })
-      const body = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`)
+      const res = await axiosInstance.get('/sauces')
+      const body = res.data || res // axiosInstance might unwrap or not depending on interceptor
 
       const raw = Array.isArray(body)
         ? body
         : Array.isArray(body?.data)
-        ? body.data
-        : Array.isArray(body?.sauces)
-        ? body.sauces
-        : []
+          ? body.data
+          : Array.isArray(body?.sauces)
+            ? body.sauces
+            : []
 
       setSauces(
         raw.map((m) => ({
@@ -44,7 +42,7 @@ export default function SauceDashboard() {
         }))
       )
     } catch (err) {
-      setError(err.message || 'Could not load sauces.')
+      setError(err.response?.data?.message || err.message || 'Could not load sauces.')
     } finally {
       setLoading(false)
     }
@@ -59,15 +57,10 @@ export default function SauceDashboard() {
   const confirmDelete = async (id) => {
     if (!window.confirm('Delete this sauce?')) return
     try {
-      const res = await fetch(`${API_BASE}sauces/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      const body = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`)
+      await axiosInstance.delete(`/sauces/${id}`)
       setSauces((prev) => prev.filter((x) => x.id !== id))
     } catch (err) {
-      alert(err.message || 'Delete failed')
+      alert(err.response?.data?.message || err.message || 'Delete failed')
     }
   }
 
@@ -76,17 +69,10 @@ export default function SauceDashboard() {
     setSauces((prev) => prev.map((x) => (x.id === row.id ? { ...x, isAvailable: next } : x)))
     try {
       const payload = { ...row, isAvailable: next }
-      const res = await fetch(`${API_BASE}sauces/${row.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      })
-      const body = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`)
+      await axiosInstance.put(`/sauces/${row.id}`, payload)
     } catch (err) {
       setSauces((prev) => prev.map((x) => (x.id === row.id ? { ...x, isAvailable: !next } : x)))
-      alert(err.message || 'Update failed')
+      alert(err.response?.data?.message || err.message || 'Update failed')
     }
   }
 
@@ -118,7 +104,7 @@ export default function SauceDashboard() {
                   src={
                     row.image.startsWith('http')
                       ? row.image
-                      : `${API_BASE.replace('/api/', '/')}${row.image.replace(/^\/+/, '')}`
+                      : `${SERVER_URL}/${row.image.replace(/^\/+/, '')}`
                   }
                   alt={row.name}
                 />
@@ -165,7 +151,7 @@ export default function SauceDashboard() {
           </td>
         </tr>
       )),
-    [sauces, navigate]
+    [sauces, navigate, SERVER_URL]
   )
 
   return (

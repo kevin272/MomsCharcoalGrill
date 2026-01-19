@@ -296,17 +296,15 @@ export default function CateringForm({
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div className="admin-form-header px-6 pt-6">
+      <div className="admin-form-header">
         <h2>{initial ? "Edit Catering Option" : "New Catering Option"}</h2>
         <div className="accent-line"></div>
       </div>
 
-      {err && <div className="form-error-banner mx-6 mb-4">{err}</div>}
+      {err && <div className="form-error-banner mb-4">{err}</div>}
 
-      <form className="admin-form-grid p-6 pt-0" onSubmit={handleSubmit}>
-        <div className="form-field full-width">
-          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Basics</h4>
-        </div>
+      <form className="admin-form-grid" onSubmit={handleSubmit}>
+        <div className="admin-form-section-title">Basics</div>
 
         <div className="form-field half-width">
           <label>Title *</label>
@@ -372,9 +370,7 @@ export default function CateringForm({
           </div>
         </div>
 
-        <div className="form-field full-width mt-4">
-          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Pricing & Minimums</h4>
-        </div>
+        <div className="admin-form-section-title mt-4">Pricing & Minimums</div>
 
         <div className="form-field half-width">
           <label>Price</label>
@@ -410,8 +406,8 @@ export default function CateringForm({
           />
         </div>
 
-        <div className="form-field full-width mt-6 border-t border-gray-900 pt-6">
-          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Menu Selection</h4>
+        <div className="form-field full-width mt-4 border-t border-gray-900 pt-6">
+          <div className="admin-form-section-title">Menu Selection</div>
           <MenuItemPicker
             value={selectedItemIds}
             onChange={setSelectedItemIds}
@@ -423,7 +419,7 @@ export default function CateringForm({
 
         {selectedItemIds.length > 0 && (
           <div className="form-field full-width mt-6 bg-gray-950 p-6 border border-gray-900">
-            <h4 className="text-white font-bold uppercase text-xs tracking-widest mb-4">Item Add-ons (Extras)</h4>
+            <div className="admin-form-section-title !border-gray-800">Item Add-ons (Extras)</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {selectedItemIds.map((id) => {
                 const item = itemsLookup[id];
@@ -447,8 +443,8 @@ export default function CateringForm({
           </div>
         )}
 
-        <div className="form-field full-width mt-6 border-t border-gray-900 pt-6">
-          <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-widest mb-4">Order Rules</h4>
+        <div className="form-field full-width mt-4 border-t border-gray-900 pt-6">
+          <div className="admin-form-section-title">Order Rules</div>
           <div className="options-group mb-4">
             <label className="checkbox-label">
               <input
@@ -468,7 +464,7 @@ export default function CateringForm({
           </div>
 
           {selectionRules.enabled && (
-            <div className="bg-gray-950 p-6 border border-gray-900">
+            <div className="bg-black/40 p-6 border border-gray-900">
               <div className="flex flex-wrap gap-2 mb-6">
                 {Object.values(GENERAL_PROFILES).map((preset) => {
                   const isActive = (selectionRules.type || "classic") === preset.key;
@@ -476,9 +472,9 @@ export default function CateringForm({
                     <button
                       key={preset.key}
                       type="button"
-                      className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all ${isActive
-                        ? 'border-yellow-400 bg-yellow-400 text-black'
-                        : 'border-gray-800 text-gray-400 hover:border-gray-600'
+                      className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isActive
+                        ? 'border-[#FAEB30] text-[#FAEB30] bg-transparent'
+                        : 'border-gray-800 text-gray-500 hover:border-gray-600'
                         }`}
                       onClick={() => {
                         const nextType = preset.key;
@@ -503,10 +499,11 @@ export default function CateringForm({
                   const defaultVal = activePreset.defaults?.[key] ?? 0;
                   return (
                     <div key={key} className="form-field">
-                      <label className="capitalize">{key}</label>
+                      <label className="capitalize text-[10px] text-gray-400 font-bold">{key}</label>
                       <input
                         type="number"
                         min="0"
+                        className="!py-2 !px-3 !text-sm"
                         value={selectionRules.categoryLimits?.[key] ?? defaultVal}
                         onChange={(e) => updateLimit(key, e.target.value)}
                       />
@@ -518,7 +515,7 @@ export default function CateringForm({
           )}
         </div>
 
-        <div className="form-field full-width flex gap-4 mt-8 pb-8">
+        <div className="form-field full-width flex gap-4 mt-8 pb-4">
           <button className="submit-btn" type="submit" disabled={saving}>
             {saving ? "Saving..." : (initial ? "Update Package" : "Create Package")}
           </button>

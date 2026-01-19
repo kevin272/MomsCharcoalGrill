@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axiosInstance from '../../config/axios.config';
 
 export default function SauceForm() {
   const { id } = useParams();
@@ -22,19 +23,18 @@ export default function SauceForm() {
     if (!isEdit) return;
     (async () => {
       try {
-        const res = await fetch(`/api/sauces/${id}`);
-        const json = await res.json();
-        if (!json.success) throw new Error(json.message || 'Failed');
+        const res = await axiosInstance.get(`/sauces/${id}`);
+        const data = res.data;
         setForm({
-          name: json.data.name || '',
-          price: json.data.price ?? '',
-          description: json.data.description || '',
-          isAvailable: !!json.data.isAvailable,
-          order: json.data.order ?? 0,
+          name: data.name || '',
+          price: data.price ?? '',
+          description: data.description || '',
+          isAvailable: !!data.isAvailable,
+          order: data.order ?? 0,
         });
-        setPreview(json.data.image || '');
+        setPreview(data.image || '');
       } catch (e) {
-        setErr(e.message);
+        setErr(e.message || 'Failed to load sauce');
       }
     })();
   }, [id, isEdit]);
@@ -64,16 +64,15 @@ export default function SauceForm() {
       fd.append('order', String(form.order || 0));
       if (imageFile) fd.append('image', imageFile);
 
-      const res = await fetch(isEdit ? `/api/sauces/${id}` : '/api/sauces', {
-        method: isEdit ? 'PUT' : 'POST',
-        body: fd,
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'Save failed');
+      if (isEdit) {
+        await axiosInstance.put(`/sauces/${id}`, fd);
+      } else {
+        await axiosInstance.post('/sauces', fd);
+      }
 
       navigate('/admin/sauces');
     } catch (e) {
-      setErr(e.message);
+      setErr(e.response?.data?.message || e.message || 'Save failed');
     } finally {
       setLoading(false);
     }

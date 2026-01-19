@@ -6,13 +6,7 @@ import { DEFAULT_DELIVERY_FEE, fetchDeliveryFee } from '../utils/settings';
 
 const isValidEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
-/**
- * Shopping cart / checkout page.  Displays the items currently in the cart
- * using the CartContext and allows the user to enter special requirements
- * and customer details.  On submission it posts the order to the backend
- * using the new `/api/orders/checkout` endpoint.  Upon successful order
- * creation the cart is cleared and a confirmation is shown.
- */
+
 function CartPage() {
   const { items: cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
   const [paymentMode, setPaymentMode] = useState('COD');
@@ -575,7 +569,7 @@ function CartPage() {
               )}
               <div className="contact-info-text">
                 Incase of confusion, Please contact:{' '}
-                <span className="contact-number">+61741942975</span>
+                <span className="contact-number">+61 741 942 975</span>
               </div>
             </div>
             <button
@@ -597,19 +591,10 @@ function CartPage() {
           }}
         >
           <div className="customer-details-modal success-modal">
-            <button
-              type="button"
-              className="modal-close-btn"
-              onClick={closeOrderSuccess}
-              aria-label="Close popup"
-            >
-              <span className="modal-close-icon" aria-hidden="true">X</span>
-            </button>
             <div className="modal-header">
-              <div className="success-icon" aria-hidden>✓</div>
               <div>
                 <h3>Order placed successfully</h3>
-                <p className="text-sm opacity-80">
+                <p className="text-sm opacity-80 text-center">
                   Ref <span className="font-semibold">{orderSuccess.id}</span>
                 </p>
               </div>

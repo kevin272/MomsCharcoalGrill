@@ -40,17 +40,9 @@ const DeliverySettings = lazy(() => import('./pages/Dashboardpages/DeliverySetti
 
 // Loading component
 const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    backgroundColor: '#000',
-    color: '#FAEB30',
-    fontFamily: 'Big Shoulders Stencil Text, sans-serif',
-    fontSize: '2rem'
-  }}>
-    LOADING...
+  <div className="spinner-container" style={{ height: '100vh', backgroundColor: '#000' }}>
+    <div className="loader-spinner"></div>
+    <div className="spinner-text" style={{ color: '#FAEB30', fontSize: '1.2rem' }}>Loading...</div>
   </div>
 );
 

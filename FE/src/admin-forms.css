@@ -251,12 +251,45 @@
     border-radius: 0;
     border: 1px solid #333;
     border-top: 4px solid #FAEB30;
+    padding: 30px;
+}
+
+.admin-form-section-title {
+    color: #FAEB30;
+    font-family: "Big Shoulders Stencil Text", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    grid-column: span 2;
+    border-bottom: 1px solid #222;
+    padding-bottom: 8px;
 }
 
 /* MenuItemPicker Overrides */
 .menuitem-picker.revamped {
     background: #000 !important;
     border: 1px solid #333 !important;
+}
+
+.menuitem-picker__group-header {
+    color: #FAEB30;
+    font-family: "Big Shoulders Stencil Text", sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 5px;
+    margin: 20px 0 15px 0;
+}
+
+.menuitem-picker__group-count {
+    color: #888;
+    font-size: 0.8rem;
+    font-family: Afacad, sans-serif;
+    font-weight: 400;
+    margin-left: 10px;
 }
 
 .menuitem-card {
@@ -267,4 +300,26 @@
 .menuitem-card--active {
     border-color: #FAEB30 !important;
     background: #111 !important;
+}
+
+.catering-kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.catering-pill {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.pill--outline {
+    border: 1px solid #333;
+    color: #FAEB30;
 }
