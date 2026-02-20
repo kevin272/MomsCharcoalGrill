@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
+const helmet = require('helmet');
 require('dotenv').config();
 
 // Import auth utilities
@@ -31,6 +32,14 @@ const noticeRoutes = require('./routes/notice');
 
 
 const app = express();
+
+app.use(helmet({
+  // This is CRITICAL for your setup. 
+  // Because your frontend (Netlify) is different from your backend, 
+  // we must allow "Cross-Origin" resource loading for your /uploads images.
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
 // ✅ FIXED: proper CORS handling
 const allowedOrigins = [
   'https://mumscharcoalgrill.netlify.app',
